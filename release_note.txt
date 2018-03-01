@@ -1,0 +1,26 @@
+20171201_Doorbell_SDK_v1.2.3.2_64c33b
+
+Release Note
+ [新增]
+ . [P2P]裝置端更新呼叫方式以及kconfig設定
+ . 廣播功能(註3)
+ . 死機時打印暫存器值
+ . 支持GC0308格科威指紋模組
+
+ [修正]
+ . lcd.exe設定DCLK 6M但實際量測並非6M
+ . 開啟備份功能，在win32環境無法正常啟動
+ . 修正backtrace錯誤
+ . 在門鈴機9910的平台無法使用ithPrintf
+ . test_motiondetection_rec錄製720x576影片會卡頓，改善效能問題
+
+ [修改]
+ . 修改取消使用Timer1處理PCR回繞問題，即新增一組Timer1可使用(註1)
+ . 增加系統穩定性(註2)
+ . itu/guidesigner增加支持多國語言個數至32個
+
+註1: 若加上原來的，可任意使用的Timer有Timer1、Timer2與Timer3
+
+註2: 修改包括，關閉ARM MCLK/NCLK gating clock，320Mhz init script修改RISC頻率為160Mhz，開機時做一次掃memory window的動作
+
+註3: 可以一台室內機當作server，對所有client室內機做廣播
