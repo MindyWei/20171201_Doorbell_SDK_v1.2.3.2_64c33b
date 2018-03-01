@@ -294,6 +294,7 @@ static void ListBoxOnSelection(ITUListBox* listbox, ITUScrollText* item, bool co
 void ituListBoxInit(ITUListBox* listbox, int width)
 {
     assert(listbox);
+    ITU_ASSERT_THREAD();
 
     memset(listbox, 0, sizeof (ITUListBox));
 
@@ -337,6 +338,7 @@ void ituListBoxSelect(ITUListBox* listbox, int index)
     ITUText* item;
     int count;
     assert(listbox);
+    ITU_ASSERT_THREAD();
 
     if (widget->type == ITU_SCROLLLISTBOX || widget->type == ITU_SCROLLMEDIAFILELISTBOX || widget->type == ITU_SCROLLICONLISTBOX)
         count = itcTreeGetChildCount(listbox) / 3;
@@ -390,6 +392,7 @@ void ituListBoxCheck(ITUListBox* listbox, int index)
     ITUText* item;
     int count;
     assert(listbox);
+    ITU_ASSERT_THREAD();
 
     if (widget->type == ITU_SCROLLLISTBOX || widget->type == ITU_SCROLLMEDIAFILELISTBOX || widget->type == ITU_SCROLLICONLISTBOX)
         count = itcTreeGetChildCount(listbox) / 3;
@@ -439,6 +442,8 @@ void ituListBoxCheck(ITUListBox* listbox, int index)
 
 void ituListBoxReload(ITUListBox* listbox)
 {
+    ITU_ASSERT_THREAD();
+
     if (itcTreeGetChildCount(listbox) == 0)
         return;
 
@@ -453,7 +458,9 @@ void ituListBoxGoto(ITUListBox* listbox, int index)
 {
     char buf[32];
 
-    if (listbox->itemCount == 0 || index > listbox->itemCount)
+    ITU_ASSERT_THREAD();
+
+    if (listbox->itemCount == 0 || index > listbox->pageCount)
         return;
 
     listbox->pageIndex = index;
@@ -516,6 +523,8 @@ ITUWidget* ituListBoxGetFocusItem(ITUListBox* listbox)
 {
     ITUWidget* widget = (ITUWidget*) listbox;
 
+    ITU_ASSERT_THREAD();
+
     if (listbox->focusIndex >= 0)
     {
         ITUWidget* item;
@@ -536,6 +545,7 @@ void ituListBoxSetItemRead(ITUListBox* listbox, ITUWidget* item, bool read)
 {
     ITUWidget* widget = (ITUWidget*) listbox;
     assert(listbox);
+    ITU_ASSERT_THREAD();
 
     if (item)
     {

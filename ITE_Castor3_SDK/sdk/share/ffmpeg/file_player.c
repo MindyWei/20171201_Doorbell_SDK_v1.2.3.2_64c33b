@@ -924,7 +924,10 @@ void render_frame(AVCodecContext *avctx, AVFrame *picture)
             prop.pitch_y  = picture->linesize[0]; //width; //2048
             prop.pitch_uv = picture->linesize[1]; //width/2; //2048
             prop.bidx     = bidx;
-            prop.format   = MMP_ISP_IN_YUV420;
+            if(avctx->codec_id == CODEC_ID_MJPEG)
+                prop.format   = MMP_ISP_IN_YUV422;
+            else
+                prop.format   = MMP_ISP_IN_YUV420;
 
     #ifdef CFG_BUILD_ITV
             itv_update_dbuf_anchor(&prop);
@@ -1015,14 +1018,13 @@ static double cal_audio_threshold(PlayerInstance *is)
     return threshold;
 }
 
-#if 0
+#if 1
 static void flush_audio_hw(PlayerInstance *is)
 {
     AVFormatContext *ic          = is->ic;
     int             audio_stream = is->audio_stream;
     int             nAudioEngine = 0;
 
-    iteAudioStop();
     switch (ic->streams[audio_stream]->codec->codec_id)
     {
     case CODEC_ID_MP2:
@@ -1062,7 +1064,24 @@ static void flush_audio_hw(PlayerInstance *is)
     default:
         break;
     }
+    
+    if(nAudioEngine == ITE_WAV_DECODE)
+    {
+        iteAudioStopQuick();
+#if (CFG_CHIP_FAMILY == 9850)
+		i2s_enable_fading(1);//fading in
+#endif
+		usleep(1000);
     iteAudioOpenEngine(nAudioEngine);
+        WavHeaderReload(is->audioctx);    
+    }
+    else
+    {
+        iteAudioStop();
+#if (CFG_CHIP_FAMILY == 9850)
+		i2s_enable_fading(1);//fading in
+#endif
+	}
 }
 
 /* get the current audio clock value */
@@ -2077,7 +2096,7 @@ seekto:
                     packet_queue_flush(&is->audioq);
                     //packet_queue_put(&is->audioq, &flush_pkt);
                     //avcodec_flush_buffers(is->audio_st->codec);
-                    //flush_audio_hw(is);
+                    flush_audio_hw(is);
                 }
                 if (is->video_stream >= 0)
                 {
@@ -2958,7 +2977,9 @@ static int ithMediaPlayer_stop(void)
 #ifdef CFG_BUILD_ITV
     itv_flush_dbuf();
 #endif
-
+#if (CFG_CHIP_FAMILY == 9850)
+	i2s_enable_fading(0);//close fading in
+#endif
     pthread_mutex_unlock(&player_mutex);
     return 0;
 }
@@ -3370,7 +3391,7 @@ static bool ithMediaPlayer_check_fileplayer_playing()
     PlayerProps    *pprop = global_player_prop;
     if (!pprop)
     {
-        av_log(NULL, AV_LOG_ERROR, "Player not exist\n");
+        //av_log(NULL, AV_LOG_ERROR, "Player not exist\n");
         return false;
     }
     return pprop->isFilePlayer_thread_created;

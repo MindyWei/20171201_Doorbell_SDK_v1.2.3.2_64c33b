@@ -64,13 +64,9 @@ typedef void* MMP_EVENT;
 #define AUDIOMGR_NETWORKPLAY_EOF_COUNT_MAX 600
 
 
-//#define MGRDEBUG
- 
-#ifdef MGRDEBUG
-#define DEBUG_PRINT printf
-#else
+//#define DEBUG_PRINT printf
 #define DEBUG_PRINT(...)
-#endif
+
 
 /*==================================================================================================*
  * Typedefs                                                                                         *
@@ -93,6 +89,7 @@ typedef void* MMP_EVENT;
 //                              Global Data Definition
 //=============================================================================
 SMTK_AUDIO_MGR          audioMgr;
+SMTK_AUDIO_PARAM_NETWORK gpNetwork; 
 static PAL_FILE*                       currFile;
 static PAL_FILE*                       ptFile;
 static MMP_UINT32                   audioTime;
@@ -108,8 +105,7 @@ static SMTK_AUDIO_FILE_INFO gtFileInfo;
 static SMTK_AUDIO_LRC_INFO* gpLrcInfo;
 
 static pthread_t  gAudioMgrthreadID;
-static pthread_t  gAudioReadthreadID;
-
+static pthread_t  gAudioReadthreadID;      
 static MMP_ULONG                    fileSize = 0;
 #ifdef HAVE_WAV
 static unsigned char                  ptWaveHeader[48];
@@ -1041,10 +1037,10 @@ void AudioThreadFunc()
     {
         MMP_ULONG   remainSize;
         MMP_ULONG   nTemp1;        
-        MMP_UINT nCurrTime=0;
-        MMP_UINT nTemp=0;
-        MMP_UINT16 nTmp;       
-        unsigned short reg,reg1;
+        MMP_UINT    nCurrTime=0;
+        MMP_UINT    nTemp=0;
+        struct timeval StartPlayT, CurrPlayT;        
+
 
         if (audioMgr.stop == MMP_TRUE) {           
             goto stop;
@@ -1060,17 +1056,18 @@ void AudioThreadFunc()
         }
         //DEBUG_PRINT("audio thread #line %d  %d %d \n",__LINE__,audioMgr.nOffset,audioMgr.ptNetwork.nReadLength);
 
-        gettimeofday(&gStartDebugT, NULL);    
+        gettimeofday(&gStartDebugT, NULL);
+        gettimeofday(&StartPlayT, NULL);        
 
 #ifdef SMTK_AUDIO_READ_BUFFER_THREAD
         //DEBUG_PRINT("[Audio mgr] thread bCheckMusicComplete %d %d %d ,#line %d \n",audioMgr.bCheckMusicComplete,audioMgr.nCurrentWriteBuffer,audio_buffer[audioMgr.nCurrentWriteBuffer].ready,__LINE__);        
         do{
             usleep(10000);
         } while(audioMgr.bCheckMusicComplete==MMP_FALSE || audioMgr.playing == MMP_FALSE);
-        if (audioMgr.mode == SMTK_AUDIO_NORMAL) {
-            if (audioMgr.ptNetwork.nSpecialCase !=1)
-                i2s_pause_DAC(1);
-        }
+//        if (audioMgr.mode == SMTK_AUDIO_NORMAL) {
+//            if (audioMgr.ptNetwork.nSpecialCase !=1)
+//                i2s_pause_DAC(1);
+//        }
         
         //DEBUG_PRINT("[Audio mgr] thread bCheckMusicComplete %d %d #line %d \n",audioMgr.bCheckMusicComplete,audioMgr.playing,__LINE__);
         usleep(50000);
@@ -1087,6 +1084,7 @@ void AudioThreadFunc()
             unsigned int nTest;
             
             if (audioMgr.ptNetwork.nSpecialCase ==1){
+                I2S_DA32_WAIT_RP_EQUAL_WP();
                 i2s_pause_DAC(1);
                 goto stop;
             }
@@ -1213,12 +1211,12 @@ void AudioThreadFunc()
 
                         gettimeofday(&gStartDebugT, NULL);     
                         //DEBUG_PRINT("[Audio mgr] buffer full %d %d\n",I2S_DA32_GET_RP(),I2S_DA32_GET_WP());
-#ifdef CFG_VIDEO_ENABLE                       
-                        if (mtal_pb_check_fileplayer_playing()){
+//#ifdef CFG_VIDEO_ENABLE                       
+//                        if (mtal_pb_check_fileplayer_playing()){
                             // 
-                            i2s_pause_DAC(0);
-                        } 
-#endif                        
+//                            i2s_pause_DAC(0);
+//                        } 
+//#endif                        
                     }
 
                     if (audioMgr.ptNetwork.nLocalFileSize<=gnAudioWrite && audioMgr.ptNetwork.bLocalPlay==1 && audioMgr.ptNetwork.nType == SMTK_AUDIO_WAV){
@@ -1354,27 +1352,32 @@ void AudioThreadFunc()
 
         if (audioMgr.mode == SMTK_AUDIO_NORMAL) {
             //DEBUG_PRINT(" audio mgr stop eventAudioMgrToThread %d \n",__LINE__);
-
+            unsigned int dur = 0;
             nResult = 0;
             nTemp = 0;
+
             do {
                 usleep(2000);
                 if (audioMgr.ptNetwork.nSpecialCase ==1){
-                    //DEBUG_PRINT("[Audio mgr] short wav end #line %d \n",__LINE__);
+                    DEBUG_PRINT("[Audio mgr] short wav(nSpecialCase) end #line %d \n",__LINE__);
                     break;
                 }
                 
-               /* if (audioMgr.ptNetwork.nType == SMTK_AUDIO_WAV){
-                    DEBUG_PRINT("[Audio mgr] wav stop #line %d  \n",__LINE__);
-                    break;
-                } */               
-                smtkAudioMgrGetTotalTime(&nTotal); 
-                iteAudioGetAttrib(ITE_AUDIO_CODEC_SET_BUFFER_LENGTH, &nI2SBufferLength);        
+                if (audioMgr.ptNetwork.nType == SMTK_AUDIO_WAV){
+                    gettimeofday(&CurrPlayT, NULL);
+                    dur = (unsigned int)itpTimevalDiff(&StartPlayT, &CurrPlayT);  
+                    if( dur >= smtkAudioMgrGetTime()- 100){
+                        DEBUG_PRINT("[Audio mgr] dur = %d  smtkAudioMgrGetTime = %d nResult = %d\n",dur,smtkAudioMgrGetTime(),nResult); 
+                        break;
+                    }
+                }                    
 
                 if (nResult==100){
                     //DEBUG_PRINT("[Audio mgr] wait to end of playing %d %d #line %d \n",I2S_DA32_GET_RP(),I2S_DA32_GET_WP(),__LINE__);
                     nResult = 0;
                     nTemp++;
+                    smtkAudioMgrGetTotalTime(&nTotal); 
+                    iteAudioGetAttrib(ITE_AUDIO_CODEC_SET_BUFFER_LENGTH, &nI2SBufferLength);                       
                     // flac can not wp == rp
                     if ( (I2S_DA32_GET_WP()>I2S_DA32_GET_RP()) && (I2S_DA32_GET_WP()-I2S_DA32_GET_RP()<128)){
                         //DEBUG_PRINT("[Audio mgr] wait to end of playing breaking %d %d #line %d \n",I2S_DA32_GET_RP(),I2S_DA32_GET_WP(),__LINE__);
@@ -1443,11 +1446,6 @@ void AudioThreadFunc()
 
             audioMgr.ptNetwork.bEOP = MMP_TRUE;
 
-            // disable ffmpeg pause audio
-            nResult = 0;
-            iteAudioSetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nResult);
-
-
             if (smtkAudioMgrGetInterruptOverwriteStatus()==1) {                
                 smtkAudioMgrSetInterruptStatus(0);
                 
@@ -1476,6 +1474,11 @@ void AudioThreadFunc()
 
             //printf("[Audio mgr] sem wait eof #line %d \n",__LINE__);
             gSpecialTime = 0;
+            // disable ffmpeg pause audio
+#ifdef CFG_VIDEO_ENABLE
+            if(audioMgr.ptNetwork.nType == SMTK_AUDIO_MP3)
+                FFmpeg_pause(0);
+#endif
             sem_wait(gpAudioMgrSemaphore);
 
             //printf("[Audio mgr] sem_wait exit #line %d \n",__LINE__);
@@ -1707,7 +1710,8 @@ smtkAudioMgrInitialize(
     audioMgr.pause      = MMP_FALSE;
     audioMgr.mode       = SMTK_AUDIO_NORMAL;
     audioMgr.stop       = MMP_TRUE;
-
+    audioMgr.Nfilequeque= 0;
+    audioMgr.bQuickPlay = MMP_FALSE;
 //    thread = PalCreateThread(PAL_THREAD_MP3, ThreadFunc, MMP_NULL, 4096,PAL_THREAD_PRIORITY_NORMAL);
 //    if (thread == MMP_NULL)
 //    {
@@ -1764,7 +1768,11 @@ smtkAudioMgrInitialize(
 #ifdef CFG_AUDIO_MGR_WAV_HD
     gOutHDBuffer = memalign(64,I2S_BUFFER_LENGTH);
 #endif
+{
+    memset(&gpNetwork, 0, sizeof (gpNetwork));
+    gpNetwork.pFilename = (char*)malloc(256);
     
+}
     //iteAudioStopQuick();
     
 end:
@@ -1887,6 +1895,27 @@ int smtkAudiomgrPlayNetworkResetHandle(void* handle)
     return 0;
 }
 
+
+MMP_INT smtkSetFileQueue(SMTK_AUDIO_PARAM_NETWORK tmpNetwork){
+
+    pthread_mutex_lock(&audio_read_buffer_mutex);
+    
+    if(gpNetwork.pHandle) fclose(gpNetwork.pHandle);
+    
+    gpNetwork.audioMgrCallback = tmpNetwork.audioMgrCallback;
+    gpNetwork.nType            = tmpNetwork.nType;
+    gpNetwork.LocalRead        = tmpNetwork.LocalRead;
+    gpNetwork.nReadLength      = tmpNetwork.nReadLength;
+    gpNetwork.bSeek            = tmpNetwork.bSeek;
+    gpNetwork.nM4A             = tmpNetwork.nM4A;
+    gpNetwork.bLocalPlay       = tmpNetwork.bLocalPlay;
+    strcpy(gpNetwork.pFilename,tmpNetwork.pFilename);
+
+
+    audioMgr.Nfilequeque++;
+    pthread_mutex_unlock(&audio_read_buffer_mutex);
+    return 0;
+}
 
 
 MMP_INT
@@ -2011,26 +2040,11 @@ smtkAudioMgrPlayNetwork(
      iteAudioSetMusicShowSpectrum((int)pNetwork->bSpectrum);             
 #endif
 
-    nFfmpegPauseAudio = 0;
 #ifdef CFG_VIDEO_ENABLE
-
-    printf(" check video %d \n",mtal_pb_check_fileplayer_playing());
-    if (mtal_pb_check_fileplayer_playing()){
-        // set ffmpeg pause audio
-        nFfmpegPauseAudio = 1;
-    #if defined(__OPENRTOS__)            
-        iteAudioSetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nFfmpegPauseAudio);
-        iteAudioSetMp3RdBufPointer(nFfmpegPauseAudio);
-    #endif        
-    }
+    if(pNetwork->nType== SMTK_AUDIO_MP3)
+        FFmpeg_pause(1);
 #endif
     
-    if (nFfmpegPauseAudio && pNetwork->nType== SMTK_AUDIO_MP3)
-    {
-        // don't open engine 
-    }
-    else
-    {
     // open engine
     if (audioMgr.playing == MMP_FALSE)
     {              
@@ -2109,7 +2123,7 @@ smtkAudioMgrPlayNetwork(
             return SMTK_AUDIO_ERROR_UNKNOW_FAIL;
         }
     }
-    }
+    
     audioMgr.filePlay = MMP_FALSE;
     audioMgr.pause = MMP_FALSE;
     audioMgr.stop = MMP_FALSE;
@@ -2134,6 +2148,7 @@ smtkAudioMgrPlayNetwork(
     audioMgr.ptNetwork.audioMgrCallback= pNetwork->audioMgrCallback;
 
     audioMgr.ptNetwork.pFilename = pNetwork->pFilename;
+
     // drop audio
     audioMgr.ptNetwork.nDropTimeEnable= pNetwork->nDropTimeEnable;
     if (audioMgr.ptNetwork.nDropTimeEnable){
@@ -2306,6 +2321,31 @@ smtkAudioMgrSimplePlay(
     return result;
 }
 
+#ifdef CFG_VIDEO_ENABLE
+void FFmpeg_pause(int pause){
+    
+    int nFfmpegPauseAudio;
+    pthread_mutex_lock(&audio_callback_mutex);  
+#if defined(__OPENRTOS__)  
+    iteAudioGetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nFfmpegPauseAudio);
+    
+    if (mtal_pb_check_fileplayer_playing() && nFfmpegPauseAudio != pause){
+        if(pause){
+            i2s_enable_fading(0);//no fading
+        }else{
+            i2s_enable_fading(1);//fading
+            iteAudioOpenEngine(SMTK_AUDIO_MP3);//reinit i2s ,clear buffer data
+        }
+        itp_codec_playback_mute();
+        iteAudioSetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &pause);
+        iteAudioSetMp3RdBufPointer(pause);
+        printf("%s FFmpeg_pause(%d)\n",__FUNCTION__,pause);
+    }  
+#endif         
+    pthread_mutex_unlock(&audio_callback_mutex); 
+}
+#endif 
+
 // check if playing,then stop
 MMP_INT
 smtkAudioMgrQuickStop()
@@ -2374,7 +2414,7 @@ smtkAudioMgrStop(
     MMP_INT timeout=0;
     int i=0;
     int al_state = 0;
-    int nFfmpegPauseAudio;
+
     LOG_ENTER "smtkAudioMgrStop()\r\n" LOG_END
 #if 0
     if (fin){
@@ -2432,13 +2472,19 @@ smtkAudioMgrStop(
 
 #ifdef CFG_VIDEO_ENABLE
     // disable ffmpeg pause audio
-    nFfmpegPauseAudio = 0;
-    iteAudioSetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nFfmpegPauseAudio);
-    if (mtal_pb_check_fileplayer_playing()){
-        printf("audio mgr stop, mtal_pb_check_fileplayer_playing  \n");
+    
+/*    if (mtal_pb_check_fileplayer_playing()){
+        int nFfmpegPauseAudio;
+        iteAudioGetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nFfmpegPauseAudio);
+        if(nFfmpegPauseAudio){
+            nFfmpegPauseAudio = 0;
+            iteAudioSetAttrib(ITE_AUDIO_FFMPEG_PAUSE_AUDIO, &nFfmpegPauseAudio);
+            iteAudioSetMp3RdBufPointer(nFfmpegPauseAudio);
+            printf("audio mgr stop, mtal_pb_check_fileplayer_playing  \n");
+        }
 
     }
-
+*/
     smtkAudioMgrSetNetworkError(0);
     if (audioMgr.ptNetwork.nARMDecode == 0 && audioMgr.ptNetwork.nSpecialCase ==0 && mtal_pb_check_fileplayer_playing()==0){
         iteAudioStopQuick();
@@ -3765,6 +3811,81 @@ static int audio_special_case_check_state(int ch,int sampleRate,int length)
 
 }
 
+void smtkSetQuickPlayFlag(void){
+   audioMgr.bQuickPlay = MMP_TRUE;
+}
+
+static int audio_special_case_quick_play(){
+    unsigned char* I2SBuf;
+    int nBufferLength = 128*1024;
+    int i2sNewWP;
+    int nOffset = 0;
+    I2SBuf = gOutBuffer;
+    audioMgr.playing == MMP_TRUE;
+	printf("#####audio_special_case_quick_play: enter\r\n");
+    i2s_pause_DAC(0);
+	printf("#####audio_special_case_quick_play: after i2s_pause_DAC(0)\r\n");
+
+    if (i2s_get_DA_running && audioMgr.ptNetwork.nSpecialCase ==1){
+        unsigned char *dstBuffer = NULL;
+        int copySize = 0;
+        
+        I2S_DA32_SET_WP(I2S_DA32_GET_RP());
+        gOutReadPointer = I2S_DA32_GET_RP();
+        gOutWritePointer = I2S_DA32_GET_WP();
+        dstBuffer = gOutBuffer + gOutReadPointer;
+        i2sNewWP = gOutWritePointer;
+        
+        if(gOutWritePointer + audioMgr.ptNetwork.nLocalFileSize > nBufferLength)
+            memset(I2SBuf,0,nBufferLength);//clear I2S buffer data
+
+        I2S_DA32_SET_WP(i2sNewWP);
+        DEBUG_PRINT("[Audio mgr] audio_special_case_play da %d ,read pointer %d write pointer %d nLocalFileSize=%d\n",128*1024,gOutReadPointer,gOutWritePointer,audioMgr.ptNetwork.nLocalFileSize);
+  
+        if (i2sNewWP+audioMgr.ptNetwork.nLocalFileSize<= nBufferLength) {
+            dstBuffer = gOutBuffer + i2sNewWP;
+            copySize = audioMgr.ptNetwork.nLocalFileSize;
+            i2sNewWP = i2sNewWP+audioMgr.ptNetwork.nLocalFileSize-SMTK_AUDIO_WAV_HEADER;
+        } else if (i2sNewWP+audioMgr.ptNetwork.nLocalFileSize > nBufferLength) {
+            dstBuffer = gOutBuffer + i2sNewWP;
+            copySize = nBufferLength - i2sNewWP ;
+            memcpy(dstBuffer, audioMgr.sampleBuf+SMTK_AUDIO_WAV_HEADER, copySize);
+
+            nOffset = copySize;
+            
+            dstBuffer = gOutBuffer;
+            
+            copySize = audioMgr.ptNetwork.nLocalFileSize-(nBufferLength - i2sNewWP);
+            i2sNewWP = copySize;
+
+        } else {
+            DEBUG_PRINT("[Audio mgr] special case error %d \n",__LINE__);
+        }
+
+        if (copySize>44)
+        {
+            memcpy(dstBuffer, audioMgr.sampleBuf+SMTK_AUDIO_WAV_HEADER+nOffset, copySize-SMTK_AUDIO_WAV_HEADER);
+#if CFG_CPU_WB
+            ithFlushDCacheRange(dstBuffer, copySize);
+            ithFlushMemBuffer();
+#endif
+            I2S_DA32_SET_WP(i2sNewWP);
+        }
+
+    }
+
+/*
+    if(audioMgr.bQuickPlay==MMP_FALSE){
+        I2S_DA32_WAIT_RP_EQUAL_WP();
+        i2s_pause_DAC(1);
+        audioMgr.playing = MMP_FALSE;
+    }
+*/
+	//printf("#####audio_special_case_quick_play: end\r\n");
+    return 0;
+
+}
+
 static int audio_special_case_play(){
 #if defined(__OPENRTOS__)
     unsigned char* I2SBuf;
@@ -3779,7 +3900,7 @@ static int audio_special_case_play(){
     int nOffset = 0;
     // 128k reference from mediastream2.c castor3snd_init()
     //gOutBuffer = memalign(64,128*1024);
-
+    audioMgr.playing = MMP_TRUE;
     I2SBuf = gOutBuffer;
     nChannels = gtWaveInfo.nChans;
     nSampeRate = gtWaveInfo.sampRate;
@@ -3835,20 +3956,26 @@ static int audio_special_case_play(){
         iteAudioSetAttrib(ITE_AUDIO_CODEC_SET_BUFFER_LENGTH, &nBufferLength);    
         iteAudioSetAttrib(ITE_AUDIO_I2S_PTR, I2SBuf);
 
+    }else{
+        //already init i2s, just open i2s
+        i2s_pause_DAC(0);
     }
-    i2s_pause_DAC(0);
     nOffset = 0;
     if (i2s_get_DA_running && audioMgr.ptNetwork.nSpecialCase ==1){
         unsigned char *dstBuffer = NULL;
         int copySize = 0;
-        int dummysize = 256;
-        int resetbuf = 0;
+        //int dummysize = 256;
         
         I2S_DA32_SET_WP(I2S_DA32_GET_RP());
         gOutReadPointer = I2S_DA32_GET_RP();
         gOutWritePointer = I2S_DA32_GET_WP();
         dstBuffer = gOutBuffer + gOutReadPointer;
-        if(gOutWritePointer+dummysize <= nBufferLength){
+        i2sNewWP = gOutReadPointer;
+        
+        if(gOutWritePointer /*+ dummysize */+ audioMgr.ptNetwork.nLocalFileSize > nBufferLength)
+            memset(I2SBuf,0,nBufferLength);//clear I2S buffer data
+        
+        /*if(gOutWritePointer+dummysize <= nBufferLength){
             memset(dstBuffer,0,dummysize);
             dstBuffer+=dummysize;
             i2sNewWP = gOutWritePointer + dummysize;
@@ -3862,12 +3989,12 @@ static int audio_special_case_play(){
             memset(dstBuffer,0,scez2);
             dstBuffer = gOutBuffer + scez2;
             i2sNewWP = scez2;
-            resetbuf = 1;
         }//add some scilent at start ,buff time .
-
+        */
+        
         I2S_DA32_SET_WP(i2sNewWP);
         DEBUG_PRINT("[Audio mgr] audio_special_case_play da %d ,read pointer %d write pointer %d nLocalFileSize=%d\n",128*1024,gOutReadPointer,gOutWritePointer,audioMgr.ptNetwork.nLocalFileSize);
-        
+  
         if (i2sNewWP+audioMgr.ptNetwork.nLocalFileSize<= nBufferLength) {
             dstBuffer = gOutBuffer + i2sNewWP;
             copySize = audioMgr.ptNetwork.nLocalFileSize;
@@ -3883,8 +4010,6 @@ static int audio_special_case_play(){
             
             copySize = audioMgr.ptNetwork.nLocalFileSize-(nBufferLength - i2sNewWP);
             i2sNewWP = copySize;
-            memset(I2SBuf,0,i2sNewWP);
-            resetbuf = 1;
 
         } else {
             DEBUG_PRINT("[Audio mgr] special case error %d \n",__LINE__);
@@ -3900,8 +4025,6 @@ static int audio_special_case_play(){
             I2S_DA32_SET_WP(i2sNewWP);
         }
 
-        I2S_DA32_WAIT_RP_EQUAL_WP();
-        if(resetbuf) memset(I2SBuf,0,nBufferLength);
     }
     
     
@@ -4365,11 +4488,28 @@ static void *audio_read_thread_func(void *arg) {
             // sleep a little time
             usleep(20);
         }
+        if(audioMgr.Nfilequeque){   //init i2s need some time that may cause video lag,  
+            audioMgr.Nfilequeque--; //we init i2s in a thread  
+            if(audioMgr.Nfilequeque==0){
+                pthread_mutex_lock(&audio_read_buffer_mutex);
+                smtkAudioMgrQuickStop();
+                gpNetwork.pHandle=fopen(gpNetwork.pFilename, "rb");
+                smtkAudioMgrPlayNetwork(&gpNetwork);
+                pthread_mutex_unlock(&audio_read_buffer_mutex);
+            }
+        }
+  
         //DEBUG_PRINT("audio_read_thread_func %d \n",nTemp++);
         if (audioMgr.playing == MMP_TRUE){
             audioMgr.nReading = 1;
             audio_buffer_read_data();
             audioMgr.nReading = 0;            
+        }
+        if(audioMgr.bQuickPlay == MMP_TRUE){//special case:quick play small continual sound;
+            //audioMgr.bQuickPlay= MMP_FALSE;
+            //usleep(40000);//40000
+            audio_special_case_quick_play();
+            audioMgr.bQuickPlay = MMP_FALSE;
         }
     }
 

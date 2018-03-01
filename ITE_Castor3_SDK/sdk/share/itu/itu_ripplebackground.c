@@ -12,6 +12,7 @@ void ituRippleBackgroundExit(ITUWidget* widget)
 {
     ITURippleBackground* rb = (ITURippleBackground*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (rb->rippleMap)
     {
@@ -343,6 +344,7 @@ void ituRippleBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, 
 void ituRippleBackgroundInit(ITURippleBackground* rb)
 {
     assert(rb);
+    ITU_ASSERT_THREAD();
 
     memset(rb, 0, sizeof (ITURippleBackground));
 

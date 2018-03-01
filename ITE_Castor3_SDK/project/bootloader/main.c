@@ -35,6 +35,46 @@ char tftppara[128] = "tftp://192.168.1.20/doorbell_indoor2.bin";
 static bool usbInited = false;
 #endif
 
+#if defined(CFG_CAPTURE_MODULE_ENABLE) //add for TARGET_BOARD_G
+#define TARGET_BOARD_G
+
+#define CAM_VOL_PIN  	32
+#define BL_VOL_PIN  	34
+#define BL_GPIO_PIN  	35
+
+#define PR2000_MPP3 	73
+#define PR2000_MPP4 	72
+
+static void user_gpio_init()
+{
+	ithGpioSetMode(BL_GPIO_PIN, ITH_GPIO_MODE0);
+	ithGpioSetOut(BL_GPIO_PIN);
+	ithGpioEnable(BL_GPIO_PIN); 
+	ithGpioSet(BL_GPIO_PIN);	
+	
+	ithGpioSetMode(BL_VOL_PIN, ITH_GPIO_MODE0);
+	ithGpioSetOut(BL_VOL_PIN);
+	ithGpioEnable(BL_VOL_PIN);			
+	ithGpioSet(BL_VOL_PIN);
+	
+	ithGpioSetMode(CAM_VOL_PIN, ITH_GPIO_MODE0);
+	ithGpioSetOut(CAM_VOL_PIN);
+	ithGpioEnable(CAM_VOL_PIN); 
+	ithGpioSet(CAM_VOL_PIN);	
+
+	ithGpioSetMode(PR2000_MPP3, ITH_GPIO_MODE0);
+	ithGpioSetOut(PR2000_MPP3);
+	ithGpioEnable(PR2000_MPP3); 
+	ithGpioClear(PR2000_MPP3);	
+
+	ithGpioSetMode(PR2000_MPP4, ITH_GPIO_MODE0);
+	ithGpioSetOut(PR2000_MPP4);
+	ithGpioEnable(PR2000_MPP4); 
+	ithGpioClear(PR2000_MPP4);
+
+}
+#endif
+
 #ifdef CFG_UPGRADE_USB_DEVICE
 
 static bool DetectUsbDeviceMode(void)
@@ -552,6 +592,12 @@ void* BootloaderMain(void* arg)
 #endif // CFG_BACKLIGHT_ENABLE
     blLcdOn = true;
 #endif // CFG_BL_SHOW_LOGO
+
+#if defined(CFG_CAPTURE_MODULE_ENABLE)
+#if defined(TARGET_BOARD_G)
+	user_gpio_init();
+#endif
+#endif
 
 #ifdef CFG_UPGRADE_USB_DEVICE
     if (DetectUsbDeviceMode())

@@ -4526,7 +4526,7 @@ config SENSOR_ENABLE
 
         config SENSOR_OMNIVISION_OV7725
             bool "OMNIVISION_OV7725"
-            depends on CHIP_PKG_IT9910
+
             help
                 Sensor OMNIVISION_OV7725.
             help_cht

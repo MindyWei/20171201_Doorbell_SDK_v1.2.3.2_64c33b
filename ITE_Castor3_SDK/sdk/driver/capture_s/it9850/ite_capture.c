@@ -71,7 +71,9 @@ static MMP_BOOL gtDeviceReboot = MMP_TRUE;
 static MMP_UINT32  gvideo_vram_addr = 0;
 static MMP_UINT8  *gvideo_sys_addr  = NULL;
 
-
+static int      NewBufferIdx      = 0;
+static int      OldBufferIdx      = 0;
+static MMP_BOOL GetFirstBufferIdx = MMP_FALSE;
 
 //=============================================================================
 //                Private Function Definition
@@ -224,6 +226,7 @@ void
 mmpCapFire(
     void)
 {
+    printf("CapFire\n");
     CaptureControllerHardware_Run();
 }
 
@@ -392,7 +395,7 @@ mmpCap_Memory_Initialize()
     uint32_t offset = 0;
     uint32_t size   = CAP_MEM_BUF_HEIGHT * CAP_INPUT_MAX_HEIGHT;
 
-
+    printf("Init(0)\n");
     if (CapMemBuffer[0])
     {
         cap_msg_ex(CAP_MSG_TYPE_ERR, " Init Conflict %s (%d) error\n", __FUNCTION__, __LINE__);
@@ -408,7 +411,7 @@ mmpCap_Memory_Initialize()
         result = MMP_RESULT_ERROR;
         goto end;
     }
-  
+    printf("Init(1)\n"); 
     CapMemBuffer[0] = gvideo_sys_addr;
     for (i = 1; i < CAPTURE_MEM_BUF_COUNT; i++)
     {
@@ -434,14 +437,14 @@ mmpCap_Memory_Clear(
     MMP_RESULT result = MMP_SUCCESS;
 	MMP_UINT32 i;
 	MMP_UINT8 *pAddr;
-
+  printf("Clr(0)\n");
     if (CapMemBuffer[0] == 0x0)
     {
         cap_msg_ex(CAP_MSG_TYPE_ERR, " clear memory fail %s (%d) error\n", __FUNCTION__, __LINE__);
         result = MMP_RESULT_ERROR;
         goto end;
     }
-
+   printf("Clr(1)\n");
 	if (gvideo_sys_addr)
     {
         itpVmemFree(gvideo_vram_addr);
@@ -449,6 +452,7 @@ mmpCap_Memory_Clear(
         gvideo_vram_addr = 0;
 		CapMemBuffer[0] = 0;
     }
+    printf("Clr(2)\n");
 end:
     if (result)
         cap_msg_ex(CAP_MSG_TYPE_ERR, "%s (%d) error\n", __FUNCTION__, __LINE__);
@@ -489,7 +493,7 @@ mmpCap_Initialize(
     Capctxt->input_protocol     = BT_601;
 
     Capctxt->input_video_source.LCDSRC  = MMP_FALSE;
-    Capctxt->input_video_source.HSYNCDE = MMP_FALSE;
+    Capctxt->input_video_source.HSYNCDE = MMP_FALSE;//MMP_TRUE;//my.wei set MMP_TRUE for BT601 DE mode
     Capctxt->input_video_source.DEPOL   = MMP_FALSE;
     
 end:
@@ -771,18 +775,18 @@ int ithCaptureSetModule(CaptureModuleDriver CapturemoduleDriver)
 int ithCaptureGetNewFrame(
     ITE_CAP_VIDEO_INFO *Outdata)
 {
-    static int      cap_idx;
-    static int      NewBufferIdx      = 0;
-    static int      OldBufferIdx      = 0;
-    static MMP_BOOL GetFirstBufferIdx = MMP_FALSE;
+    int      cap_idx;
+    //static int      NewBufferIdx      = 0;
+    //static int      OldBufferIdx      = 0;
+    //static MMP_BOOL GetFirstBufferIdx = MMP_FALSE;
     MMP_UINT16      timeOut           = 0;
     MMP_UINT16      FirstBufferIdx    = 1;
 
-    if (!GetFirstBufferIdx)
-    {
-        OldBufferIdx      = CaptureControllerHardwareGetBufferIndex();
-        GetFirstBufferIdx = MMP_TRUE;
-    }
+    //if (!GetFirstBufferIdx)
+    //{
+    //    OldBufferIdx      = CaptureControllerHardwareGetBufferIndex();
+    //    GetFirstBufferIdx = MMP_TRUE;
+    //}
 
     while (NewBufferIdx == OldBufferIdx)
     {
@@ -791,7 +795,7 @@ int ithCaptureGetNewFrame(
         timeOut++;
         if (timeOut > 1000)
         {
-	        printf("Capture controller not moving!!\n");
+	        //printf("Capture controller not moving!!\n");
             break;
         }
     }
@@ -886,21 +890,23 @@ int ithCapFire()
 int ithCapTerminate()
 {
     MMP_RESULT result = MMP_SUCCESS;
-
+  //  printf("Ter(0)\n");
     mmpCapDeviceTerminate();
-
+  //  printf("Ter(1)\n");
     mmpCapTerminate();
-
+   // printf("Ter(2)\n");
 	mmpCap_Memory_Clear();
-
+  //printf("Ter(3)\n");
     ithCapDisableClock();
-
+ //printf("Ter(4)\n");
     if (Capctxt)
     {
         free(Capctxt);
         Capctxt = NULL;
     }
-
+    NewBufferIdx      = 0;
+    OldBufferIdx      = 0;
+    GetFirstBufferIdx = MMP_FALSE;
     return result;
 }
 
@@ -910,7 +916,8 @@ ithCapInitialize()
     MMP_UINT32 i;
     MMP_RESULT result = MMP_SUCCESS;
 
-    for (i = ITH_GPIO_PIN69; i <= ITH_GPIO_PIN81; i++)   //GPIO70 ~ GPIO81  for capture setting
+	//my.wei, set from ITH_GPIO_PIN71 if TARGET_BOARD_S, else from ITH_GPIO_PIN70.
+    for (i = ITH_GPIO_PIN70; i <= ITH_GPIO_PIN81; i++)   //GPIO70 ~ GPIO81  for capture setting
     {
         ithGpioSetMode(i, ITH_GPIO_MODE1);
         ithGpioSetIn(i);
@@ -918,6 +925,7 @@ ithCapInitialize()
 
     //usleep(1000);
     //it can add ithCapResetEngine() here. //Benson
+    ithCapResetEngine();
     ithCapEnableClock();
 
     result = mmpCap_Memory_Initialize();
@@ -933,7 +941,6 @@ ithCapInitialize()
         mmpCapPowerDown();
         return -1;
     }
-
     return 0;
 }
 

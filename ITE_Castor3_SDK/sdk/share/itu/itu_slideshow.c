@@ -17,6 +17,7 @@ bool ituSlideshowClone(ITUWidget* widget, ITUWidget** cloned)
     ITUSlideshow* newSlideshow;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -160,6 +161,7 @@ void ituSlideshowOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituSlideshowInit(ITUSlideshow* slideshow)
 {
     assert(slideshow);
+    ITU_ASSERT_THREAD();
 
     memset(slideshow, 0, sizeof (ITUSlideshow));
 
@@ -195,6 +197,7 @@ void ituSlideshowLoad(ITUSlideshow* slideshow, uint32_t base)
 void ituSlideshowSetDelay(ITUSlideshow* slideshow, int delay)
 {
     assert(slideshow);
+    ITU_ASSERT_THREAD();
 
     slideshow->delay           = delay;
     slideshow->widget.dirty    = true;
@@ -203,6 +206,7 @@ void ituSlideshowSetDelay(ITUSlideshow* slideshow, int delay)
 void ituSlideshowPlay(ITUSlideshow* slideshow, int frame)
 {
     assert(slideshow);
+    ITU_ASSERT_THREAD();
 
     if (frame >= 0)
         ituSlideshowGoto(slideshow, frame);
@@ -215,6 +219,7 @@ void ituSlideshowPlay(ITUSlideshow* slideshow, int frame)
 void ituSlideshowStop(ITUSlideshow* slideshow)
 {
     assert(slideshow);
+    ITU_ASSERT_THREAD();
     slideshow->playing         = false;
     slideshow->widget.dirty    = true;
 }
@@ -223,6 +228,7 @@ void ituSlideshowGoto(ITUSlideshow* slideshow, int frame)
 {
     int count;
     assert(slideshow);
+    ITU_ASSERT_THREAD();
 
     if (slideshow->frame == frame)
         return;

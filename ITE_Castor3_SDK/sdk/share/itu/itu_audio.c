@@ -9,6 +9,8 @@
 
 #define AUDIOMGR_LOCAL_PLAYER_BUFFER_LEN            (64 * 1024)
 
+FILE* fp = NULL;
+
 extern MMP_INT smtkAudioMgrPlayNetwork(SMTK_AUDIO_PARAM_NETWORK* pNetwork);
 
 static const char audioName[] = "ITUAudio";
@@ -89,6 +91,7 @@ void ituAudioOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituAudioInit(ITUAudio* audio)
 {
     assert(audio);
+    ITU_ASSERT_THREAD();
 
     memset(audio, 0, sizeof (ITUAudio));
 
@@ -128,12 +131,15 @@ static int AudioPlayCallback(int state)
 void ituAudioPlay(ITUAudio* audio)
 {
     assert(audio);
+    ITU_ASSERT_THREAD();
 
     if ((audio->widget.flags & ITU_ENABLED) == 0)
         return;
 
     LOG_DBG "playing %s\n", audio->filePath LOG_END
 
+    if(fp) fclose(fp);
+    
 #ifdef CFG_BUILD_AUDIO_MGR
     if (audio->filePath[0] != '\0')
     {
@@ -153,14 +159,20 @@ void ituAudioPlay(ITUAudio* audio)
 
             if (audiomgr_local.nType != 0)
             {
-                FILE* fp = fopen(audio->filePath, "rb");
-                if (fp)
-                {
-                    int result;
-
+                
                 #ifdef __OPENRTOS__
                     smtkAudioMgrQuickStop();
                 #endif
+                
+                if(fp) {
+                    fclose(fp);
+                    fp = NULL;
+                }
+                
+                fp = fopen(audio->filePath, "rb");
+                if (fp)
+                {
+                    int result;
 
                     smtkAudioMgrSetCallbackFunction((int*)AudioPlayCallback);
 
@@ -195,6 +207,7 @@ void ituAudioPlay(ITUAudio* audio)
 void ituAudioStop(ITUAudio* audio)
 {
     assert(audio);
+    ITU_ASSERT_THREAD();
 
     if ((audio->widget.flags & ITU_ENABLED) == 0)
         return;
@@ -203,6 +216,10 @@ void ituAudioStop(ITUAudio* audio)
     smtkAudioMgrQuickStop();
 #endif
 
+    if(fp) {
+        fclose(fp);
+        fp = NULL;
+    }
     audio->audioFlags &= ~ITU_AUDIO_PLAYING;
     ituScene->playingAudio = NULL;
 }

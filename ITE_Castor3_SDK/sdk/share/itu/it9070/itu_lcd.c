@@ -29,7 +29,18 @@ void ituLcdInit(void)
 
     if (lcdSurface.surf.addr == 0)
     {
+        ITUPixelFormat format;
         memset(&lcdSurface, 0, sizeof(lcdSurface));
+
+        switch (ithLcdGetFormat())
+        {
+        case ITH_LCD_RGB565: format = ITU_RGB565;   break;
+        case ITH_LCD_ARGB1555: format = ITU_ARGB1555; break;
+        case ITH_LCD_ARGB4444: format = ITU_ARGB4444; break;
+        case ITH_LCD_ARGB8888: format = ITU_ARGB8888; break;
+        default:
+            format = ITU_RGB565;
+        }
 
         // Get width, height, pitch setting from LCD register
         // [ToDo] Could we set the UI size different from the LCD width and
@@ -37,7 +48,7 @@ void ituLcdInit(void)
         lcdSurface.surf.width  = ithLcdGetWidth();
         lcdSurface.surf.height = ithLcdGetHeight();
         lcdSurface.surf.pitch  = ithLcdGetPitch();
-        lcdSurface.surf.format = ITU_RGB565;
+        lcdSurface.surf.format = format;
         lcdSurface.surf.flags  = ITU_STATIC;
         lcdSurface.surf.addr   =
 #ifdef CFG_M2D_ENABLE

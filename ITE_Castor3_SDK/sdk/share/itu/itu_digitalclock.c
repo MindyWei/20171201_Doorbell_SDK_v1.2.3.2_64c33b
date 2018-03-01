@@ -163,6 +163,7 @@ bool ituDigitalClockUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, i
 void ituDigitalClockInit(ITUDigitalClock* dclk)
 {
     assert(dclk);
+    ITU_ASSERT_THREAD();
 
     memset(dclk, 0, sizeof (ITUDigitalClock));
 

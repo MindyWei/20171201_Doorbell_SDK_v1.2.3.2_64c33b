@@ -16,6 +16,7 @@ bool ituSpriteClone(ITUWidget* widget, ITUWidget** cloned)
     ITUSprite* newSprite;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -188,6 +189,7 @@ void ituSpriteOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituSpriteInit(ITUSprite* sprite)
 {
     assert(sprite);
+    ITU_ASSERT_THREAD();
 
     memset(sprite, 0, sizeof (ITUSprite));
 
@@ -225,6 +227,7 @@ void ituSpriteLoad(ITUSprite* sprite, uint32_t base)
 void ituSpriteSetDelay(ITUSprite* sprite, int delay)
 {
     assert(sprite);
+    ITU_ASSERT_THREAD();
 
     sprite->delay           = delay;
     sprite->widget.dirty    = true;
@@ -233,6 +236,7 @@ void ituSpriteSetDelay(ITUSprite* sprite, int delay)
 void ituSpritePlay(ITUSprite* sprite, int frame)
 {
     assert(sprite);
+    ITU_ASSERT_THREAD();
 
     if (frame >= 0)
         ituSpriteGoto(sprite, frame);
@@ -245,6 +249,8 @@ void ituSpritePlay(ITUSprite* sprite, int frame)
 void ituSpriteStop(ITUSprite* sprite)
 {
     assert(sprite);
+    ITU_ASSERT_THREAD();
+
     sprite->playing         = false;
     sprite->widget.dirty    = true;
 }
@@ -253,6 +259,7 @@ void ituSpriteGoto(ITUSprite* sprite, int frame)
 {
     int count;
     assert(sprite);
+    ITU_ASSERT_THREAD();
 
     if (sprite->frame == frame)
         return;

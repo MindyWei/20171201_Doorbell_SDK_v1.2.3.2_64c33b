@@ -508,6 +508,7 @@ bool ituDragIconPress(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int ar
 void ituDragIconInit(ITUDragIcon* dragicon)
 {
     assert(dragicon);
+    ITU_ASSERT_THREAD();
 
 	memset(dragicon, 0, sizeof (ITUDragIcon));
 
@@ -557,6 +558,7 @@ void ituDragIconMouseShift(ITUWidget* widget, int* shiftX, int* shiftY)
 	ITUDragIcon* dragicon = (ITUDragIcon*)widget;
 
 	assert(dragicon);
+    ITU_ASSERT_THREAD();
 
 	*shiftX = dragicon->moveX;
 	*shiftY = dragicon->moveY;
@@ -568,6 +570,7 @@ bool ituDragIconIsWorking(ITUWidget* widget)
 	ITUDragIcon* dragicon = (ITUDragIcon*)widget;
 
 	assert(dragicon);
+    ITU_ASSERT_THREAD();
 
 	if (dragicon->working)
 		return true;
@@ -580,6 +583,7 @@ void ituDragIconSetAniBSN(ITUWidget* widget, int pw, int ph)
 	ITUDragIcon* dragicon = (ITUDragIcon*)widget;
 
 	assert(dragicon);
+    ITU_ASSERT_THREAD();
 
 	dragicon->pw = pw;
 	dragicon->ph = ph;
@@ -590,6 +594,7 @@ void ituDragIconReset(ITUWidget* widget)
 	ITUDragIcon* dragicon = (ITUDragIcon*)widget;
 
 	assert(dragicon);
+    ITU_ASSERT_THREAD();
 
 	if (dragicon->working)
 	{

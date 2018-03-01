@@ -120,6 +120,7 @@ void ituColorPickerDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 void ituColorPickerInit(ITUColorPicker* cp)
 {
     assert(cp);
+    ITU_ASSERT_THREAD();
 
     memset(cp, 0, sizeof (ITUColorPicker));
 

@@ -15,103 +15,107 @@ bool ituTrackBarUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int a
 
     if (ev == ITU_EVENT_MOUSEMOVE)
     {
-        if (ituWidgetIsEnabled(widget) && tbar->tracker && ituButtonIsPressed(tbar->tracker))
+        if (--tbar->delayCount <= 0)
         {
-            if (tbar->layout == ITU_LAYOUT_HORIZONTAL)
+            if (ituWidgetIsEnabled(widget) && tbar->tracker && ituButtonIsPressed(tbar->tracker))
             {
-                int x = arg2 - widget->rect.x;
-
-                if (tbar->max > tbar->min && tbar->step > 0)
+                if (tbar->layout == ITU_LAYOUT_HORIZONTAL)
                 {
-                    int i, value;
-                    float sw = (float)(ituWidgetGetWidth(tbar) - tbar->gap * 2) / (tbar->max - tbar->min);
+                    int x = arg2 - widget->rect.x;
 
-                    if (x < tbar->gap)
+                    if (tbar->max > tbar->min && tbar->step > 0)
                     {
-                        value = tbar->min;
-                    }
-                    else if (x > (int)(sw * (tbar->max - tbar->min)) + tbar->gap)
-                    {
-                        value = tbar->max;
-                    }
-                    else
-                    {
-                        value = tbar->min;
-                        for (i = tbar->min; i <= tbar->max; i += tbar->step)
+                        int i, value;
+                        float sw = (float)(ituWidgetGetWidth(tbar) - tbar->gap * 2) / (tbar->max - tbar->min);
+
+                        if (x < tbar->gap)
                         {
-                            int v0 = (int)(sw * (i - tbar->min)) + tbar->gap;
-                            int v1 = (int)(sw * (i + tbar->step - tbar->min)) + tbar->gap;
-
-                            if (v0 <= x && x <= v1)
+                            value = tbar->min;
+                        }
+                        else if (x >(int)(sw * (tbar->max - tbar->min)) + tbar->gap)
+                        {
+                            value = tbar->max;
+                        }
+                        else
+                        {
+                            value = tbar->min;
+                            for (i = tbar->min; i <= tbar->max; i += tbar->step)
                             {
-                                int diffLeft = x - v0;
-                                int diffRight = v1 - x;
-                                if (diffLeft < diffRight)
-                                    value = i;
-                                else
-                                    value = i + tbar->step;
+                                int v0 = (int)(sw * (i - tbar->min)) + tbar->gap;
+                                int v1 = (int)(sw * (i + tbar->step - tbar->min)) + tbar->gap;
 
-                                //printf("x=%d v0=%d v1=%d l=%d r=%d val=%d\n", x, v0, v1, diffLeft, diffRight, value);
-                                break;
+                                if (v0 <= x && x <= v1)
+                                {
+                                    int diffLeft = x - v0;
+                                    int diffRight = v1 - x;
+                                    if (diffLeft < diffRight)
+                                        value = i;
+                                    else
+                                        value = i + tbar->step;
+
+                                    //printf("x=%d v0=%d v1=%d l=%d r=%d val=%d\n", x, v0, v1, diffLeft, diffRight, value);
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    if (tbar->value != value)
-                    {
-                        ituTrackBarSetValue(tbar, value);
-                        ituTrackBarOnValueChanged(tbar, value, false);
-                        ituExecActions((ITUWidget*)tbar, tbar->actions, ITU_EVENT_CHANGED, value);
-                    }
-                }
-            }
-            else //if (tbar->layout == ITU_LAYOUT_VERTICAL)
-            {
-                int y = arg3 - widget->rect.y;
-
-                if (tbar->max > tbar->min && tbar->step > 0)
-                {
-                    int i, value;
-                    float sh = (float)(ituWidgetGetHeight(tbar) - tbar->gap * 2) / (tbar->max - tbar->min);
-
-                    if (y > ituWidgetGetHeight(tbar) + tbar->gap)
-                    {
-                        value = tbar->min;
-                    }
-                    else if (y < tbar->gap)
-                    {
-                        value = tbar->max;
-                    }
-                    else
-                    {
-                        value = tbar->min;
-                        for (i = tbar->min; i <= tbar->max; i += tbar->step)
+                        if (tbar->value != value)
                         {
-                            int v0 = ituWidgetGetHeight(tbar) - (int)(sh * (i - tbar->min)) + tbar->gap;
-                            int v1 = ituWidgetGetHeight(tbar) - (int)(sh * (i + tbar->step - tbar->min)) + tbar->gap;
-
-                            if (v0 >= y && y >= v1)
-                            {
-                                int diffBottom = v0 - y;
-                                int diffTop = y - v1;
-                                if (diffBottom < diffTop)
-                                    value = i;
-                                else
-                                    value = i + tbar->step;
-
-                                //printf("y=%d v0=%d v1=%d b=%d t=%d val=%d\n", y, v0, v1, diffBottom, diffTop, value);
-                                break;
-                            }
+                            ituTrackBarSetValue(tbar, value);
+                            ituTrackBarOnValueChanged(tbar, value, false);
+                            ituExecActions((ITUWidget*)tbar, tbar->actions, ITU_EVENT_CHANGED, value);
                         }
                     }
+                }
+                else //if (tbar->layout == ITU_LAYOUT_VERTICAL)
+                {
+                    int y = arg3 - widget->rect.y;
 
-                    if (tbar->value != value)
+                    if (tbar->max > tbar->min && tbar->step > 0)
                     {
-                        ituTrackBarSetValue(tbar, value);
-                        ituTrackBarOnValueChanged(tbar, value, false);
-                        ituExecActions((ITUWidget*)tbar, tbar->actions, ITU_EVENT_CHANGED, value);
+                        int i, value;
+                        float sh = (float)(ituWidgetGetHeight(tbar) - tbar->gap * 2) / (tbar->max - tbar->min);
+
+                        if (y > ituWidgetGetHeight(tbar) + tbar->gap)
+                        {
+                            value = tbar->min;
+                        }
+                        else if (y < tbar->gap)
+                        {
+                            value = tbar->max;
+                        }
+                        else
+                        {
+                            value = tbar->min;
+                            for (i = tbar->min; i <= tbar->max; i += tbar->step)
+                            {
+                                int v0 = ituWidgetGetHeight(tbar) - (int)(sh * (i - tbar->min)) + tbar->gap;
+                                int v1 = ituWidgetGetHeight(tbar) - (int)(sh * (i + tbar->step - tbar->min)) + tbar->gap;
+
+                                if (v0 >= y && y >= v1)
+                                {
+                                    int diffBottom = v0 - y;
+                                    int diffTop = y - v1;
+                                    if (diffBottom < diffTop)
+                                        value = i;
+                                    else
+                                        value = i + tbar->step;
+
+                                    //printf("y=%d v0=%d v1=%d b=%d t=%d val=%d\n", y, v0, v1, diffBottom, diffTop, value);
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (tbar->value != value)
+                        {
+                            ituTrackBarSetValue(tbar, value);
+                            ituTrackBarOnValueChanged(tbar, value, false);
+                            ituExecActions((ITUWidget*)tbar, tbar->actions, ITU_EVENT_CHANGED, value);
+                        }
                     }
                 }
+                tbar->delayCount = tbar->delay;
             }
         }
     }
@@ -127,6 +131,7 @@ bool ituTrackBarUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int a
             {
                 ituExecActions((ITUWidget*)tbar, tbar->actions, ITU_EVENT_CHANGED, tbar->value);
                 ituTrackBarOnValueChanged(tbar, tbar->value, true);
+                tbar->delayCount = tbar->delay;
             }
 			else if (!(widget->flags & ITU_PROGRESS))
             {
@@ -230,6 +235,7 @@ bool ituTrackBarUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int a
                         ((ITUWidget*)tbar->tracker)->flags |= ITU_DRAGGING;
                         ituScene->dragged = (ITUWidget*)tbar->tracker;
                     }
+                    tbar->delayCount = tbar->delay;
                     result = widget->dirty = true;
                 }
             }
@@ -677,6 +683,7 @@ void ituTrackBarOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituTrackBarInit(ITUTrackBar* tbar, ITULayout layout)
 {
     assert(tbar);
+    ITU_ASSERT_THREAD();
 
     memset(tbar, 0, sizeof (ITUTrackBar));
 
@@ -716,6 +723,7 @@ void ituTrackBarLoad(ITUTrackBar* tbar, uint32_t base)
 void ituTrackBarSetValue(ITUTrackBar* bar, int value)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     if (value < bar->min || value > bar->max)
     {

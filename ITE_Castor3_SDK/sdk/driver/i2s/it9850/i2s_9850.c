@@ -27,7 +27,10 @@
 //#define ENABLE_FORCE_RESET_RW_POINTER
 
 //#define I2S_DEBUG_SET_CLOCK
-#define I2S_DEBUG_DEINIT_DAC_COST
+//#define I2S_DEBUG_DEINIT_DAC_COST
+
+//#define DEBUG_PRINT printf
+#define DEBUG_PRINT(...)
 
 #define DA_PTR_SIZE_WIDTH   32
 #define AD_PTR_SIZE_WIDTH   32 /* 16:9070; 32:9910 32:9850*/
@@ -119,6 +122,7 @@ unsigned i2s_get_current_volstep(void);
 unsigned i2s_get_current_volperc(void);
 void i2s_get_volstep_range(unsigned *max, unsigned *normal, unsigned *min);
 void i2s_set_linein_bypass(int bypass);
+void i2s_enable_fading(int yesno);
 
 /* FIXME: SPDIF */
 static void _init_spdif(u32 sample_rate);
@@ -209,10 +213,10 @@ void I2S_DA32_WAIT_RP_EQUAL_WP(void)
 			/* if enable, then wait the RW=WP, */
 			while( I2S_DA32_GET_RP() != WPtr )
 			{
-				if(cnt++>1000)	break;
+				if(cnt++>5000)	break;
 				usleep(1000);
 			}
-			if(cnt++>1000)	printf("I2S# waring, wait for RP=WP timeout.\n");
+			if(cnt++>5000)	printf("I2S# waring, wait for RP=WP timeout.\n");
 		}		
 
 		/* Disable this function,and then set WP */
@@ -276,7 +280,7 @@ static void _i2s_power_on(void)
 	u16 data16;
 
 	if(_i2s_DA_running || _i2s_AD_running) {
-		printf("I2S# power on already, DA:%d, AD:%d\n", _i2s_DA_running, _i2s_AD_running);
+		DEBUG_PRINT("I2S# power on already, DA:%d, AD:%d\n", _i2s_DA_running, _i2s_AD_running);
 		return;
 	}
 
@@ -308,7 +312,7 @@ static void _i2s_power_on(void)
 		} while(((data16 >> 1) & 0x1) != 1);
 	}
 
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 }
 
 static void _i2s_power_off(void)
@@ -317,7 +321,7 @@ static void _i2s_power_off(void)
 	u16 data16;
 
 	if(_i2s_DA_running || _i2s_AD_running) {
-		printf("I2S# module still running, skip power-off, DA:%d, AD:%d\n", _i2s_DA_running, _i2s_AD_running);
+		DEBUG_PRINT("I2S# module still running, skip power-off, DA:%d, AD:%d\n", _i2s_DA_running, _i2s_AD_running);
 		return;
 	}
 
@@ -344,7 +348,7 @@ static void _i2s_power_off(void)
 	}
 #endif
 
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 }
 
 /*
@@ -481,11 +485,11 @@ static void _i2s_reset(void)
 	u16 data16;
 
 	if(_i2s_DA_running) {
-		printf("I2S# DAC is running, skip reset I2S !\n");
+		DEBUG_PRINT("I2S# DAC is running, skip reset I2S !\n");
 		return;
 	}
 	if(_i2s_AD_running) {
-		printf("I2S# ADC is running, skip reset I2S !\n");
+		DEBUG_PRINT("I2S# ADC is running, skip reset I2S !\n");
 		return;
 	}
 
@@ -549,7 +553,7 @@ static void _i2s_reset(void)
 		}
 	}
 
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 }
 
 static void _i2s_aws_sync(void)
@@ -587,15 +591,16 @@ static void _i2s_set_clock(u32 demanded_sample_rate)
 	int i;
 
 	if(_i2s_DA_running) {
-		printf("I2S# DAC is running, skip set clock !\n");
+		DEBUG_PRINT("I2S# DAC is running, skip set clock !\n");
 		return;
 	}
 	if(_i2s_AD_running) {
-		printf("I2S# ADC is running, skip set clock !\n");
+		DEBUG_PRINT("I2S# ADC is running, skip set clock !\n");
 		return;
 	}
-
+#ifdef I2S_DEBUG_SET_CLOCK
 	printf("I2S# %s, demanded_sample_rate: %u\n", __func__, demanded_sample_rate);
+#endif
 
 	#ifdef	ENABLE_192KHZ_SAMPLE_RATE
 	if     ((demanded_sample_rate > 182400) && (demanded_sample_rate < 210600)) { target_sample_rate = 192000; }
@@ -879,7 +884,7 @@ static void _i2s_set_clock(u32 demanded_sample_rate)
 static void _i2s_enable_fading(u32 fading_step, u32 fading_duration)
 {
 	u16 data16;
-//	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
     reg_write16(I2S_REG_FADE_OUT_EN, 0x1);
 	data16 = reg_read16(I2S_REG_FADE_OUT_SET);
 	data16 |= ((fading_step & 0xF) << 8);
@@ -891,7 +896,7 @@ static void _i2s_enable_fading(u32 fading_step, u32 fading_duration)
 static void _i2s_disable_fading(void)
 {
     u16 data16;
-//	printf("I2S# %s\n", __func__);
+    DEBUG_PRINT("I2S# %s\n", __func__);
 	data16 = reg_read16(I2S_REG_FADE_OUT_EN);
 	data16 &= ~(1 << 0);    
 	reg_write16(I2S_REG_FADE_OUT_EN, 0x0);
@@ -899,7 +904,7 @@ static void _i2s_disable_fading(void)
 
 static void _i2s_use_GPIO_MODE3(void) /* GPIO settings for CFG3 */
 {
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 
 	ithGpioSetMode(10, ITH_GPIO_MODE2); /* ZCLK     (CODEC-BCLK)   */
 	ithGpioSetMode( 7, ITH_GPIO_MODE2); /* AMCLK    (CODEC-MCLK)   */
@@ -924,7 +929,7 @@ static void _i2s_use_GPIO_MODE3(void) /* GPIO settings for CFG3 */
 
 static void _i2s_use_GPIO_MODE2(void) /* GPIO settings for CFG2 */
 {
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 
 	ithGpioSetMode(10, ITH_GPIO_MODE2); /* ZCLK     (CODEC-BCLK)   */
 	ithGpioSetMode(11, ITH_GPIO_MODE2); /* AMCLK    (CODEC-MCLK)   */
@@ -949,7 +954,7 @@ static void _i2s_use_GPIO_MODE2(void) /* GPIO settings for CFG2 */
 
 static void _i2s_use_GPIO_MODE1(void) /* GPIO settings for CFG2 */
 {
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 
 	ithGpioSetMode(35, ITH_GPIO_MODE1); /* ZCLK     (CODEC-BCLK)   */
 	ithGpioSetMode(32, ITH_GPIO_MODE1); /* AMCLK    (CODEC-MCLK)   */
@@ -985,14 +990,14 @@ void i2s_CODEC_standby(void)
 
 void i2s_volume_up(void)
 {
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 
 	itp_codec_playback_amp_volume_up();
 }
 
 void i2s_volume_down(void)
 {
-	printf("I2S# %s\n", __func__);
+	DEBUG_PRINT("I2S# %s\n", __func__);
 
 	itp_codec_playback_amp_volume_down();
 }
@@ -1017,11 +1022,22 @@ void i2s_pause_ADC(int pause)
 	}
 }
 
+void i2s_enable_fading(int yesno){
+    if(yesno){
+//		_i2s_enable_fading(0xF, 0x01); /* fast response */
+//		_i2s_enable_fading(0x7, 0x7F); /* moderato */      
+        _i2s_enable_fading(0x1, 0xFF); /* slow response */
+        reg_write16(I2S_REG_DIG_OUT_VOL, 0xFF00);    
+    }else{
+        _i2s_disable_fading();
+    }    
+}
+
 void i2s_pause_DAC(int pause)
 {
 	u16 data16;
 
-	printf("I2S# %s(%d)\n", __func__, pause);
+	//printf("I2S# %s(%d)\n", __func__, pause);
 
 	if(pause)
 	{
@@ -1058,8 +1074,8 @@ void i2s_deinit_ADC(void)
 {
 	u16 data16;
 
-	if(0 == _i2s_AD_running) {
-		printf("I2S# ADC is 'NOT' running, skip deinit ADC !\n");
+	if(!_i2s_AD_running) {
+		DEBUG_PRINT("I2S# ADC is 'NOT' running, skip deinit ADC !\n");
 		return;
 	}
 
@@ -1104,11 +1120,15 @@ void i2s_deinit_DAC(void)
 
 	pthread_mutex_lock(&I2S_MUTEX);
 
-	if(0 == _i2s_DA_running) {
-		printf("I2S# DAC is 'NOT' running, skip deinit DAC !\n");
+	if(!_i2s_DA_running) {
+		DEBUG_PRINT("I2S# DAC is 'NOT' running, skip deinit DAC !\n");
 		pthread_mutex_unlock(&I2S_MUTEX);
 		return;
 	}
+
+#ifdef I2S_DEBUG_DEINIT_DAC_COST
+	gettimeofday(&tv_pollS, NULL); //-*-
+#endif
 
 	printf("I2S# %s +\n", __func__);
 
@@ -1132,10 +1152,6 @@ void i2s_deinit_DAC(void)
 		data16 = reg_read16(I2S_REG_OUTPUT_CTL2);
 	} while(data16 & 0x3);
 
-#ifdef I2S_DEBUG_DEINIT_DAC_COST
-	gettimeofday(&tv_pollS, NULL); //-*-
-#endif
-
 	do
 	{
 //		i2s_delay_us(1000); /* FIXME: dummy loop */;
@@ -1150,17 +1166,17 @@ void i2s_deinit_DAC(void)
 		i2s_memcnt = (out_status_2 >> 0) & 0x7F;
 	} while(/*!i2s_idle*/ !pipe_idle || (i2s_memcnt != 0));
 
-#ifdef I2S_DEBUG_DEINIT_DAC_COST
-	gettimeofday(&tv_pollE, NULL); //-*-
-	printf("I2S# DEINIT_DAC_COST: %ld (ms)\n", TV_CAL_DIFF_MS(tv_pollE, tv_pollS));
-#endif
-
 	_i2s_DA_running = 0; /* put before _i2s_reset() */
 	_i2s_reset();
 
 	_i2s_power_off();
 
 	printf("I2S# %s -\n", __func__);
+    
+#ifdef I2S_DEBUG_DEINIT_DAC_COST
+	gettimeofday(&tv_pollE, NULL); //-*-
+	printf("I2S# DEINIT_DAC_COST: %ld (ms)\n", TV_CAL_DIFF_MS(tv_pollE, tv_pollS));
+#endif    
 	pthread_mutex_unlock(&I2S_MUTEX);
 }
 
@@ -1171,16 +1187,24 @@ void i2s_init_DAC(STRC_I2S_SPEC *i2s_spec)
 	u16 data16;
 //	u32 data32;
 	u8 resolution_type;
+#ifdef I2S_DEBUG_DEINIT_DAC_COST
+	static struct timeval tv_pollS;
+	static struct timeval tv_pollE;
+#endif    
 
 	pthread_mutex_lock(&I2S_MUTEX);
 
 	if(_i2s_DA_running) {
-		printf("I2S# DAC is running, skip re-init !\n");
+		DEBUG_PRINT("I2S# DAC is running, skip re-init !\n");
 		pthread_mutex_unlock(&I2S_MUTEX);
 		return;
 	}
-
-//	printf("I2S# %s +\n", __func__);
+    printf("I2S# %s +\n", __func__);
+#ifdef I2S_DEBUG_DEINIT_DAC_COST
+	gettimeofday(&tv_pollS, NULL); //-*-
+#endif    
+    
+    if(itp_codec_get_DA_running()) itp_codec_playback_deinit();
 
 	if(_g_UseSpdif)	
 	{
@@ -1336,6 +1360,11 @@ void i2s_init_DAC(STRC_I2S_SPEC *i2s_spec)
 
     
 	printf("I2S# %s -\n", __func__);
+    
+#ifdef I2S_DEBUG_DEINIT_DAC_COST
+	gettimeofday(&tv_pollE, NULL); //-*-
+	printf("I2S# INIT_DAC_COST: %ld (ms)\n", TV_CAL_DIFF_MS(tv_pollE, tv_pollS));
+#endif        
 	pthread_mutex_unlock(&I2S_MUTEX);
 }
 
@@ -1346,7 +1375,7 @@ void i2s_init_ADC(STRC_I2S_SPEC *i2s_spec)
 	u8 resolution_type;
 
 	if(_i2s_AD_running) {
-		printf("I2S# ADC is running, skip re-init ADC !\n");
+		DEBUG_PRINT("I2S# ADC is running, skip re-init ADC !\n");
 		return;
 	}
 
@@ -1464,7 +1493,7 @@ int  i2s_get_DA_running(void)
 
 void i2s_mute_DAC(int mute)
 {
-	//printf("I2S# %s(%d)\n", __func__, mute);
+	DEBUG_PRINT("I2S# %s(%d)\n", __func__, mute);
 	if(mute)
 	{
 		itp_codec_playback_mute();
@@ -1544,7 +1573,7 @@ void i2s_ADC_get_volstep_range(unsigned *max, unsigned *normal, unsigned *min)
 
 void i2s_mute_ADC(int mute)
 {
-	printf("I2S# %s(%d)\n", __func__, mute);
+	DEBUG_PRINT("I2S# %s(%d)\n", __func__, mute);
 
 	if(mute) { itp_codec_rec_mute(); }
 	else     { itp_codec_rec_unmute(); }
@@ -1552,7 +1581,7 @@ void i2s_mute_ADC(int mute)
 
 void i2s_set_linein_bypass(int bypass)
 {
-	printf("I2S# %s(%d)\n", __func__, bypass);
+	DEBUG_PRINT("I2S# %s(%d)\n", __func__, bypass);
 	itp_codec_playback_linein_bypass(bypass);
 }
 

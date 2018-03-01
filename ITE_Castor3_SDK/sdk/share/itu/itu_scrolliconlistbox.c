@@ -685,6 +685,7 @@ void ituScrollIconListBoxOnAction(ITUWidget* widget, ITUActionType action, char*
 void ituScrollIconListBoxInit(ITUScrollIconListBox* scrolliconlistbox, int width)
 {
     assert(scrolliconlistbox);
+    ITU_ASSERT_THREAD();
 
     memset(scrolliconlistbox, 0, sizeof (ITUScrollIconListBox));
 
@@ -708,12 +709,14 @@ void ituScrollIconListBoxLoad(ITUScrollIconListBox* scrolliconlistbox, uint32_t 
 
 int ituScrollIconListBoxGetItemCount(ITUScrollIconListBox* scrolliconlistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildCount(scrolliconlistbox) / 3;
 }
 
 void ituScrollIconListBoxSetSelectable(ITUScrollIconListBox* scrolliconlistbox, bool selectable)
 {
 	assert(scrolliconlistbox);
+    ITU_ASSERT_THREAD();
 
 	if (selectable)
 	{
@@ -734,15 +737,18 @@ void ituScrollIconListBoxSetSelectable(ITUScrollIconListBox* scrolliconlistbox, 
 
 ITCTree* ituScrollIconListBoxGetLastPageItem(ITUScrollIconListBox* scrolliconlistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolliconlistbox, 0);
 }
 
 ITCTree* ituScrollIconListBoxGetCurrPageItem(ITUScrollIconListBox* scrolliconlistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolliconlistbox, itcTreeGetChildCount(scrolliconlistbox) / 3);
 }
 
 ITCTree* ituScrollIconListBoxGetNextPageItem(ITUScrollIconListBox* scrolliconlistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolliconlistbox, itcTreeGetChildCount(scrolliconlistbox) * 2 / 3);
 }

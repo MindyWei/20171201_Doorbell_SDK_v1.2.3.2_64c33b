@@ -78,6 +78,45 @@ int ituFtLoadFont(int index, char* filename, ITUGlyphFormat format)
     return FT_Err_Ok;
 }
 
+int ituFtLoadFontArray(int index, uint8_t* array, int size, ITUGlyphFormat format)
+{
+    FT_Error error;
+
+    assert(index >= 0);
+    assert(index < ITU_FREETYPE_MAX_FONTS);
+    assert(array);
+    assert(size > 0);
+
+    if (index >= ITU_FREETYPE_MAX_FONTS)
+    {
+        LOG_ERR "out of font index: %d >= \n", index, ITU_FREETYPE_MAX_FONTS LOG_END
+            return __LINE__;
+    }
+
+    error = FT_New_Memory_Face(ft.library, array, size, 0, &ft.fonts[index]);
+    if (error)
+    {
+        LOG_ERR "couldn't open font array: %d\n", error LOG_END
+            return error;
+    }
+
+    ft.glyph_formats[index] = format;
+
+    if (!ft.current_font)
+    {
+        ft.current_font = ft.fonts[index];
+        ft.current_glyph_format = format;
+    }
+
+    if (!ft.default_font)
+    {
+        ft.default_font = ft.fonts[index];
+        ft.default_glyph_format = format;
+    }
+
+    return FT_Err_Ok;
+}
+
 void ituFtSetCurrentFont(int index)
 {
     assert(index >= 0);
@@ -145,6 +184,7 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
         FT_Glyph glyph;
         FT_Face face = ft.current_font;
         ITUGlyphFormat format;
+        int yy;
 
         charcode = buf[i];
 
@@ -184,7 +224,10 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
              format = ITU_GLYPH_8BPP;
              break;
         }
-		ituDrawGlyph(surf, x + x_advance + glyf->bitmap_left, y + face->size->metrics.y_ppem - glyf->bitmap_top, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+        yy = y + face->size->metrics.y_ppem - glyf->bitmap_top;
+        if (yy < 0)
+            yy = 0;
+		ituDrawGlyph(surf, x + x_advance + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
 
         x_advance += glyf->advance.x >> 6;
         FT_Done_Glyph(glyph);
@@ -382,6 +425,7 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
         FT_Glyph glyph;
         FT_Face face = ft.current_font;
         ITUGlyphFormat format;
+        int yy;
 
         charcode = buf;
         error = FT_Load_Char(face, charcode, load_flags);
@@ -426,7 +470,10 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
              format = ITU_GLYPH_8BPP;
              break;
         }
-        ituDrawGlyph(surf, x + glyf->bitmap_left, y + face->size->metrics.y_ppem - glyf->bitmap_top, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+        yy = y + face->size->metrics.y_ppem - glyf->bitmap_top;
+        if (yy < 0)
+            yy = 0;
+        ituDrawGlyph(surf, x + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
 
         FT_Done_Glyph(glyph);
     }
@@ -469,4 +516,44 @@ void ituFtSetFontStyleValue(unsigned int style, int value)
         ft.bold_size = value;
         break;
     }
+}
+
+bool ituFtIsCharValid(const char* text)
+{
+    FT_Error error = FT_Err_Ok;
+    int len;
+    wchar_t buf;
+    bool result = false;
+    assert(text);
+
+    if (!ft.current_font)
+    {
+        LOG_ERR "current font not exist\n" LOG_END
+        goto end;
+    }
+
+    len = strlen(text);
+    len = mbtowc(&buf, text, len);
+
+    if (len > 0)
+    {
+        int charcode;
+        FT_UInt  gindex;
+        FT_Face face = ft.current_font;
+
+        charcode = buf;
+        gindex = FT_Get_Char_Index(face, charcode);
+        if (gindex == 0 && face != ft.default_font)
+        {
+            face = ft.default_font;
+            gindex = FT_Get_Char_Index(face, charcode);
+        }
+        if (gindex)
+        {
+            result = true;
+            goto end;
+        }
+    }
+end:
+    return result;
 }

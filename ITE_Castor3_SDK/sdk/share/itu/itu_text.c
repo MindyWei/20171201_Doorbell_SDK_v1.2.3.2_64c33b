@@ -11,6 +11,7 @@ void ituTextExit(ITUWidget* widget)
 {
     ITUText* text = (ITUText*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (text->string)
     {
@@ -25,6 +26,7 @@ bool ituTextClone(ITUWidget* widget, ITUWidget** cloned)
     ITUText* text = (ITUText*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -293,6 +295,7 @@ void ituTextOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituTextInit(ITUText* text)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     memset(text, 0, sizeof (ITUText));
 
@@ -328,6 +331,7 @@ void ituTextLoad(ITUText* text, uint32_t base)
 void ituTextSetFontWidth(ITUText* text, int height)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
     text->fontWidth = height;
     text->widget.dirty = true;
 }
@@ -335,6 +339,7 @@ void ituTextSetFontWidth(ITUText* text, int height)
 void ituTextSetFontHeight(ITUText* text, int height)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
     text->fontHeight = height;
     text->widget.dirty = true;
 }
@@ -342,6 +347,7 @@ void ituTextSetFontHeight(ITUText* text, int height)
 void ituTextSetFontSize(ITUText* text, int size)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
     text->fontWidth = size;
     text->fontHeight = size;
     text->widget.dirty = true;
@@ -350,7 +356,8 @@ void ituTextSetFontSize(ITUText* text, int size)
 void ituTextSetLanguage(ITUText* text, int lang)
 {
     assert(text);
-    
+    ITU_ASSERT_THREAD();
+
     if (!text->stringSet)
         return;
 
@@ -366,6 +373,7 @@ void ituTextSetLanguage(ITUText* text, int lang)
 void ituTextSetStringImpl(ITUText* text, char* string)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     if (text->string)
         free(text->string);
@@ -403,6 +411,7 @@ void ituTextSetStringImpl(ITUText* text, char* string)
 char* ituTextGetStringImpl(ITUText* text)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     if (text->string)
         return text->string;
@@ -415,6 +424,7 @@ char* ituTextGetStringImpl(ITUText* text)
 void ituTextSetBackColor(ITUText* text, uint8_t alpha, uint8_t red, uint8_t green, uint8_t blue)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     text->bgColor.alpha = alpha;
     text->bgColor.red   = red;
@@ -428,6 +438,7 @@ void ituTextResize(ITUText* text)
     char* string;
     ITURectangle* rect = (ITURectangle*) &text->widget.rect;
     assert(text);
+    ITU_ASSERT_THREAD();
 
     if (text->string)
         string = text->string;

@@ -137,21 +137,21 @@ bool ituWidgetUpdateImpl(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int
             int x = arg2 - widget->rect.x;
             int y = arg3 - widget->rect.y;
 
-            while (--childCount >= 0)
+            if (ituWidgetIsInside(widget, x, y))
             {
-                ITUWidget *child = children[childCount];
-
-                if (ituWidgetIsVisible(child))
+                while (--childCount >= 0)
                 {
-                    result |= ituWidgetUpdate(child, ev, arg1, x, y);
-                    if (result)
-                        break;
-                }
-            }
+                    ITUWidget *child = children[childCount];
 
-            if (!result && ituWidgetIsInside(widget, x, y))
-            {
-                result = ituWidgetOnPress(widget, ev, arg1, x, y);
+                    if (ituWidgetIsVisible(child))
+                    {
+                        result |= ituWidgetUpdate(child, ev, arg1, x, y);
+                        if (result)
+                            break;
+                    }
+                }
+                if (!result)
+                    result = ituWidgetOnPress(widget, ev, arg1, x, y);
             }
         }
     }
@@ -243,7 +243,7 @@ bool ituWidgetUpdateImpl(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int
         {
             ITUWidget* child = (ITUWidget*)node;
 
-			if (child->visible || (ev == ITU_EVENT_LOAD && child->visible) || ev == ITU_EVENT_RELEASE || ev == ITU_EVENT_LANGUAGE || ev == ITU_EVENT_LOAD_IMAGE || ev == ITU_EVENT_LAYOUT)
+            if (child->visible || (ev == ITU_EVENT_LOAD && child->visible) || ev == ITU_EVENT_RELEASE || ev == ITU_EVENT_LANGUAGE || ev == ITU_EVENT_LOAD_IMAGE || ev == ITU_EVENT_LAYOUT || ev == ITU_EVENT_TIMER)
             {
                 widget->dirty |= ituWidgetUpdate(child, ev, arg1, arg2, arg3);
                 //if (widget->dirty)
@@ -288,9 +288,13 @@ void ituWidgetDrawImpl(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
     for (node = widget->tree.child; node; node = node->sibling)
     {
         ITUWidget* child = (ITUWidget*)node;
-        if (child->visible && ituWidgetIsOverlapClipping(child, dest, x, y))
-            ituWidgetDraw(node, dest, x, y, alpha);
-
+        if (child->visible)
+        {
+            if (ituWidgetIsOverlapClipping(child, dest, x, y))
+                ituWidgetDraw(node, dest, x, y, alpha);
+            else
+                ituDirtyWidget(child, false);
+        }
         child->dirty = false;
     }
     ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
@@ -400,6 +404,7 @@ void ituWidgetInit(ITUWidget* widget)
     assert(widget);
 
     memset(widget, 0, sizeof (ITUWidget));
+    ITU_ASSERT_THREAD();
 
     widget->type        = ITU_WIDGET;
     strcpy(widget->name, widgetName);
@@ -457,6 +462,7 @@ void ituWidgetSetNameImpl(ITUWidget* widget, const char* name)
 {
     assert(widget);
     assert(name);
+    ITU_ASSERT_THREAD();
 
     strncpy(widget->name, name, ITU_WIDGET_NAME_SIZE - 1);
     widget->name[ITU_WIDGET_NAME_SIZE - 1] = '\0';
@@ -465,6 +471,7 @@ void ituWidgetSetNameImpl(ITUWidget* widget, const char* name)
 void ituWidgetSetVisibleImpl(ITUWidget* widget, bool visible)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (!visible && (widget->flags & ITU_ALWAYS_VISIBLE))
     {
@@ -693,6 +700,8 @@ void ituWidgetSetVisibleImpl(ITUWidget* widget, bool visible)
 
                 if (step > 0)
                     ituEffectSetTotalStep(widget->effect, step);
+                else
+                    ituEffectSetTotalStep(widget->effect, widget->effectSteps);
 
                 ituEffectStart(widget->effect, widget);
                 ituEffectUpdate(widget->effect, widget);
@@ -1090,6 +1099,7 @@ void ituWidgetSetVisibleImpl(ITUWidget* widget, bool visible)
 void ituWidgetSetActiveImpl(ITUWidget* widget, bool active)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->active  = active;
     widget->dirty   = true;
@@ -1098,6 +1108,7 @@ void ituWidgetSetActiveImpl(ITUWidget* widget, bool active)
 void ituWidgetSetAlphaImpl(ITUWidget* widget, uint8_t alpha)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->alpha   = alpha;
     widget->dirty   = true;
@@ -1107,6 +1118,7 @@ void ituWidgetSetAlphaImpl(ITUWidget* widget, uint8_t alpha)
 void ituWidgetSetColorImpl(ITUWidget* widget, uint8_t alpha, uint8_t red, uint8_t green, uint8_t blue)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->color.alpha = alpha;
     widget->color.red   = red;
@@ -1118,6 +1130,7 @@ void ituWidgetSetColorImpl(ITUWidget* widget, uint8_t alpha, uint8_t red, uint8_
 void ituWidgetSetXImpl(ITUWidget* widget, int x)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.x  = x;
     widget->dirty   = true;
@@ -1126,6 +1139,7 @@ void ituWidgetSetXImpl(ITUWidget* widget, int x)
 void ituWidgetSetYImpl(ITUWidget* widget, int y)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.y  = y;
     widget->dirty   = true;
@@ -1134,6 +1148,7 @@ void ituWidgetSetYImpl(ITUWidget* widget, int y)
 void ituWidgetSetPositionImpl(ITUWidget* widget, int x, int y)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.x  = x;
     widget->rect.y  = y;
@@ -1143,6 +1158,7 @@ void ituWidgetSetPositionImpl(ITUWidget* widget, int x, int y)
 void ituWidgetSetWidthImpl(ITUWidget* widget, int width)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.width  = width;
     widget->dirty       = true;
@@ -1153,6 +1169,7 @@ void ituWidgetSetWidthImpl(ITUWidget* widget, int width)
 void ituWidgetSetHeightImpl(ITUWidget* widget, int height)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.height = height;
     widget->dirty       = true;
@@ -1163,6 +1180,7 @@ void ituWidgetSetHeightImpl(ITUWidget* widget, int height)
 void ituWidgetSetDimensionImpl(ITUWidget* widget, int width, int height)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->rect.width  = width;
     widget->rect.height = height;
@@ -1174,6 +1192,7 @@ void ituWidgetSetDimensionImpl(ITUWidget* widget, int width, int height)
 void ituWidgetSetBoundImpl(ITUWidget* widget, int x, int y, int width, int height)
 {
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     widget->bound.x         = x;
     widget->bound.y         = y;
@@ -1185,6 +1204,8 @@ void ituWidgetSetBoundImpl(ITUWidget* widget, int x, int y, int width, int heigh
 bool ituWidgetIsInsideImpl(ITUWidget* widget, int x, int y)
 {
     int bw, bh;
+
+    ITU_ASSERT_THREAD();
 
     if (!widget->visible)
         return false;
@@ -1206,6 +1227,7 @@ void ituWidgetSetClipping(ITUWidget* widget, ITUSurface* dest, int x, int y, ITU
     assert(widget);
     assert(dest);
     assert(prevClip);
+    ITU_ASSERT_THREAD();
 
     memcpy(prevClip, &dest->clipping, sizeof(ITURectangle));
 
@@ -1337,6 +1359,7 @@ void ituWidgetGetGlobalPositionImpl(ITUWidget* widget, int* x, int* y)
     int cy = 0;
 
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     while (widget)
     {
@@ -1358,6 +1381,7 @@ void ituWidgetShowImpl(ITUWidget* widget, ITUEffectType effect, int step)
     ITUEffectType oldEffect = widget->effects[ITU_STATE_SHOWING];
     int oldStep = widget->effects[ITU_STATE_NORMAL];
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituWidgetSetEffect(widget, ITU_STATE_NORMAL, step);    // use widget->effects[ITU_STATE_NORMAL] to store step parameter
     ituWidgetSetEffect(widget, ITU_STATE_SHOWING, effect);
@@ -1371,6 +1395,7 @@ void ituWidgetHideImpl(ITUWidget* widget, ITUEffectType effect, int step)
     ITUEffectType oldEffect = widget->effects[ITU_STATE_HIDING];
     int oldStep = widget->effects[ITU_STATE_NORMAL];
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituWidgetSetEffect(widget, ITU_STATE_NORMAL, step);    // use widget->effects[ITU_STATE_NORMAL] to store step parameter
     ituWidgetSetEffect(widget, ITU_STATE_HIDING, effect);

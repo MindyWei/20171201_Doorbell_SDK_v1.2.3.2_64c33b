@@ -11,6 +11,7 @@ void ituProgressBarExit(ITUWidget* widget)
 {
     ITUProgressBar* bar = (ITUProgressBar*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (bar->barSurf)
     {
@@ -132,8 +133,18 @@ void ituProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 
             if (width > 0)
             {
-				ituSurfaceSetClipping(dest, destx, desty, width, prevClip.height);
-                //ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                int clipx = destx;
+                int clipy = desty;
+
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (clipx < dest->clipping.x)
+                        clipx = dest->clipping.x;
+
+                    if (clipy < dest->clipping.y)
+                        clipy = dest->clipping.y;
+                }
+                ituSurfaceSetClipping(dest, clipx, clipy, width, rect->height);
 
                 if (bar->barSurf)
                 {
@@ -184,8 +195,18 @@ void ituProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 
             if (height > 0)
             {
-                //ituSurfaceSetClipping(dest, destx, desty + rect->height - height, prevClip.width, prevClip.height);
-				ituSurfaceSetClipping(dest, destx, desty + rect->height - height, prevClip.width, height);
+                int clipx = destx;
+                int clipy = desty;
+
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (clipx < dest->clipping.x)
+                        clipx = dest->clipping.x;
+
+                    if (clipy < dest->clipping.y)
+                        clipy = dest->clipping.y;
+                }
+                ituSurfaceSetClipping(dest, clipx, clipy + rect->height - height, rect->width, height);
 
                 if (bar->barSurf)
                 {
@@ -227,7 +248,7 @@ void ituProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 						    ituColorFill(surf, width, 0, rect->width - width, rect->height, &widget->color);
                     }
 
-					ituSurfaceSetClipping(surf, 0, 0, width, prevClip.height);
+					ituSurfaceSetClipping(surf, 0, 0, width, rect->height);
 
                     if (bar->barSurf)
                     {
@@ -271,7 +292,7 @@ void ituProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
                         if (widget->color.alpha == 255)
                             ituColorFill(surf, 0, 0, rect->width, rect->height, &widget->color);
                     }
-					ituSurfaceSetClipping(surf, 0, rect->height - height, prevClip.width, height);
+					ituSurfaceSetClipping(surf, 0, rect->height - height, rect->width, height);
 
 					if (bar->barSurf)
 					{
@@ -318,6 +339,7 @@ void ituProgressBarOnAction(ITUWidget* widget, ITUActionType action, char* param
 void ituProgressBarInit(ITUProgressBar* bar, ITULayout layout)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     memset(bar, 0, sizeof (ITUProgressBar));
 
@@ -366,6 +388,7 @@ void ituProgressBarLoad(ITUProgressBar* bar, uint32_t base)
 void ituProgressBarSetValue(ITUProgressBar* bar, int value)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     //printf("value=%d\n", value);
 
@@ -401,6 +424,8 @@ void ituProgressBarLoadStaticData(ITUProgressBar* bar)
 
 void ituProgressBarReleaseSurface(ITUProgressBar* bar)
 {
+    ITU_ASSERT_THREAD();
+
     if (bar->barSurf)
     {
         ituSurfaceRelease(bar->barSurf);

@@ -14,10 +14,10 @@
 
 
 #define PENCURSOR_HEADSIZE 6
-#define MAX_PENCURVE_ARRAY 1024
+#define MAX_PENCURVE_ARRAY 512 //1024
 #define MAX_PEN_PRESSURE 16
 #define MIN_PEN_PRESSURE 4
-#define SMOOTH_FACTOR 20
+#define SMOOTH_FACTOR 10 //20
 // 20 is limit
 //#define DRAWPEN_USB_DEVICE_DEBUG
 //#define SEND_MAX_CURVE_RAW
@@ -967,6 +967,7 @@ void ituDrawPenOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituDrawPenInit(ITUDrawPen* drawpen)
 {
     assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	memset(drawpen, 0, sizeof (ITUDrawPen));
 
@@ -1061,6 +1062,7 @@ void ituDrawPenLoad(ITUDrawPen* drawpen, uint32_t base)
 void ituDrawPenPlay(ITUDrawPen* drawpen)
 {
 	assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	if ((drawpen->widget.flags & ITU_ENABLED) == 0)
         return;
@@ -1069,6 +1071,7 @@ void ituDrawPenPlay(ITUDrawPen* drawpen)
 void ituDrawPenStop(ITUDrawPen* drawpen)
 {
 	assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	if ((drawpen->widget.flags & ITU_ENABLED) == 0)
         return;
@@ -1091,6 +1094,7 @@ bool ituDrawPenDumpJpeg(ITUDrawPen* drawpen, int percent, char* filename)
 {
 	bool result = false;
 	assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	if ((filename != NULL) && (drawpen->surf != NULL))
 	{
@@ -1111,6 +1115,7 @@ void ituDrawPenSetPenColor(ITUDrawPen* drawpen, ITUColor color)
 	int i = 0;
 
 	assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	drawpen->pencolor.alpha = color.alpha;
 	drawpen->pencolor.red = color.red;
@@ -1184,6 +1189,7 @@ void ituDrawPenUSBTask(ITUDrawPen* drawpen, bool usbtask)
 void ituDrawPenUSBSendID(ITUDrawPen* drawpen, unsigned int id)
 {
 	assert(drawpen);
+    ITU_ASSERT_THREAD();
 
 	if (fsg_connected == 1)
 	{
@@ -1199,3 +1205,17 @@ void ituDrawPenUSBSendID(ITUDrawPen* drawpen, unsigned int id)
 #endif
 	}
 }
+
+void ituDrawPenCursorSwitch(ITUDrawPen* drawpen, bool switchon)
+{
+    ITU_ASSERT_THREAD();
+
+	if ((drawpen) && (drawpen->cursorsurf))
+	{
+		if (switchon)
+			ituColorFill(drawpen->cursorsurf, 0, 0, PENCURSOR_HEADSIZE, PENCURSOR_HEADSIZE, &drawpen->pencolor);
+		else
+			ituColorFill(drawpen->cursorsurf, 0, 0, PENCURSOR_HEADSIZE, PENCURSOR_HEADSIZE, &emptycolor);
+	}
+}
+

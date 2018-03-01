@@ -573,6 +573,8 @@ void ituCalendarLastMonth(ITUCalendar* cal)
     struct timeval tv;
     struct tm* tm;
 
+    ITU_ASSERT_THREAD();
+
     if (!cal->year || !cal->month)
         return;
 
@@ -603,6 +605,8 @@ void ituCalendarNextMonth(ITUCalendar* cal)
 {
     struct timeval tv;
     struct tm* tm;
+
+    ITU_ASSERT_THREAD();
 
     if (!cal->year || !cal->month)
         return;
@@ -635,6 +639,8 @@ void ituCalendarToday(ITUCalendar* cal)
     struct timeval tv;
     struct tm* tm;
 
+    ITU_ASSERT_THREAD();
+
     gettimeofday(&tv, NULL);
     tm = localtime(&tv.tv_sec);
 
@@ -647,6 +653,8 @@ void ituCalendarToday(ITUCalendar* cal)
 
 void ituCalendarGoto(ITUCalendar* cal, int year, int month)
 {
+    ITU_ASSERT_THREAD();
+
     cal->year   = year;
     cal->month  = month;
     cal->day    = 0;
@@ -657,6 +665,7 @@ void ituCalendarGoto(ITUCalendar* cal, int year, int month)
 void ituCalendarInit(ITUCalendar* cal)
 {
     assert(cal);
+    ITU_ASSERT_THREAD();
 
     memset(cal, 0, sizeof (ITUCalendar));
 

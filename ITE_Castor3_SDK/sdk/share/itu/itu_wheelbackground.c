@@ -145,7 +145,7 @@ void ituWheelBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, u
         int pointerX = icon->surf->width / 2;
         int pointerY = icon->surf->height / 2;
 
-#if (CFG_CHIP_FAMILY == 9850)
+#if (CFG_CHIP_FAMILY != 9070)
         ituRotate(dest, destx, desty, icon->surf, pointerX, pointerY, angle, 1.0f, 1.0f);
 #else
         ituRotate(dest, destx + pointerX, desty + pointerY, icon->surf, pointerX, pointerY, angle, 1.0f, 1.0f);        
@@ -157,6 +157,7 @@ void ituWheelBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, u
 void ituWheelBackgroundInit(ITUWheelBackground* wbg)
 {
     assert(wbg);
+    ITU_ASSERT_THREAD();
 
     memset(wbg, 0, sizeof (ITUWheelBackground));
 
@@ -181,6 +182,7 @@ void ituWheelBackgroundLoad(ITUWheelBackground* wbg, uint32_t base)
 void ituWheelBackgroundSetValue(ITUWheelBackground* wbg, int value)
 {
     assert(wbg);
+    ITU_ASSERT_THREAD();
 
     if (value < 0 || value > 360)
     {

@@ -476,10 +476,10 @@ AVC_Video_Decoder_Reload(
 
             // 0x000001 (3 bytes) and Nal_Header (1 byte)
             
-            if (nalSize < 4 || !(pPreStartCodeAddr[3] == 0x47 || pPreStartCodeAddr[3] == 0x67 
-                                || pPreStartCodeAddr[3] == 0x48 || pPreStartCodeAddr[3] == 0x68 
-                                || pPreStartCodeAddr[3] == 0x45 || pPreStartCodeAddr[3] == 0x65 
-                                || pPreStartCodeAddr[3] == 0x41 || pPreStartCodeAddr[3] == 0x61 
+            if (nalSize < 4 || !(pPreStartCodeAddr[3] == 0x47 || pPreStartCodeAddr[3] == 0x67 || pPreStartCodeAddr[3] == 0x27 
+                                || pPreStartCodeAddr[3] == 0x48 || pPreStartCodeAddr[3] == 0x68 || pPreStartCodeAddr[3] == 0x28 
+                                || pPreStartCodeAddr[3] == 0x45 || pPreStartCodeAddr[3] == 0x65 || pPreStartCodeAddr[3] == 0x25 
+                                || pPreStartCodeAddr[3] == 0x41 || pPreStartCodeAddr[3] == 0x61 || pPreStartCodeAddr[3] == 0x21 
                                 || pPreStartCodeAddr[3] == 0x06 ))
             {
                 return_state |= VIDEO_RETURN_SKIP_PACKET;

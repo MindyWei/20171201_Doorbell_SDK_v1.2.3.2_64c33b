@@ -38,6 +38,7 @@ void ituLanguageSpriteOnAction(ITUWidget* widget, ITUActionType action, char* pa
 void ituLanguageSpriteInit(ITULanguageSprite* ls)
 {
     assert(ls);
+    ITU_ASSERT_THREAD();
 
     memset(ls, 0, sizeof (ITULanguageSprite));
 

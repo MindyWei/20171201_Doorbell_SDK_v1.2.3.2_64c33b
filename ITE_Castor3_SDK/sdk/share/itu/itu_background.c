@@ -12,6 +12,7 @@ bool ituBackgroundClone(ITUWidget* widget, ITUWidget** cloned)
     ITUIcon* icon = (ITUIcon*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -34,6 +35,7 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
     ITURectangle prevClip;
     ITUBackground* bg = (ITUBackground*) widget;
     ITURectangle* rect = (ITURectangle*) &widget->rect;
+    ITUSurface* bgSurf = NULL;
     assert(bg);
     assert(dest);
 
@@ -42,7 +44,7 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
     desta = alpha * widget->color.alpha / 255;
     desta = desta * widget->alpha / 255;
 
-    if (widget->angle == 0)
+    if (widget->angle == 0 && !((widget->flags & ITU_STRETCH) && widget->tree.child && bg->orgWidth && bg->orgHeight))
         ituWidgetSetClipping(widget, dest, x, y, &prevClip);
 
     if (!bg->icon.surf || 
@@ -51,31 +53,87 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
     {
         if (desta == 255)
         {
-            if (bg->graidentMode == ITU_GF_NONE)
-                ituColorFill(dest, destx, desty, rect->width, rect->height, &widget->color);
+            if ((widget->flags & ITU_STRETCH) && widget->tree.child && bg->orgWidth && bg->orgHeight)
+            {
+                bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
+                if (bgSurf)
+                {
+                    if (bg->graidentMode == ITU_GF_NONE)
+                        ituColorFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &widget->color);
+                    else
+                        ituGradientFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &widget->color, &bg->graidentColor, bg->graidentMode);
+                }
+            }
             else
-                ituGradientFill(dest, destx, desty, rect->width, rect->height, &widget->color, &bg->graidentColor, bg->graidentMode);
+            {
+                if (bg->graidentMode == ITU_GF_NONE)
+                    ituColorFill(dest, destx, desty, rect->width, rect->height, &widget->color);
+                else
+                    ituGradientFill(dest, destx, desty, rect->width, rect->height, &widget->color, &bg->graidentColor, bg->graidentMode);
+            }
         }
         else if (desta > 0)
         {
-#if (CFG_CHIP_FAMILY == 9070)
-            ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
-            if (surf)
+            ITUColor color, graidentColor;
+
+            ituSetColor(&color, 255, widget->color.red, widget->color.green, widget->color.blue);
+            ituSetColor(&graidentColor, 255, bg->graidentColor.red, bg->graidentColor.green, bg->graidentColor.blue);
+
+        #if (CFG_CHIP_FAMILY == 9070)
+            if ((widget->flags & ITU_STRETCH) && widget->tree.child && bg->orgWidth && bg->orgHeight)
+            {
+                bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
+                if (bgSurf)
+                {
+                    if (bg->graidentMode == ITU_GF_NONE)
+                        ituColorFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &color);
+                    else
+                        ituGradientFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &color, &graidentColor, bg->graidentMode);
+                }
+            }
+            else
+            {
+                ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
+                if (surf)
+                {
+                    if (bg->graidentMode == ITU_GF_NONE)
+                        ituColorFill(surf, 0, 0, rect->width, rect->height, &color);
+                    else
+                        ituGradientFill(surf, 0, 0, rect->width, rect->height, &color, &graidentColor, bg->graidentMode);
+
+                    ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);
+                    ituDestroySurface(surf);
+                }
+            }
+        #else
+            if (widget->tree.child && bg->orgWidth && bg->orgHeight)
+            {
+                bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
+                if (bgSurf)
+                {
+                    if (bg->graidentMode == ITU_GF_NONE)
+                        ituColorFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &color);
+                    else
+                        ituGradientFill(bgSurf, 0, 0, bgSurf->width, bgSurf->height, &color, &graidentColor, bg->graidentMode);
+                }
+            }
+            else
             {
                 if (bg->graidentMode == ITU_GF_NONE)
-                    ituColorFill(surf, 0, 0, rect->width, rect->height, &widget->color);
+                    ituColorFillBlend(dest, destx, desty, rect->width, rect->height, &color, false, true, desta);
                 else
-                    ituGradientFill(surf, 0, 0, rect->width, rect->height, &widget->color, &bg->graidentColor, bg->graidentMode);
-
-                ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);                
-                ituDestroySurface(surf);
+                    ituGradientFillBlend(dest, destx, desty, rect->width, rect->height, &color, &graidentColor, bg->graidentMode, false, true, desta);
             }
-#else
-            if (bg->graidentMode == ITU_GF_NONE)
-                ituColorFillBlend(dest, destx, desty, rect->width, rect->height, &widget->color, true, true, desta);
-            else
-                ituGradientFillBlend(dest, destx, desty, rect->width, rect->height, &widget->color, &bg->graidentColor, bg->graidentMode, true, true, desta);
-#endif
+        #endif
+        }
+        else if ((widget->flags & ITU_STRETCH) && widget->tree.child && bg->orgWidth && bg->orgHeight)
+        {
+            bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, ITU_ARGB8888, NULL, 0);
+            if (bgSurf)
+            {
+                ITUColor color = { 0, 0, 0, 0 };
+                ituColorFill(bgSurf, 0, 0, bg->orgWidth, bg->orgHeight, &color);
+            }
         }
     }
     
@@ -93,7 +151,20 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
                     {
                         if (widget->transformType == ITU_TRANSFORM_NONE)
                         {
-                            ituStretchBlt(dest, destx, desty, rect->width, rect->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                            if (widget->tree.child && bg->orgWidth && bg->orgHeight)
+                            {
+                                if (!bgSurf)
+                                    bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
+
+                                if (bgSurf)
+                                {
+                                    ituStretchBlt(bgSurf, 0, 0, bgSurf->width, bgSurf->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                                }
+                            }
+                            else
+                            {
+                                ituStretchBlt(dest, destx, desty, rect->width, rect->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                            }
                         }
                         else
                         {
@@ -138,24 +209,37 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
                 }
                 else
                 {
-                    ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
-                    if (surf)
+                    if (widget->tree.child && widget->angle == 0 && bg->orgWidth && bg->orgHeight)
                     {
-                        ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
+                        if (!bgSurf)
+                            bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
 
-                        if (widget->angle == 0)
+                        if (bgSurf)
                         {
-                            ituStretchBlt(surf, 0, 0, rect->width, rect->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                            ituStretchBlt(bgSurf, 0, 0, bgSurf->width, bgSurf->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
                         }
-                        else
+                    }
+                    else
+                    {
+                        ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
+                        if (surf)
                         {
-                            float scaleX = (float)rect->width / bg->icon.surf->width;
-                            float scaleY = (float)rect->height / bg->icon.surf->height;
+                            ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
 
-                            ituRotate(surf, rect->width / 2, rect->height / 2, bg->icon.surf, bg->icon.surf->width / 2, bg->icon.surf->height / 2, (float)widget->angle, scaleX, scaleY);
+                            if (widget->angle == 0)
+                            {
+                                ituStretchBlt(surf, 0, 0, rect->width, rect->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                            }
+                            else
+                            {
+                                float scaleX = (float)rect->width / bg->icon.surf->width;
+                                float scaleY = (float)rect->height / bg->icon.surf->height;
+
+                                ituRotate(surf, rect->width / 2, rect->height / 2, bg->icon.surf, bg->icon.surf->width / 2, bg->icon.surf->height / 2, (float)widget->angle, scaleX, scaleY);
+                            }
+                            ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);
+                            ituDestroySurface(surf);
                         }
-                        ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);
-                        ituDestroySurface(surf);
                     }
                 }
 #else
@@ -194,21 +278,34 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
                 }
                 else
                 {
-                    float scaleX = (float)rect->width / bg->icon.surf->width;
-                    float scaleY = (float)rect->height / bg->icon.surf->height;
+                    if (widget->tree.child && bg->orgWidth && bg->orgHeight)
+                    {
+                        if (!bgSurf)
+                            bgSurf = ituCreateSurface(bg->orgWidth, bg->orgHeight, 0, dest->format, NULL, 0);
 
-                    //printf("scaleX:%f,scaleY:%f (%d %d) (%d %d)\n",scaleX,scaleY,rect->width,rect->height,bg->icon.surf->width,bg->icon.surf->height);
-                    ituTransform(
-                        dest, destx, desty, rect->width, rect->height,
-                        bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height,
-                        bg->icon.surf->width / 2, bg->icon.surf->height / 2,
-                        scaleX,
-                        scaleY,
-                        (float)widget->angle,
-                        0,
-                        true,
-                        true,
-                        desta);
+                        if (bgSurf)
+                        {
+                            ituStretchBlt(bgSurf, 0, 0, bgSurf->width, bgSurf->height, bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height);
+                        }
+                    }
+                    else
+                    {
+                        float scaleX = (float)rect->width / bg->icon.surf->width;
+                        float scaleY = (float)rect->height / bg->icon.surf->height;
+
+                        //printf("scaleX:%f,scaleY:%f (%d %d) (%d %d)\n",scaleX,scaleY,rect->width,rect->height,bg->icon.surf->width,bg->icon.surf->height);
+                        ituTransform(
+                            dest, destx, desty, rect->width, rect->height,
+                            bg->icon.surf, 0, 0, bg->icon.surf->width, bg->icon.surf->height,
+                            bg->icon.surf->width / 2, bg->icon.surf->height / 2,
+                            scaleX,
+                            scaleY,
+                            (float)widget->angle,
+                            0,
+                            true,
+                            true,
+                            desta);
+                    }
                 }
 #endif
             }
@@ -227,7 +324,7 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
                             int w = (bg->icon.surf->width - bg->icon.surf->width * widget->transformX / 100) / 2;
                             int h = (bg->icon.surf->height - bg->icon.surf->height * widget->transformY / 100) / 2;
 
-                            if (itcTreeGetChildCount(bg) > 0)
+                            if (widget->tree.child && bg->orgWidth && bg->orgHeight)
                             {
                                 ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
                                 if (surf)
@@ -302,17 +399,114 @@ void ituBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
         }
     }
     if (widget->angle == 0)
-        ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+    {
+        if (bgSurf)
+        {
+            ITCTree* node;
+            assert(widget->flags & ITU_STRETCH);
 
-    if (widget->flags & ITU_TRANSFER_ALPHA)
-        ituWidgetDrawImpl(widget, dest, x, y, desta);
+            for (node = widget->tree.child; node; node = node->sibling)
+            {
+                ITUWidget* child = (ITUWidget*)node;
+
+                if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
+                    ituWidgetDraw(node, bgSurf, 0, 0, alpha);
+
+                child->dirty = false;
+            }
+
+            if ((widget->flags & ITU_TRANSFER_ALPHA) == 0)
+            {
+                desta = alpha * widget->alpha / 255;
+            }
+
+            if (desta == 255)
+            {
+                ituStretchBlt(dest, destx, desty, rect->width, rect->height, bgSurf, 0, 0, bgSurf->width, bgSurf->height);
+            }
+            else
+            {
+                ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
+                if (surf)
+                {
+                    ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
+                    assert(widget->angle == 0);
+                    ituStretchBlt(surf, 0, 0, rect->width, rect->height, bgSurf, 0, 0, bgSurf->width, bgSurf->height);
+
+                    ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);
+
+                    ituDestroySurface(surf);
+                }
+            }
+        }
+        else
+        {
+            if (!((widget->flags & ITU_STRETCH) && widget->tree.child && bg->orgWidth && bg->orgHeight))
+                ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+
+            ituWidgetDrawImpl(widget, dest, x, y, alpha);
+        }
+    }
     else
-        ituWidgetDrawImpl(widget, dest, x, y, alpha);
+    {
+        ITUSurface* surf;
+        ITCTree* node;
+
+        surf = ituCreateSurface(rect->width, rect->height, 0, ITU_ARGB8888, NULL, 0);
+        if (surf)
+        {
+            ITUColor color = { 0, 0, 0, 0 };
+
+            ituColorFill(surf, 0, 0, rect->width, rect->height, &color);
+
+            for (node = widget->tree.child; node; node = node->sibling)
+            {
+                ITUWidget* child = (ITUWidget*)node;
+
+                if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
+                    ituWidgetDraw(node, surf, 0, 0, alpha);
+
+                child->dirty = false;
+            }
+
+            if (bgSurf)
+            {
+            #if (CFG_CHIP_FAMILY == 9070)
+                ituRotate(dest, destx + rect->width / 2, desty + rect->height / 2, bgSurf, bgSurf->width / 2, bgSurf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+            #else
+                ituRotate(dest, destx, desty, bgSurf, bgSurf->width / 2, bgSurf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+            #endif
+            }
+
+        #if (CFG_CHIP_FAMILY == 9070)
+            ituRotate(dest, destx + rect->width / 2, desty + rect->height / 2, surf, surf->width / 2, surf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+        #else
+            ituRotate(dest, destx, desty, surf, surf->width / 2, surf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+        #endif
+            ituDestroySurface(surf);
+        }
+    }
+    if (bgSurf)
+        ituDestroySurface(bgSurf);
+
+    {
+        ITCTree* node;
+
+        for (node = widget->tree.child; node; node = node->sibling)
+        {
+            ITUWidget* child = (ITUWidget*)node;
+            if (child->visible && child->type == ITU_CLIPPER)
+            {
+                ituClipperPostDraw(child, dest, destx, desty, alpha);
+            }
+        }
+    }
 }
 
 void ituBackgroundInit(ITUBackground* bg)
 {
     assert(bg);
+    ITU_ASSERT_THREAD();
 
     memset(bg, 0, sizeof (ITUBackground));
 

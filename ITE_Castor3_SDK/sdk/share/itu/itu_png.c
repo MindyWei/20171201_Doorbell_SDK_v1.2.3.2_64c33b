@@ -271,3 +271,132 @@ end:
 
     return surf;
 }
+
+void ituPngSaveFile(ITUSurface* surf, char* filepath)
+{
+    FILE* fp = NULL;
+    png_structp png_ptr = NULL;
+    png_infop info_ptr = NULL;
+    png_bytepp row_pointers = NULL;
+    int h, y;
+    uint8_t* src = NULL;
+
+    assert(filepath);
+
+    fp = fopen(filepath, "wb");
+    if (!fp)
+        goto end;
+
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png_ptr)
+    {
+        LOG_ERR "%s: png_create_write_struct returned 0.\n", filepath LOG_END
+            goto end;
+    }
+
+    info_ptr = png_create_info_struct(png_ptr);
+    if (!info_ptr)
+    {
+        LOG_ERR "%s: png_create_info_struct returned 0.\n", filepath LOG_END
+        goto end;
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr)))
+    {
+        LOG_ERR "%s: error from libpng.\n", filepath LOG_END
+        goto end;
+    }
+
+    row_pointers = (png_bytep*)calloc(1, sizeof(png_bytep)* surf->height);
+    if (!row_pointers)
+    {
+        goto end;
+    }
+
+    png_init_io(png_ptr, fp);
+    png_set_IHDR(png_ptr, info_ptr, surf->width, surf->height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    for (y = 0; y < surf->height; y++)
+    {
+        row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png_ptr, info_ptr));
+        if (!row_pointers[y])
+        {
+            goto end;
+        }
+    }
+
+    LOG_DBG "%s: %lux%lu\n", filepath, surf->width, surf->height LOG_END
+
+    png_write_info(png_ptr, info_ptr);
+
+    src = ituLockSurface(surf, 0, 0, surf->width, surf->height);
+    assert(src);
+
+    if (surf == ituGetDisplaySurface())
+    {
+        uint32_t addr;
+
+        switch (ithLcdGetFlip())
+        {
+        case 0:
+            addr = ithLcdGetBaseAddrA();
+            break;
+
+        case 1:
+            addr = ithLcdGetBaseAddrB();
+            break;
+
+        default:
+            addr = ithLcdGetBaseAddrC();
+            break;
+        }
+        src = ithMapVram(addr, surf->lockSize, ITH_VRAM_READ);
+    }
+
+    if (surf->format == ITU_ARGB8888)
+    {
+        for (h = 0; h < surf->height; h++)
+        {
+            int i, j;
+            uint8_t* ptr = src + surf->width * 4 * h;
+
+            // color trasform from ARGB8888 to RGB888
+            for (i = (surf->width - 1) * 4, j = (surf->width - 1) * 3; i >= 0 && j >= 0; i -= 4, j -= 3)
+            {
+                row_pointers[h][j + 0] = ptr[i + 2];
+                row_pointers[h][j + 1] = ptr[i + 1];
+                row_pointers[h][j + 2] = ptr[i + 0];
+            }
+        }
+    }
+    else if (surf->format == ITU_RGB565)
+    {
+        for (h = 0; h < surf->height; h++)
+        {
+            int i, j;
+            uint8_t* ptr = src + surf->width * 2 * h;
+
+            // color trasform from RGB565 to RGB888
+            for (i = (surf->width - 1) * 2, j = (surf->width - 1) * 3; i >= 0 && j >= 0; i -= 2, j -= 3)
+            {
+                row_pointers[h][j + 0] = ((ptr[i + 1]) & 0xf8) + ((ptr[i + 1] >> 5) & 0x07);
+                row_pointers[h][j + 1] = ((ptr[i + 0] >> 3) & 0x1c) + ((ptr[i + 1] << 5) & 0xe0) + ((ptr[i + 1] >> 1) & 0x3);
+                row_pointers[h][j + 2] = ((ptr[i + 0] << 3) & 0xf8) + ((ptr[i + 0] >> 2) & 0x07);
+            }
+        }
+    }
+    png_write_image(png_ptr, row_pointers);
+    png_write_end(png_ptr, NULL);
+    ituUnlockSurface(surf);
+
+end:
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+
+    for (y = 0; y < surf->height; y++)
+        free(row_pointers[y]);
+
+    free(row_pointers);
+
+    if (fp)
+        fclose(fp);
+}

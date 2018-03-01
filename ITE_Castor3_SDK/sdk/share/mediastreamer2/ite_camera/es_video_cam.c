@@ -97,8 +97,8 @@ es_enc_init(
         pEnc_info->tsi_idx      = 0;
 
         /*add for configure_video_source */
-        pEnc_info->vsize.width  = 1280;
-        pEnc_info->vsize.height = 720;
+        pEnc_info->vsize.width  = SENSOR_WIDTH;
+        pEnc_info->vsize.height = SENSOR_HEIGHT;
         pEnc_info->fps          = 30.0;
         memset(&pEnc_info->slice, NULL, sizeof(SLICE_DATA));
         pEnc_info->packer       = NULL;

@@ -58,4 +58,24 @@
 #define ITU_SCROLL_DELAY                3
 #define ITU_STOP_DELAY                  30
 
+#ifndef CFG_M2D_ENABLE
+    #undef CFG_CHIP_FAMILY
+    #define CFG_CHIP_FAMILY 9070
+#endif // CFG_M2D_ENABLE
+
+#if defined(CFG_ITU_ASSERT_THREAD) || !defined(NDEBUG)
+
+#define FUNCTIONIZE(a,b)    a(b)
+#define STRINGIZE(a)        #a
+#define INT2STRING(i)       FUNCTIONIZE(STRINGIZE,i)
+#define ITU_FILE_POS        __FILE__ ":" INT2STRING(__LINE__)
+
+#define ITU_ASSERT_THREAD() ituAssertThread(ITU_FILE_POS)
+
+#else
+
+#define ITU_ASSERT_THREAD()
+
+#endif // defined(CFG_ITU_ASSERT_THREAD) || !defined(NDEBUG)
+
 #endif // ITU_CFG_H

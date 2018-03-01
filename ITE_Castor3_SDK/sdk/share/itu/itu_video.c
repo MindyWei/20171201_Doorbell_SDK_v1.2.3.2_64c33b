@@ -20,9 +20,9 @@ static bool videoloopIsPlaying = false;
 static bool isVideoWidgetStartPlaying = false;
 
 #ifdef CFG_VIDEO_ENABLE
-extern bool audioKeySoundPaused;
 static bool videoPlayerSetWindow = false;
 static MTAL_SPEC mtal_spec = {0};
+extern bool audioKeySoundPaused;
 #endif
 
 #ifdef CFG_VIDEO_ENABLE
@@ -93,6 +93,7 @@ void ituVideoExit(ITUWidget* widget)
 {
     ITUVideo* video = (ITUVideo*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
 #ifdef CFG_VIDEO_ENABLE
     mtal_pb_stop();
@@ -129,12 +130,11 @@ bool ituVideoUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
         if(!isOtherVideoPlaying && !isVideoWidgetStartPlaying)
         {
 #ifdef CFG_VIDEO_ENABLE        
-            ItuEnterVideoState();        
-            videoPlayerSetWindow = true;
-            mtal_pb_init(EventHandler);
-
             if (video->playing && video->filePath[0] != '\0')
             {
+                ItuEnterVideoState();        
+                videoPlayerSetWindow = true;
+                mtal_pb_init(EventHandler);
                 strcpy(mtal_spec.srcname, video->filePath);
                 if(video->volume)
                     mtal_spec.vol_level = video->volume;
@@ -176,13 +176,12 @@ bool ituVideoUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
         isVideoWidgetStartPlaying = false;
         if(!isOtherVideoPlaying)
         {
-#ifdef CFG_VIDEO_ENABLE        
-            ItuEnterVideoState();        
-            videoPlayerSetWindow = true;
-            mtal_pb_init(EventHandler);
-
+#ifdef CFG_VIDEO_ENABLE                    
             if (video->playing && video->filePath[0] != '\0')
             {
+                ItuEnterVideoState();        
+                videoPlayerSetWindow = true;
+                mtal_pb_init(EventHandler);
                 strcpy(mtal_spec.srcname, video->filePath);
                 if(video->volume)
                     mtal_spec.vol_level = video->volume;
@@ -293,6 +292,7 @@ void ituVideoOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituVideoInit(ITUVideo* video)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
 
     memset(video, 0, sizeof (ITUVideo));
 
@@ -320,9 +320,10 @@ void ituVideoLoad(ITUVideo* video, uint32_t base)
     ituVideoSetOnStop(video, VideoOnStop);
 }
 
-void ituVideoPlay(ITUVideo* video, int frame)
+void ituVideoPlay(ITUVideo* video, int percentage)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
 
     if (video->filePath[0] != '\0')
     {
@@ -360,8 +361,8 @@ void ituVideoPlay(ITUVideo* video, int frame)
 #endif // CFG_VIDEO_ENABLE
     }
 
-    if (frame > 0)
-        ituVideoGoto(video, frame);
+    if (percentage > 0)
+        ituVideoGoto(video, percentage);
 
     video->playing         = true;
     video->widget.dirty    = true;
@@ -370,6 +371,8 @@ void ituVideoPlay(ITUVideo* video, int frame)
 void ituVideoStop(ITUVideo* video)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
+
     if (video->playing)
     {
 #ifdef CFG_VIDEO_ENABLE
@@ -388,10 +391,11 @@ void ituVideoStop(ITUVideo* video)
 		        tid = 0;
 #endif
 	        }
-        } 
+        }
         audioKeySoundPaused = false;
 #endif // CFG_VIDEO_ENABLE
         video->playing         = false;
+        video->paused          = false;
         video->widget.dirty    = true;
     }
 }
@@ -399,6 +403,7 @@ void ituVideoStop(ITUVideo* video)
 void ituVideoPause(ITUVideo* video)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
 
     if (video->playing && !video->paused)
     {
@@ -409,11 +414,12 @@ void ituVideoPause(ITUVideo* video)
     }
 }
 
-void ituVideoGoto(ITUVideo* video, int frame)
+void ituVideoGoto(ITUVideo* video, int percentage)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
 
-    if (video->playing && frame >= 0)
+    if (video->playing && percentage >= 0)
     {
 #ifdef CFG_VIDEO_ENABLE        
         int pos;
@@ -421,7 +427,7 @@ void ituVideoGoto(ITUVideo* video, int frame)
 
         mtal_pb_get_total_duration(&totaltime);
         if(totaltime > 0)
-            pos = frame*totaltime/100;
+            pos = percentage*totaltime/100;
         else
             pos = 0;
         mtal_pb_seekto(pos);
@@ -434,6 +440,7 @@ void ituVideoGoto(ITUVideo* video, int frame)
 int ituVideoGetPlayingPercentage(ITUVideo* video)
 {
     assert(video);
+    ITU_ASSERT_THREAD();
 
     if (video->playing)
     {
@@ -461,5 +468,18 @@ int ituVideoGetPlayingPercentage(ITUVideo* video)
         return percentage_value;
     }
     return -1;
+}
+
+void ituVideoSpeedUpDown(ITUVideo* video, float speed)
+{
+    assert(video);
+    ITU_ASSERT_THREAD();
+
+    if (video->playing)
+    {
+    #ifdef CFG_VIDEO_ENABLE
+        mtal_pb_slow_fast_play(speed);
+    #endif // CFG_VIDEO_ENABLE
+    }
 }
 

@@ -700,6 +700,7 @@ void itv_flush_dbuf(void)
     itv_rcs.pcmd_flush_dbuf = 1;
 
     WAIT_UNTIL(itv_rcs.pcmd_flush_dbuf == 0);
+    itv_rcs.vid_surf_cur_idx         = -1;
 }
 
 /* video surface */
@@ -720,6 +721,7 @@ int itv_get_vidSurf_index(void)
 {
     if (itv_rcs.vid_surf_ridx != itv_rcs.vid_surf_widx)
     {
+          //printf("###### %d, %d, %d, %d\n", itv_rcs.vid_surf_ridx, itv_rcs.vid_surf_widx, ITV_MAX_VSBUF, g_lcd_index);
     	  itv_rcs.vid_surf_ridx = (itv_rcs.vid_surf_ridx + 1) % ITV_MAX_VSBUF;
     	  itv_rcs.vid_surf_cur_idx = g_lcd_index;
     }

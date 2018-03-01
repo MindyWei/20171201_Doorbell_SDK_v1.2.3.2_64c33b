@@ -16,12 +16,14 @@ void ituSceneInit(ITUScene *scene, ITUWidget *root)
     scene->root = root;
 
     ituScene    = scene;
+    scene->threadID = pthread_self();
 }
 
 void ituSceneExit(ITUScene *scene)
 {
     ITCTree *node;
     assert(scene);
+    ITU_ASSERT_THREAD();
 
     for (node = (ITCTree *)scene->root; node; node = node->sibling)
     {
@@ -43,6 +45,7 @@ bool ituSceneUpdate(ITUScene *scene, ITUEvent ev, int arg1, int arg2, int arg3)
 
     assert(scene);
     assert(scene->root);
+    ITU_ASSERT_THREAD();
 
     if (ev == ITU_EVENT_MOUSELONGPRESS && scene->dragged)
         return false;
@@ -209,25 +212,28 @@ bool ituSceneUpdate(ITUScene *scene, ITUEvent ev, int arg1, int arg2, int arg3)
 
     if (ev < ITU_EVENT_CUSTOM)
     {
-        // flush action queue
-        result |= ituFlushActionQueue(scene->actionQueue, &scene->actionQueueLen);
-
         // execute delay queue
-        ituExecDelayQueue(scene->delayQueue);
-
-        // execute delayed commands
-        for (i = 0; i < ITU_COMMAND_SIZE; i++)
+        if (ev == ITU_EVENT_TIMER)
         {
-            ITUCommand *cmd = &scene->commands[i];
-            if (cmd->delay > 0)
+            ituExecDelayQueue(scene->delayQueue);
+
+            // execute delayed commands
+            for (i = 0; i < ITU_COMMAND_SIZE; i++)
             {
-                if (--cmd->delay == 0)
+                ITUCommand *cmd = &scene->commands[i];
+                if (cmd->delay > 0)
                 {
-                    cmd->func(cmd->arg);
-                    result = true;
+                    if (--cmd->delay == 0)
+                    {
+                        cmd->func(cmd->arg);
+                        result = true;
+                    }
                 }
             }
         }
+
+        // flush action queue
+        result |= ituFlushActionQueue(scene->actionQueue, &scene->actionQueueLen);
     }
 
     if (ev == ITU_EVENT_MOUSEUP)
@@ -242,6 +248,7 @@ void ituSceneDraw(ITUScene *scene, ITUSurface *dest)
     assert(scene);
     assert(scene->root);
     assert(dest);
+    ITU_ASSERT_THREAD();
 
     for (node = &scene->root->tree; node; node = node->sibling)
     {
@@ -261,6 +268,7 @@ void ituScenePreDraw(ITUScene *scene, ITUSurface *dest)
     assert(scene);
     assert(scene->root);
     assert(dest);
+    ITU_ASSERT_THREAD();
 
     ituDrawGlyph = ituDrawGlyphEmpty;
 
@@ -283,6 +291,7 @@ void ituScenePreDraw(ITUScene *scene, ITUSurface *dest)
 void ituSceneSetRotation(ITUScene *scene, ITURotation rot, int screenWidth, int screenHeight)
 {
     assert(scene);
+    ITU_ASSERT_THREAD();
 
     scene->rotation     = rot;
     scene->screenWidth  = screenWidth;
@@ -310,6 +319,7 @@ static ITUWidget *FindWidget(ITUWidget *widget, const char *name)
 void ituSceneSetFunctionTable(ITUScene *scene, ITUActionFunction *funcTable)
 {
     assert(scene);
+    ITU_ASSERT_THREAD();
     scene->actionFuncTable = funcTable;
 }
 
@@ -338,6 +348,7 @@ void *ituSceneFindWidget(ITUScene *scene, const char *name)
     ITCTree *node;
     assert(scene);
     assert(name);
+    ITU_ASSERT_THREAD();
 
     if (!scene->root)
         return NULL;
@@ -432,6 +443,8 @@ static ITUWidget* FocusPrev(ITUWidget* widget)
 
 ITUWidget *ituSceneFocusPrev(ITUScene *scene)
 {
+    ITU_ASSERT_THREAD();
+
     if (!scene->focused)
     {
         ITCTree* node;
@@ -518,6 +531,8 @@ static ITUWidget* FocusNext(ITUWidget* widget)
 
 ITUWidget *ituSceneFocusNext(ITUScene *scene)
 {
+    ITU_ASSERT_THREAD();
+
     if (!scene->focused)
     {
         ITCTree* node;

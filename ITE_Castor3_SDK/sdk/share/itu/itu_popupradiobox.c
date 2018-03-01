@@ -174,6 +174,7 @@ void ituPopupRadioBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uin
 void ituPopupRadioBoxInit(ITUPopupRadioBox* popupRadioBox)
 {
     assert(popupRadioBox);
+    ITU_ASSERT_THREAD();
 
     memset(popupRadioBox, 0, sizeof (ITUPopupRadioBox));
 

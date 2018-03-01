@@ -342,6 +342,18 @@ bool VideoPlayerLastButtonOnPress(ITUWidget* widget, char* param)
     return true;
 }
 
+bool VideoPlayerPauseButtonOnPress(ITUWidget* widget, char* param)
+{
+	if(videoPlayerIsPlaying)
+	{
+#ifdef CFG_VIDEO_ENABLE 
+		printf("##################video play/pause \r\n");       
+		mtal_pb_pause();
+#endif
+	}
+	return true;
+}
+
 bool VideoPlayerPlayCheckBoxOnPress(ITUWidget* widget, char* param)
 {
     if (ituCheckBoxIsChecked(videoPlayerPlayCheckBox))

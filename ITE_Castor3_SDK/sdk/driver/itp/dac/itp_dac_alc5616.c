@@ -13,7 +13,10 @@
 #define IIC_PORT IIC_PORT_0
 #else
 #define IIC_PORT IIC_PORT_1
-#endif  
+#endif
+
+//#define DEBUG_PRINT printf
+#define DEBUG_PRINT(...)
 
 /* ************************************************************************** */
 /* wrapper */
@@ -35,10 +38,11 @@ static int _alc5616_DA_running = 0;
 static int _alc5616_AD_running = 0;
 static pthread_mutex_t ALC5616_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-static int _alc5616_micin = 1;
-static int _alc5616_linein = 1;
-static int _alc5616_spkout = 1;
-static int _alc5616_hpout = 1;
+static int _alc5616_micin   = 1;
+static int _alc5616_linein  = 0;
+static int _alc5616_lineout = 0;
+static int _alc5616_spkout  = 1;
+static int _alc5616_hpout   = 1;
 static int _alc5616_channel = 2; //note set 2 can get louder 
 
 static int _alc5616_cold_start = 1; /* alc5616q should enable power only once */
@@ -160,17 +164,17 @@ static void init_alc5616_common(void)
 {
     pthread_mutex_lock(&ALC5616_MUTEX);
 
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	if(_alc5616_DA_running)
 	{
-		printf("ALC5616# DAC is running, skip re-init process !\n");
+		DEBUG_PRINT("ALC5616# DAC is running, skip re-init process !\n");
 		pthread_mutex_unlock(&ALC5616_MUTEX);
 		return;
 	}
 	if(_alc5616_AD_running)
 	{
-		printf("ALC5616# ADC is running, skip re-init process !\n");
+		DEBUG_PRINT("ALC5616# ADC is running, skip re-init process !\n");
 		pthread_mutex_unlock(&ALC5616_MUTEX);
 		return;
 	}
@@ -238,6 +242,11 @@ static void init_alc5616_common(void)
             alc5616_write_reg(0x3C, 0x1FFF);/* BST2 to RECMIXL */
         }
         
+        if(_alc5616_linein){
+            alc5616_writeRegMask(0x3C, (0<<5),(1<<5));//input L line-in to ADC
+            alc5616_writeRegMask(0x3E, (0<<5),(1<<5));//input R line-in to ADC
+        }
+        
         //if(_alc5616_linein)        
         //{
         //    alc5616_writeRegMask(0x14, (0<<10)|(0<<11)|(0<<2)|(0<<3), (1<<10)|(1<<11)|(1<<2)|(1<<3));       
@@ -275,7 +284,13 @@ static void init_alc5616_common(void)
             alc5616_write_reg(0x4F, 0x0279);/* Disable DAC L/R to Speaker Mixer*/
             alc5616_write_reg(0x52, 0x0279);/* Disable DAC L/R to Speaker Mixer*/
         }
-        usleep(50000);/* Delay (50 ms) to allow HP amps to settle */
+        
+        if(_alc5616_lineout){
+            alc5616_writeRegMask(0x4F, (0<<4),(1<<4));//L line-out to outmixer
+            alc5616_writeRegMask(0x52, (0<<4),(1<<4));//R line-out to outmixer        
+        }       
+        
+        usleep(10000);/* Delay (10 ms) to allow HP amps to settle */
 
         if(_alc5616_spkout)
         {
@@ -297,17 +312,17 @@ static void init_alc5616_common(void)
 static void deinit_alc5616_common(void)
 {
 	pthread_mutex_lock(&ALC5616_MUTEX);
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	if(_alc5616_DA_running)
 	{
-		printf("ALC5616# DAC is running, skip deinit !\n");
+		DEBUG_PRINT("ALC5616# DAC is running, skip deinit !\n");
 		pthread_mutex_unlock(&ALC5616_MUTEX);
 		return;
 	}
 	if(_alc5616_AD_running)
 	{
-		printf("ALC5616# ADC is running, skip deinit !\n");
+		DEBUG_PRINT("ALC5616# ADC is running, skip deinit !\n");
 		pthread_mutex_unlock(&ALC5616_MUTEX);
 		return;
 	}
@@ -367,7 +382,7 @@ void itp_codec_standby(void)
 /* DAC */
 void itp_codec_playback_init(unsigned output)
 {
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	switch(output)
 	{
@@ -398,7 +413,7 @@ void itp_codec_playback_init(unsigned output)
 
 void itp_codec_playback_deinit(void)
 {
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	_alc5616_DA_running = 0; /* put before deinit_alc5616_common() */
     if(_alc5616_spkout){
@@ -527,7 +542,7 @@ void itp_codec_playback_mute(void)
 	
 	pthread_mutex_lock(&ALC5616_MUTEX);
 
-    //printf("%s (%d)\n", __FUNCTION__, __LINE__);
+    DEBUG_PRINT("%s (%d)\n", __FUNCTION__, __LINE__);
     		
 
 	//i2s_delay_us(25000); /* FIXME: dummy loop */
@@ -565,7 +580,7 @@ void itp_codec_playback_unmute(void)
     //unsigned short data16;
     //unsigned short adj, tmp = 0x00;
 
-    //printf("%s (%d)\n", __FUNCTION__, __LINE__);
+    DEBUG_PRINT("%s (%d)\n", __FUNCTION__, __LINE__);
 
 	//if     (curr_out1_volume > MAX_OUT1_VOLUME) { curr_out1_volume = MAX_OUT1_VOLUME; }
 	//else if(curr_out1_volume < MIN_OUT1_VOLUME) { curr_out1_volume = MIN_OUT1_VOLUME; }
@@ -609,7 +624,7 @@ void itp_codec_playback_linein_bypass(unsigned bypass)
 /* ADC */
 void itp_codec_rec_init(unsigned input_source)
 {
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 	
 	switch(input_source)
 	{
@@ -640,7 +655,7 @@ void itp_codec_rec_init(unsigned input_source)
 
 void itp_codec_rec_deinit(void)
 {
-	printf("ALC5616# %s\n", __func__);
+	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	_alc5616_AD_running = 0; /* put before deinit_alc5616_common() */
 	deinit_alc5616_common();
@@ -787,3 +802,6 @@ void itp_codec_set_i2s_sample_rate(int samplerate)
 	pthread_mutex_unlock(&ALC5616_MUTEX);
 }
 
+int itp_codec_get_DA_running(void){
+    return _alc5616_DA_running;
+}

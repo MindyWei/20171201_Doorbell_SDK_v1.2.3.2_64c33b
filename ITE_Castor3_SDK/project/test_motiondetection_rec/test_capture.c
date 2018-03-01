@@ -13,6 +13,7 @@
 //#include "ite_avienc.h"
 //#include "i2s/i2s.h"
 #include "test_capture.h"
+#include "user_pr2000.h"
 
 static pthread_t tid;
 bool stopTest;
@@ -343,6 +344,10 @@ static void* DrawVideoSurface(void* arg)
 }
 #endif
 
+#if 1
+
+#endif
+
 void *TestFunc(void *arg)
 {
     itpInit();
@@ -350,6 +355,8 @@ void *TestFunc(void *arg)
     ioctl(ITP_DEVICE_BACKLIGHT, ITP_IOCTL_RESET, NULL);
 
     ioctl(ITP_DEVICE_BACKLIGHT, ITP_IOCTL_ON, NULL);
+
+	user_pr2000_init();
 
     while (!stopTest)
     {

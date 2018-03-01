@@ -16,6 +16,7 @@ bool ituAnimationClone(ITUWidget* widget, ITUWidget** cloned)
 {
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -57,9 +58,9 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                         animation->child->transformY = animation->orgTransformY;
 
                         if (animation->animationFlags & ITU_ANIM_REVERSE)
-                            ituAnimationGotoKeyframe(animation, animation->keyframe - 1);
+                            ituAnimationGoto(animation, animation->keyframe - 1);
                         else
-                            ituAnimationGotoKeyframe(animation, animation->keyframe + 1);
+                            ituAnimationGoto(animation, animation->keyframe + 1);
 
                         animation->playCount = 0;
                         ituAnimationOnStop(animation);
@@ -82,7 +83,7 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                                     animation->child->angle = animation->orgAngle;
                                     animation->child->transformX = animation->orgTransformX;
                                     animation->child->transformY = animation->orgTransformY;
-                                    ituAnimationGotoKeyframe(animation, 0);
+                                    ituAnimationGoto(animation, 0);
                                     animation->playCount = 0;
                                     ituAnimationOnStop(animation);
                                     ituExecActions((ITUWidget*)animation, animation->actions, ITU_EVENT_STOPPED, 0);
@@ -112,7 +113,7 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                                     animation->child->angle = animation->orgAngle;
                                     animation->child->transformX = animation->orgTransformX;
                                     animation->child->transformY = animation->orgTransformY;
-                                    ituAnimationGotoKeyframe(animation, 0);
+                                    ituAnimationGoto(animation, 0);
                                     animation->playCount = 0;
                                     ituAnimationOnStop(animation);
                                     ituExecActions((ITUWidget*)animation, animation->actions, ITU_EVENT_STOPPED, 0);
@@ -135,7 +136,9 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
 
                     if (animation->animationFlags & ITU_ANIM_REVERSE)
                     {
-                        target = (ITUWidget*) itcTreeGetChildAt(animation, animation->keyframe - 1);
+                        if (animation->keyframe > 0)
+                            target = (ITUWidget*) itcTreeGetChildAt(animation, animation->keyframe - 1);
+
                         if (!target && (animation->animationFlags & ITU_ANIM_CYCLE))
                         {
                             int count = itcTreeGetChildCount(animation);
@@ -292,6 +295,94 @@ void ituAnimationDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t
         y += widget->rect.y;
         alpha = alpha * widget->alpha / 255;
 
+        if ((animation->animationFlags & ITU_ANIM_MOTION_BLUR) && (animation->frame > 0))
+        {
+            int frame = animation->frame - 1;
+            ITUWidget* target = NULL;
+
+            if (animation->animationFlags & ITU_ANIM_REVERSE)
+            {
+                if (animation->keyframe > 0)
+                    target = (ITUWidget*)itcTreeGetChildAt(animation, animation->keyframe - 1);
+
+                if (!target && (animation->animationFlags & ITU_ANIM_CYCLE))
+                {
+                    int count = itcTreeGetChildCount(animation);
+                    target = (ITUWidget*)itcTreeGetChildAt(animation, count - 1);
+                }
+            }
+            else
+            {
+                target = (ITUWidget*)itcTreeGetChildAt(animation, animation->keyframe + 1);
+                if (!target && (animation->animationFlags & ITU_ANIM_CYCLE))
+                {
+                    target = (ITUWidget*)itcTreeGetChildAt(animation, 0);
+                }
+            }
+
+            if (target)
+            {
+                ITURectangle currRect;
+
+                memcpy(&currRect, &animation->child->rect, sizeof (ITURectangle));
+
+                if (animation->animationFlags & ITU_ANIM_MOVE)
+                {
+                    animation->child->rect.x = animation->keyRect.x + (target->rect.x - animation->keyRect.x) * frame / animation->totalframe;
+                    animation->child->rect.y = animation->keyRect.y + (target->rect.y - animation->keyRect.y) * frame / animation->totalframe;
+                }
+                else if (animation->animationFlags & ITU_ANIM_EASE_IN)
+                {
+                    float step = (float)frame / animation->totalframe;
+                    step = step * step * step;
+                    animation->child->rect.x = animation->keyRect.x + (int)((target->rect.x - animation->keyRect.x) * step);
+                    animation->child->rect.y = animation->keyRect.y + (int)((target->rect.y - animation->keyRect.y) * step);
+                }
+                else if (animation->animationFlags & ITU_ANIM_EASE_OUT)
+                {
+                    float step = (float)frame / animation->totalframe;
+                    step = step - 1;
+                    step = step * step * step + 1;
+                    animation->child->rect.x = animation->keyRect.x + (int)((target->rect.x - animation->keyRect.x) * step);
+                    animation->child->rect.y = animation->keyRect.y + (int)((target->rect.y - animation->keyRect.y) * step);
+                }
+                if (animation->animationFlags & ITU_ANIM_SCALE)
+                {
+                    if (!(animation->animationFlags & ITU_ANIM_MOVE) && !(animation->animationFlags & ITU_ANIM_EASE_IN) && !(animation->animationFlags & ITU_ANIM_EASE_OUT) && (animation->animationFlags & ITU_ANIM_SCALE_CENTER))
+                    {
+                        animation->child->rect.x = animation->keyRect.x - (target->rect.width - animation->keyRect.width) / 2 * frame / animation->totalframe;
+                        animation->child->rect.y = animation->keyRect.y - (target->rect.height - animation->keyRect.height) / 2 * frame / animation->totalframe;
+                        animation->child->rect.width = animation->keyRect.width + (target->rect.width - animation->keyRect.width) * frame / animation->totalframe;
+                        animation->child->rect.height = animation->keyRect.height + (target->rect.height - animation->keyRect.height) * frame / animation->totalframe;
+                    }
+                    else if (animation->animationFlags & ITU_ANIM_EASE_IN)
+                    {
+                        float step = (float)frame / animation->totalframe;
+                        step = step * step * step;
+                        animation->child->rect.width = animation->keyRect.width + (int)((target->rect.width - animation->keyRect.width) * step);
+                        animation->child->rect.height = animation->keyRect.height + (int)((target->rect.height - animation->keyRect.height) * step);
+                    }
+                    else if (animation->animationFlags & ITU_ANIM_EASE_OUT)
+                    {
+                        float step = (float)frame / animation->totalframe;
+                        step = step - 1;
+                        step = step * step * step + 1;
+                        animation->child->rect.width = animation->keyRect.width + (int)((target->rect.width - animation->keyRect.width) * step);
+                        animation->child->rect.height = animation->keyRect.height + (int)((target->rect.height - animation->keyRect.height) * step);
+                    }
+                    else
+                    {
+                        animation->child->rect.width = animation->keyRect.width + (target->rect.width - animation->keyRect.width) * frame / animation->totalframe;
+                        animation->child->rect.height = animation->keyRect.height + (target->rect.height - animation->keyRect.height) * frame / animation->totalframe;
+                        //printf("n=%s c=%d/%d t=%d/%d k=%d/%d f=%d/%d\n", target->name, animation->child->rect.width, animation->child->rect.height, target->rect.width, target->rect.height, animation->keyRect.width, animation->keyRect.height, frame, animation->totalframe);
+                    }
+                }
+                ituWidgetDraw(animation->child, dest, x, y, alpha / 5);
+
+                memcpy(&animation->child->rect, &currRect, sizeof (ITURectangle));
+            }
+        }
+
         ituWidgetDraw(animation->child, dest, x, y, alpha);
 
         ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
@@ -349,10 +440,7 @@ void ituAnimationOnAction(ITUWidget* widget, ITUActionType action, char* param)
         }
         else
         {
-            if (animation->child)
-                animation->playing = true;
-            else
-                ituAnimationReversePlay(animation, -1);
+            ituAnimationReversePlay(animation, animation->keyframe);
         }
         break;
 
@@ -380,6 +468,7 @@ void ituAnimationOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituAnimationInit(ITUAnimation* animation)
 {
     assert(animation);
+    ITU_ASSERT_THREAD();
 
     memset(animation, 0, sizeof (ITUAnimation));
 
@@ -415,6 +504,7 @@ void ituAnimationLoad(ITUAnimation* animation, uint32_t base)
 void ituAnimationSetDelay(ITUAnimation* animation, int delay)
 {
     assert(animation);
+    ITU_ASSERT_THREAD();
 
     animation->delay           = delay;
     animation->widget.dirty    = true;
@@ -425,6 +515,7 @@ void ituAnimationPlay(ITUAnimation* animation, int keyframe)
     ITUWidget* target;
 
     assert(animation);
+    ITU_ASSERT_THREAD();
 
 	animation->animationFlags &= ~ITU_ANIM_REVERSE;
 
@@ -434,11 +525,11 @@ void ituAnimationPlay(ITUAnimation* animation, int keyframe)
         {
             ituAnimationReset(animation);
         }
-        ituAnimationGotoKeyframe(animation, keyframe);
+        ituAnimationGoto(animation, keyframe);
     }
     else
     {
-        ituAnimationGotoKeyframe(animation, animation->keyframe);
+        ituAnimationGoto(animation, animation->keyframe);
     }
 
     target = (ITUWidget*) itcTreeGetChildAt(animation, animation->keyframe + 1);
@@ -477,6 +568,7 @@ void ituAnimationPlay(ITUAnimation* animation, int keyframe)
 void ituAnimationStop(ITUAnimation* animation)
 {
     assert(animation);
+    ITU_ASSERT_THREAD();
 
     if (!animation->playing)
         return;
@@ -485,11 +577,12 @@ void ituAnimationStop(ITUAnimation* animation)
     animation->widget.dirty    = true;
 }
 
-void ituAnimationGotoKeyframe(ITUAnimation* animation, int keyframe)
+void ituAnimationGoto(ITUAnimation* animation, int keyframe)
 {
     ITUWidget* target;
 
     assert(animation);
+    ITU_ASSERT_THREAD();
 
     animation->frame = 0;
 
@@ -609,6 +702,7 @@ void ituAnimationGotoKeyframe(ITUAnimation* animation, int keyframe)
 void ituAnimationGotoFrame(ITUAnimation* animation, int frame)
 {
     ITUWidget* target = NULL;
+    ITU_ASSERT_THREAD();
 
     if (frame < 0 || frame > animation->totalframe)
         return;
@@ -707,18 +801,10 @@ void ituAnimationGotoFrame(ITUAnimation* animation, int frame)
     }
 }
 
-void ituAnimationGoto(ITUAnimation* animation, int frame)
-{
-    int count = itcTreeGetChildCount(animation);
-
-    if (count == 2)
-        ituAnimationGotoFrame(animation, frame);
-    else
-        ituAnimationGotoKeyframe(animation, frame);
-}
-
 void ituAnimationReset(ITUAnimation* animation)
 {
+    ITU_ASSERT_THREAD();
+
     ituAnimationStop(animation);
     animation->frame = 0;
     if (animation->child)
@@ -740,20 +826,23 @@ void ituAnimationReset(ITUAnimation* animation)
 void ituAnimationReversePlay(ITUAnimation* animation, int keyframe)
 {
     ITUWidget* target = NULL;
-    int count = itcTreeGetChildCount(animation);
+    int count;
 
     assert(animation);
+    ITU_ASSERT_THREAD();
+
+    count = itcTreeGetChildCount(animation);
 
     if (count < 2)
         return;
 
     if (keyframe >= 0)
     {
-        ituAnimationGotoKeyframe(animation, keyframe);
+        ituAnimationGoto(animation, keyframe);
     }
     else
     {
-        ituAnimationGotoKeyframe(animation, count - 1);
+        ituAnimationGoto(animation, count - 1);
     }
 
     if (animation->keyframe - 1 >= 0)

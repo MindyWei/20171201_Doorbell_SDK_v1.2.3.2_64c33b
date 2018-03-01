@@ -11,6 +11,7 @@ void ituShadowExit(ITUWidget* widget)
 {
     ITUShadow* shadow = (ITUShadow*) widget;
     assert(shadow);
+    ITU_ASSERT_THREAD();
 
     if (shadow->maskSurf)
     {
@@ -29,6 +30,7 @@ bool ituShadowClone(ITUWidget* widget, ITUWidget** cloned)
     ITUSurface* surf;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -170,6 +172,7 @@ void ituShadowDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t al
 void ituShadowInit(ITUShadow* shadow)
 {
     assert(shadow);
+    ITU_ASSERT_THREAD();
 
     memset(shadow, 0, sizeof (ITUShadow));
 

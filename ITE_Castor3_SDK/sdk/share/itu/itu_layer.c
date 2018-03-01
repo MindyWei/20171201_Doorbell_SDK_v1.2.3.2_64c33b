@@ -12,6 +12,7 @@ void ituLayerExit(ITUWidget* widget)
 {
     ITULayer* layer = (ITULayer*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituWidgetExitImpl(widget);
 
@@ -26,6 +27,7 @@ bool ituLayerClone(ITUWidget* widget, ITUWidget** cloned)
 {
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -193,6 +195,7 @@ void ituLayerOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituLayerInit(ITULayer* layer)
 {
     assert(layer);
+    ITU_ASSERT_THREAD();
 
     memset(layer, 0, sizeof (ITULayer));
 
@@ -220,6 +223,12 @@ void ituLayerLoad(ITULayer* layer, uint32_t base)
     ituWidgetSetOnAction(layer, ituLayerOnAction);
 }
 
+static void LayerHideDelay(int arg)
+{
+    ITULayer* leaveLayer = (ITULayer*)arg;
+    ituWidgetSetVisible(leaveLayer, false);
+}
+
 static void LayerGoto(int arg)
 {
     int* args = (int*) arg;
@@ -233,12 +242,20 @@ static void LayerGoto(int arg)
         if (ituWidgetIsVisible(node))
         {
             ITULayer* l = (ITULayer*)node;
-            ituWidgetSetVisible(l, false);
+
+            if (l->hideDelay > 0)
+            {
+                ituSceneExecuteCommand(ituScene, l->hideDelay, LayerHideDelay, (int)l);
+            }
+            else
+            {
+                ituWidgetSetVisible(l, false);
+            }
         }
     }
+    ituWidgetSetCustomData(leaveLayer, -100);
 
     ituWidgetSetVisible(layer, true);
-	ituWidgetSetCustomData(leaveLayer, -100);
 	ituWidgetSetCustomData(layer, 1);
     ituExecActions((ITUWidget*)layer, layer->actions, ITU_EVENT_ENTER, leaveLayer ? (int)leaveLayer->widget.name : 0);
     ituExecActions((ITUWidget*)layer, layer->actions, ITU_EVENT_DELAY, 0);
@@ -253,6 +270,7 @@ void ituLayerGoto(ITULayer* layer)
     ITULayer* visibleLayer = NULL;
     ITCTree* node;
     assert(ituScene);
+    ITU_ASSERT_THREAD();
 
     for (node = &ituScene->root->tree; node; node = node->sibling)
     {
@@ -350,6 +368,7 @@ void ituLayerEnableOthers(ITULayer* layer)
     ITCTree* node;
     ITULayer* leaveLayer = NULL;
     assert(ituScene);
+    ITU_ASSERT_THREAD();
 
     for (node = &ituScene->root->tree; node; node = node->sibling)
     {
@@ -363,6 +382,7 @@ void ituLayerDisableOthers(ITULayer* layer)
     ITCTree* node;
     ITULayer* leaveLayer = NULL;
     assert(ituScene);
+    ITU_ASSERT_THREAD();
 
     for (node = &ituScene->root->tree; node; node = node->sibling)
     {
@@ -373,11 +393,13 @@ void ituLayerDisableOthers(ITULayer* layer)
 
 void ituLayerLoadExternal(ITULayer* layer)
 {
+    ITU_ASSERT_THREAD();
     ituWidgetUpdate(layer, ITU_EVENT_LOAD_EXTERNAL, 0, 0, 0);
 }
 
 void ituLayerReleaseExternal(ITULayer* layer)
 {
+    ITU_ASSERT_THREAD();
     free(layer->buffer);
     layer->buffer = NULL;
 }
@@ -386,6 +408,7 @@ void ituLayerLoadFont(ITULayer* layer)
 {
 #ifdef CFG_ITU_FT_CACHE_SIZE
     void(*DrawGlyphPrev)(ITUSurface* surf, int x, int y, ITUGlyphFormat format, const uint8_t* bitmap, int w, int h) = ituDrawGlyph;
+    ITU_ASSERT_THREAD();
 
     ituDrawGlyph = ituDrawGlyphEmpty;
 

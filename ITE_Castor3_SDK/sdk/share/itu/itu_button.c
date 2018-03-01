@@ -18,6 +18,7 @@ void ituButtonExit(ITUWidget* widget)
 {
     ITUButton* btn = (ITUButton*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (btn->pressSurf)
     {
@@ -40,6 +41,7 @@ bool ituButtonClone(ITUWidget* widget, ITUWidget** cloned)
     ITUSurface* surf;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -291,14 +293,7 @@ bool ituButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg
     }
     else if (ev == ITU_EVENT_LAYOUT)
     {
-        if (widget->active)
-        {
-            ituWidgetSetColor(widget, btn->focusColor.alpha, btn->focusColor.red, btn->focusColor.green, btn->focusColor.blue);
-        }
-        else
-        {
-            ituWidgetSetColor(widget, btn->bgColor.alpha, btn->bgColor.red, btn->bgColor.green, btn->bgColor.blue);
-        }
+        ituButtonSetPressed(btn, btn->pressed);
         result = widget->dirty = true;
     }
     return result;
@@ -454,6 +449,7 @@ void ituButtonOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituButtonInit(ITUButton* btn)
 {
     assert(btn);
+    ITU_ASSERT_THREAD();
 
     memset(btn, 0, sizeof (ITUButton));
 
@@ -515,14 +511,15 @@ void ituButtonSetPressed(ITUButton* btn, bool pressed)
 {
     ITUWidget* widget = (ITUWidget*) btn;
     assert(btn);
+    ITU_ASSERT_THREAD();
 
-    if (pressed)
+    if (pressed && btn->pressColor.alpha > 0)
     {
         ituWidgetSetColor(widget, btn->pressColor.alpha, btn->pressColor.red, btn->pressColor.green, btn->pressColor.blue);
     }
     else
     {
-        if (widget->active)
+        if (widget->active && btn->focusColor.alpha > 0)
         {
             ituWidgetSetColor(widget, btn->focusColor.alpha, btn->focusColor.red, btn->focusColor.green, btn->focusColor.blue);
         }
@@ -538,6 +535,7 @@ void ituButtonSetPressed(ITUButton* btn, bool pressed)
 void ituButtonSetStringImpl(ITUButton* btn, char* string)
 {
     assert(btn);
+    ITU_ASSERT_THREAD();
 
     ituTextSetString(&btn->text, string);
     ituTextResize(&btn->text);
@@ -575,6 +573,8 @@ void ituButtonLoadStaticData(ITUButton* btn)
 
 void ituButtonReleaseSurface(ITUButton* btn)
 {
+    ITU_ASSERT_THREAD();
+
     if (btn->pressSurf)
     {
         ituSurfaceRelease(btn->pressSurf);

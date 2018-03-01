@@ -11,8 +11,8 @@
 #define JPG_MAX_WIDTH                  16376
 #define JPG_MAX_HEIGHT                 16376
 
-#define MJPG_MAX_WIDTH                 800
-#define MJPG_MAX_HEIGHT                600
+#define MJPG_MAX_WIDTH                 1280//800
+#define MJPG_MAX_HEIGHT                720//600
 
 #if (JPG_CHECK_CALLER)
     #undef iteJpg_CreateHandle
@@ -1094,6 +1094,7 @@ _jpg_enc_fire(
 
             if( pJpgDev->pExifInfo ) 
             {
+                printf("++++++++jpg1=%d\n", totalEncLeng);
                 AsyncSaveAllAddr =malloc(totalEncLeng);    
                 if(AsyncSaveAllAddr ==NULL)        
                 {printf("open AsyncSaveAllAddr fail\n");}
@@ -1104,8 +1105,10 @@ _jpg_enc_fire(
 
                 memcpy(AsyncSaveAllAddr+2+pJpgDev->exifInfoSize+(pJpgDev->pHJComm->jHdrDataSize - 2) ,  pJpgDev->pHJComm->pSysBsBufAddr,pJpgDev->pHJComm->sysValidBsBufSize);
                 pJOutStreamDesc->jOut_buf(pHOutJStream, AsyncSaveAllAddr, totalEncLeng, 0);
+                free(AsyncSaveAllAddr);
             }else
             {
+                printf("++++++++jpg2=%d\n", totalEncLeng);
                 AsyncSaveAllAddr =malloc(totalEncLeng);
                 if(AsyncSaveAllAddr ==NULL)        
                 {printf("open AsyncSaveAllAddr fail\n");}
@@ -1113,6 +1116,7 @@ _jpg_enc_fire(
                 memcpy(AsyncSaveAllAddr ,  pJpgDev->pHJComm->pJHdrData ,pJpgDev->pHJComm->jHdrDataSize);
                 memcpy(AsyncSaveAllAddr+pJpgDev->pHJComm->jHdrDataSize ,  pJpgDev->pHJComm->pSysBsBufAddr,pJpgDev->pHJComm->sysValidBsBufSize);
                 pJOutStreamDesc->jOut_buf(pHOutJStream, AsyncSaveAllAddr, totalEncLeng, 0);
+                free(AsyncSaveAllAddr);
             }
         }
 

@@ -314,6 +314,7 @@ void ithStorageSelect(ITHStorage storage)
                     ithGpioSetMode(num, mode);
                     ithGpioCtrlEnable(num, ITH_GPIO_PULL_ENABLE); /* sd io pull up */
                     ithGpioCtrlEnable(num, ITH_GPIO_PULL_UP);
+					ithGpioSetDriving(num,ITH_GPIO_DRIVING_3);  /* sd io driving set high level*/
                 }
             }
         }

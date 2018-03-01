@@ -60,6 +60,7 @@ void ituWipeEffectStart(struct ITUEffectTag* effect, struct ITUWidgetTag* widget
     ITUWipeEffect* we = (ITUWipeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStartImpl(effect, widget);
     ituWidgetSetBound(widget, widget->rect.x, widget->rect.y, widget->rect.width, widget->rect.height);
@@ -70,6 +71,7 @@ void ituWipeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widget)
     ITUWipeEffect* we = (ITUWipeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStopImpl(effect, widget);
     ituWidgetSetBound(widget, 0, 0, 0, 0);
@@ -78,6 +80,7 @@ void ituWipeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widget)
 void ituWipeEffectInit(ITUWipeEffect* we, ITUWipeType type)
 {
     assert(we);
+    ITU_ASSERT_THREAD();
 
     memset(we, 0, sizeof (ITUWipeEffect));
 

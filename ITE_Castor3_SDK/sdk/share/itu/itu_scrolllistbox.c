@@ -687,6 +687,7 @@ void ituScrollListBoxOnAction(ITUWidget* widget, ITUActionType action, char* par
 void ituScrollListBoxInit(ITUScrollListBox* scrolllistbox, int width)
 {
     assert(scrolllistbox);
+    ITU_ASSERT_THREAD();
 
     memset(scrolllistbox, 0, sizeof (ITUScrollListBox));
 
@@ -710,20 +711,24 @@ void ituScrollListBoxLoad(ITUScrollListBox* scrolllistbox, uint32_t base)
 
 int ituScrollListBoxGetItemCount(ITUScrollListBox* scrolllistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildCount(scrolllistbox) / 3;
 }
 
 ITCTree* ituScrollListBoxGetLastPageItem(ITUScrollListBox* scrolllistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolllistbox, 0);
 }
 
 ITCTree* ituScrollListBoxGetCurrPageItem(ITUScrollListBox* scrolllistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolllistbox, itcTreeGetChildCount(scrolllistbox) / 3);
 }
 
 ITCTree* ituScrollListBoxGetNextPageItem(ITUScrollListBox* scrolllistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(scrolllistbox, itcTreeGetChildCount(scrolllistbox) * 2 / 3);
 }

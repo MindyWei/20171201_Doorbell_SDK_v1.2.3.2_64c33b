@@ -11,6 +11,7 @@ bool ituPopupButtonClone(ITUWidget* widget, ITUWidget** cloned)
     ITUPopupButton* popupButton = (ITUPopupButton*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -31,6 +32,7 @@ bool ituPopupButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, in
     bool result = false;
     ITUButton* btn = (ITUButton*) widget;
     ITUPopupButton* popupButton = (ITUPopupButton*) widget;
+	ITUText* text = &(btn->text);
     ITUEvent response_key = widget->flags & ITU_RESPONSE_TO_UP_KEY ? ITU_EVENT_MOUSEUP : ITU_EVENT_MOUSEDOWN;
     assert(popupButton);
 
@@ -57,6 +59,9 @@ bool ituPopupButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, in
                     widget->rect.y = popupButton->orgRect.y - popupButton->orgRect.height * popupButton->incPercent / (popupButton->totalframe * 100);
                     widget->rect.width = popupButton->orgRect.width + popupButton->orgRect.width * popupButton->incPercent / (popupButton->totalframe * 100 / 2);
                     widget->rect.height = popupButton->orgRect.height + popupButton->orgRect.height * popupButton->incPercent / (popupButton->totalframe * 100 / 2);
+
+					//Bless
+					popupButton->orgFontSize = text->fontHeight;
 
                     widget->alpha = popupButton->orgAlpha * popupButton->alphaPercent / 100;
 
@@ -86,6 +91,7 @@ bool ituPopupButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, in
                 widget->alpha = popupButton->orgAlpha;
 
                 popupButton->frame = 0;
+				ituTextSetFontSize(text, popupButton->orgFontSize);
 
                 result |= ituExecActions((ITUWidget*)popupButton, popupButton->btn.actions, ITU_EVENT_PRESS, 0);
             }
@@ -104,6 +110,9 @@ bool ituPopupButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, in
                 widget->rect.height = popupButton->orgRect.height + popupButton->orgRect.height * step * popupButton->incPercent / (popupButton->totalframe * 100 / 2);
 
                 widget->alpha = popupButton->orgAlpha * popupButton->alphaPercent / 100;
+
+				if (popupButton->textScaleFactor > 0)
+					ituTextSetFontSize(text, popupButton->orgFontSize * widget->rect.height / popupButton->orgRect.height * (popupButton->textScaleFactor + 100) / 100);
             }
             ituWidgetUpdate(widget, ITU_EVENT_LAYOUT, 0, 0, 0);
             result = widget->dirty = true;
@@ -115,6 +124,7 @@ bool ituPopupButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, in
 void ituPopupButtonInit(ITUPopupButton* popupButton)
 {
     assert(popupButton);
+    ITU_ASSERT_THREAD();
 
     memset(popupButton, 0, sizeof (ITUPopupButton));
 
@@ -129,6 +139,11 @@ void ituPopupButtonInit(ITUPopupButton* popupButton)
 void ituPopupButtonLoad(ITUPopupButton* popupButton, uint32_t base)
 {
     assert(popupButton);
+
+	if (popupButton->orgFontSize < 0)
+		popupButton->orgFontSize = 0;
+	else if (popupButton->orgFontSize > 50)
+		popupButton->orgFontSize = 50;
 
     ituButtonLoad(&popupButton->btn, base);
     ituWidgetSetClone(popupButton, ituPopupButtonClone);

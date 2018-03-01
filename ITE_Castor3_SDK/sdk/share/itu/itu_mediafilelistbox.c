@@ -293,6 +293,7 @@ void ituMediaFileListBoxExit(ITUWidget* widget)
 {
     ITUMediaFileListBox* mflistbox = (ITUMediaFileListBox*) widget;
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     if (mflistbox->mflistboxFlags & ITU_FILELIST_BUSYING)
         mflistbox->mflistboxFlags |= ITU_FILELIST_DESTROYING;
@@ -449,6 +450,7 @@ void ituMediaFileListBoxOnLoadPage(ITUListBox* listbox, int pageIndex)
 void ituMediaFileListBoxInit(ITUMediaFileListBox* mflistbox, int width, char* path)
 {
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     memset(mflistbox, 0, sizeof (ITUMediaFileListBox));
 
@@ -503,6 +505,7 @@ void ituMediaFileListSetPath(ITUMediaFileListBox* mflistbox, char* path)
     pthread_t task;
     pthread_attr_t attr;
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     if ((mflistbox->mflistboxFlags & ITU_FILELIST_BUSYING) ||
         (mflistbox->mflistboxFlags & ITU_FILELIST_DESTROYING))
@@ -536,6 +539,7 @@ ITUScrollText* ituMediaFileListPlay(ITUMediaFileListBox* mflistbox)
     ITUWidget* widget = (ITUWidget*) mflistbox;
     ITUListBox* listbox = (ITUListBox*) mflistbox;
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     if ((mflistbox->mflistboxFlags & ITU_FILELIST_BUSYING) ||
         (mflistbox->mflistboxFlags & ITU_FILELIST_DESTROYING) ||
@@ -643,6 +647,7 @@ ITUScrollText* ituMediaFileListPrev(ITUMediaFileListBox* mflistbox)
     ITUWidget* widget = (ITUWidget*) mflistbox;
     ITUListBox* listbox = (ITUListBox*) mflistbox;
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     if (listbox->focusIndex == -1)
         return ituMediaFileListPlay(mflistbox);
@@ -739,6 +744,7 @@ ITUScrollText* ituMediaFileListNext(ITUMediaFileListBox* mflistbox)
     ITUWidget* widget = (ITUWidget*) mflistbox;
     ITUListBox* listbox = (ITUListBox*) mflistbox;
     assert(mflistbox);
+    ITU_ASSERT_THREAD();
 
     if (listbox->focusIndex == -1)
         return ituMediaFileListPlay(mflistbox);

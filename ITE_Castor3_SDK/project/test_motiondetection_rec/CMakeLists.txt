@@ -20,6 +20,7 @@ add_executable(${CMAKE_PROJECT_NAME}
     jpeg_enc.c
     isp.c
     queue.c
+	user_pr2000.c
 )
 
 # build

@@ -186,52 +186,85 @@ static void SWSetRotation(ITURotation rot)
         {
             lcdSurf->width  = ithLcdGetHeight();
             lcdSurf->height = ithLcdGetWidth();
-            lcdSurf->pitch  = ithLcdGetHeight() * CFG_LCD_BPP;
+            lcdSurf->pitch = ithLcdGetPitch() * lcdSurf->width / lcdSurf->height;
             lcdSurf->addr   = swLcdAddr;
         }
-        lcdSurf->addr = itpVmemAlloc(ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+        lcdSurf->addr = itpVmemAlloc(ithLcdGetPitch() * ithLcdGetHeight());
     }
     swRotation = rot;
 }
 
 static void SWDrawGlyph(ITUSurface *surf, int x, int y, ITUGlyphFormat format, const uint8_t *bitmap, int w, int h)
 {
-    uint16_t *base;
-    int      i, j;
+    int i, j;
 
-    base = (uint16_t *)ituLockSurface(surf, x, y, w, h);
-
-    if (format == ITU_GLYPH_1BPP)
+    if (surf->format == ITU_RGB565)
     {
-        for (i = 0; i < h; i++)
+        uint16_t* base = (uint16_t *)ituLockSurface(surf, x, y, w, h);
+
+        if (format == ITU_GLYPH_1BPP)
         {
-            if (surf->flags & ITU_CLIPPING)
+            for (i = 0; i < h; i++)
             {
-                if (OUT_OF_RANGE(y + i, surf->clipping.y, surf->clipping.height))
-                    continue;
-            }
-
-            for (j = 0; j < w; j++)
-            {
-                int     index;
-                uint8_t c, mask, v;
-
                 if (surf->flags & ITU_CLIPPING)
                 {
-                    if (OUT_OF_RANGE(x + j, surf->clipping.x, surf->clipping.width))
+                    if (OUT_OF_RANGE(y + i, surf->clipping.y, surf->clipping.height))
                         continue;
                 }
-                index = ((w + 7) / 8) * i + j / 8;
-                c     = bitmap[index];
-                mask  = (0x80 >> (j % 8));
-                v     = c & mask;
-                if (v)
-                    base[surf->width * i + j] = ITH_RGB565(surf->fgColor.red, surf->fgColor.green, surf->fgColor.blue);
+
+                for (j = 0; j < w; j++)
+                {
+                    int     index;
+                    uint8_t c, mask, v;
+
+                    if (surf->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(x + j, surf->clipping.x, surf->clipping.width))
+                            continue;
+                    }
+                    index = ((w + 7) / 8) * i + j / 8;
+                    c = bitmap[index];
+                    mask = (0x80 >> (j % 8));
+                    v = c & mask;
+                    if (v)
+                        base[surf->width * i + j] = ITH_RGB565(surf->fgColor.red, surf->fgColor.green, surf->fgColor.blue);
+                }
             }
         }
+        else
+        {
+            for (i = 0; i < h; i++)
+            {
+                if (surf->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(y + i, surf->clipping.y, surf->clipping.height))
+                        continue;
+                }
+
+                for (j = 0; j < (int)w; j++)
+                {
+                    int c, bc, r, g, b;
+
+                    if (surf->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(x + j, surf->clipping.x, surf->clipping.width))
+                            continue;
+                    }
+                    c = bitmap[w * i + j];
+                    bc = base[surf->width * i + j];
+                    r = ((((bc & 0xf800) >> 11) << 3) * (255 - c) + surf->fgColor.red * c) / 255;
+                    g = ((((bc & 0x07e0) >> 5) << 2) * (255 - c) + surf->fgColor.green * c) / 255;
+                    b = (((bc & 0x001f) << 3) * (255 - c) + surf->fgColor.blue * c) / 255;
+                    base[surf->width * i + j] = ITH_RGB565(r, g, b);
+                }
+            }
+        }
+        ituUnlockSurface(surf);
     }
-    else
+    else if (surf->format == ITU_ARGB8888)
     {
+        uint32_t* base = (uint32_t *)ituLockSurface(surf, x, y, w, h);
+
         for (i = 0; i < h; i++)
         {
             if (surf->flags & ITU_CLIPPING)
@@ -242,23 +275,24 @@ static void SWDrawGlyph(ITUSurface *surf, int x, int y, ITUGlyphFormat format, c
 
             for (j = 0; j < (int)w; j++)
             {
-                int c, bc, r, g, b;
+                int c, bc, a, r, g, b;
 
                 if (surf->flags & ITU_CLIPPING)
                 {
                     if (OUT_OF_RANGE(x + j, surf->clipping.x, surf->clipping.width))
                         continue;
                 }
-                c                         = bitmap[w * i + j];
-                bc                        = base[surf->width * i + j];
-                r                         = ((((bc & 0xf800) >> 11) << 3) * (255 - c) + surf->fgColor.red * c) / 255;
-                g                         = ((((bc & 0x07e0) >> 5) << 2) * (255 - c) + surf->fgColor.green * c) / 255;
-                b                         = (((bc & 0x001f) << 3) * (255 - c) + surf->fgColor.blue * c) / 255;
-                base[surf->width * i + j] = ITH_RGB565(r, g, b);
+                c = bitmap[w * i + j];
+                bc = base[surf->width * i + j];
+                a = (((bc & 0xFF000000) >> 24) * (255 - c) + surf->fgColor.alpha * c) / 255;
+                r = (((bc & 0x00FF0000) >> 16) * (255 - c) + surf->fgColor.red * c) / 255;
+                g = (((bc & 0x0000FF00) >> 8) * (255 - c) + surf->fgColor.green * c) / 255;
+                b = ((bc & 0x000000FF) * (255 - c) + surf->fgColor.blue * c) / 255;
+                base[surf->width * i + j] = ITH_ARGB8888(a, r, g, b);
             }
         }
+        ituUnlockSurface(surf);
     }
-    ituUnlockSurface(surf);
 }
 
 static void SWBitBlt(ITUSurface *dest, int dx, int dy, int w, int h, ITUSurface *src, int sx, int sy)
@@ -267,6 +301,7 @@ static void SWBitBlt(ITUSurface *dest, int dx, int dy, int w, int h, ITUSurface 
     int dh = dest->height - dy;
     int sw = src->width - sx;
     int sh = src->height - sy;
+    int x, y;
 
     if (w > dw)
         w = dw;
@@ -279,7 +314,6 @@ static void SWBitBlt(ITUSurface *dest, int dx, int dy, int w, int h, ITUSurface 
 
     if (dest->format == ITU_RGB565)
     {
-        int      x, y;
         uint16_t *destPtr = (uint16_t *)ituLockSurface(dest, dx, dy, w, h);
 
         if (src->format == ITU_RGB565)
@@ -461,16 +495,149 @@ static void SWBitBlt(ITUSurface *dest, int dx, int dy, int w, int h, ITUSurface 
         ituUnlockSurface(src);
         ituUnlockSurface(dest);
     }
+    else if (dest->format == ITU_ARGB8888)
+    {
+        if (src->format == ITU_ARGB8888)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint32_t *srcPtr = (uint32_t *)ituLockSurface(src, sx, sy, w, h);
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, ac, a, r, g, b;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    sc = srcPtr[src->width * y + x];
+                    dc = destPtr[dest->width * y + x];
+                    ac = sc >> 24;
+                    a = (((dc & 0xFF000000) >> 24) * (255 - ac) + 255 * ac) / 255;
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - ac) + ((sc & 0x00FF0000) >> 16) * ac) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - ac) + ((sc & 0x0000FF00) >> 8) * ac) / 255;
+                    b = ((dc & 0x000000FF) * (255 - ac) + (sc & 0x000000FF) * ac) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+            ituUnlockSurface(src);
+            ituUnlockSurface(dest);
+        }
+        else if (src->format == ITU_RGB565A8)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, a, r, g, b;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    sc = srcPtr[src->width * y + x];
+                    dc = destPtr[dest->width * y + x];
+                    a = *((uint8_t*)srcPtr + src->pitch * src->height + src->width * y + x);
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - a) + (((sc & 0xf800) >> 11) << 3) * a) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - a) + (((sc & 0x07e0) >> 5) << 2) * a) / 255;
+                    b = ((dc & 0x000000FF) * (255 - a) + ((sc & 0x001f) << 3) * a) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+            ituUnlockSurface(src);
+            ituUnlockSurface(dest);
+        }
+        else if (src->format == ITU_RGB565)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    int sc, r, g, b;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    sc = srcPtr[src->width * y + x];
+                    r = ((sc & 0xf800) >> 11) << 3;
+                    g = ((sc & 0x07e0) >> 5) << 2;
+                    b = (sc & 0x001f) << 3;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(255, r, g, b);
+                }
+            }
+        }
+        else if (src->format == ITU_ARGB4444)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, ac, a, r, g, b;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    sc = srcPtr[src->width * y + x];
+                    dc = destPtr[dest->width * y + x];
+                    ac = (sc & 0xF000) >> 12;
+                    ac |= ac << 4;
+                    a = (((dc & 0xFF000000) >> 24) * (255 - ac) + 255 * ac) / 255;
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - ac) + (((sc & 0x0F00) >> 8) << 4) * ac) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - ac) + (((sc & 0x00F0) >> 4) << 4) * ac) / 255;
+                    b = ((dc & 0x000000FF) * (255 - ac) + ((sc & 0x000F) << 4) * ac) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+        }
+    }
 }
 
 static void SWStretchBlt(ITUSurface *dest, int dx, int dy, int dw, int dh, ITUSurface *src, int sx, int sy, int sw, int sh)
 {
     int w = dw;
     int h = dh;
+    int x, y;
 
     if (dest->format == ITU_RGB565)
     {
-        int      x, y;
         uint16_t *destPtr = (uint16_t *)ituLockSurface(dest, dx, dy, w, h);
 
         if (src->format == ITU_RGB565)
@@ -668,6 +835,114 @@ static void SWStretchBlt(ITUSurface *dest, int dx, int dy, int dw, int dh, ITUSu
         }
         ituUnlockSurface(src);
         ituUnlockSurface(dest);
+    }
+    else if (dest->format == ITU_ARGB8888)
+    {
+        if (src->format == ITU_ARGB8888)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint32_t *srcPtr = (uint32_t *)ituLockSurface(src, sx, sy, w, h);
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, a, r, g, b;
+                    int      xx, yy;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    xx = x * sw / dw;
+                    yy = y * sh / dh;
+                    sc = srcPtr[src->width * yy + xx];
+                    dc = destPtr[dest->width * y + x];
+                    a = sc >> 24;
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - a) + ((sc & 0x00FF0000) >> 16) * a) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - a) + ((sc & 0x0000FF00) >> 8) * a) / 255;
+                    b = ((dc & 0x000000FF) * (255 - a) + (sc & 0x000000FF) * a) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+            ituUnlockSurface(src);
+            ituUnlockSurface(dest);
+        }
+        else if (src->format == ITU_RGB565A8)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, a, r, g, b;
+                    int xx, yy;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    xx = x * sw / dw;
+                    yy = y * sh / dh;
+                    sc = srcPtr[src->width * yy + xx];
+                    dc = destPtr[dest->width * y + x];
+                    a = *((uint8_t*)srcPtr + src->pitch * src->height + src->width * y + x);
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - a) + (((sc & 0xf800) >> 11) << 3) * a) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - a) + (((sc & 0x07e0) >> 5) << 2) * a) / 255;
+                    b = ((dc & 0x000000FF) * (255 - a) + ((sc & 0x001f) << 3) * a) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+            ituUnlockSurface(src);
+            ituUnlockSurface(dest);
+        }
+        else if (src->format == ITU_RGB565)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    int sc, r, g, b;
+                    int xx, yy;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    xx = x * sw / dw;
+                    yy = y * sh / dh;
+                    sc = srcPtr[src->width * yy + xx];
+                    r = ((sc & 0xf800) >> 11) << 3;
+                    g = ((sc & 0x07e0) >> 5) << 2;
+                    b = (sc & 0x001f) << 3;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(255, r, g, b);
+                }
+            }
+        }
     }
 }
 
@@ -996,6 +1271,40 @@ static void SWAlphaBlend(ITUSurface *dest, int dx, int dy, int w, int h, ITUSurf
                     r                            = (((dc & 0x00FF0000) >> 16) * (255 - alpha) + (((sc & 0xf800) >> 11) << 3) * alpha) / 255;
                     g                            = (((dc & 0x0000FF00) >> 8) * (255 - alpha) + (((sc & 0x07e0) >> 5) << 2) * alpha) / 255;
                     b                            = ((dc & 0x000000FF) * (255 - alpha) + ((sc & 0x001f) << 3) * alpha) / 255;
+                    destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
+                }
+            }
+            ituUnlockSurface(src);
+            ituUnlockSurface(dest);
+        }
+        else if (src->format == ITU_RGB565)
+        {
+            uint32_t *destPtr = (uint32_t *)ituLockSurface(dest, dx, dy, w, h);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, sx, sy, w, h);
+            for (y = 0; y < h; y++)
+            {
+                if (dest->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(dy + y, dest->clipping.y, dest->clipping.height))
+                        continue;
+                }
+
+                for (x = 0; x < w; x++)
+                {
+                    uint32_t sc, dc, a, r, g, b;
+
+                    if (dest->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(dx + x, dest->clipping.x, dest->clipping.width))
+                            continue;
+                    }
+                    sc = srcPtr[src->width * y + x];
+                    dc = destPtr[dest->width * y + x];
+                    a = 255;
+                    a = (((dc & 0xFF000000) >> 24) * (255 - alpha) + a * alpha) / 255;
+                    r = (((dc & 0x00FF0000) >> 16) * (255 - alpha) + (((sc & 0xf800) >> 11) << 3) * alpha) / 255;
+                    g = (((dc & 0x0000FF00) >> 8) * (255 - alpha) + (((sc & 0x07e0) >> 5) << 2) * alpha) / 255;
+                    b = ((dc & 0x000000FF) * (255 - alpha) + ((sc & 0x001f) << 3) * alpha) / 255;
                     destPtr[dest->width * y + x] = ITH_ARGB8888(a, r, g, b);
                 }
             }
@@ -2048,7 +2357,7 @@ static void SWFlip(ITUSurface *surf)
         if (lcdSurf->format == ITU_RGB565 || ITU_ARGB1555 || ITU_ARGB4444)
         {
             uint16_t *src  = (uint16_t *)ituLockSurface(lcdSurf, 0, 0, lcdSurf->width, lcdSurf->height);
-            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP, ITH_VRAM_WRITE);
+            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetPitch() * ithLcdGetHeight(), ITH_VRAM_WRITE);
 
             i = 0;
             for (x = 0; x < lcdSurf->width; x++)
@@ -2058,7 +2367,7 @@ static void SWFlip(ITUSurface *surf)
                     dest[i++] = src[lcdSurf->width * y + x];
                 }
             }
-            ithUnmapVram(dest, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+            ithUnmapVram(dest, ithLcdGetPitch() * ithLcdGetHeight());
             ituUnlockSurface(lcdSurf);
         }
     }
@@ -2070,7 +2379,7 @@ static void SWFlip(ITUSurface *surf)
         if (lcdSurf->format == ITU_RGB565 || ITU_ARGB1555 || ITU_ARGB4444)
         {
             uint16_t *src  = (uint16_t *)ituLockSurface(lcdSurf, 0, 0, lcdSurf->width, lcdSurf->height);
-            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP, ITH_VRAM_WRITE);
+            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetPitch() * ithLcdGetHeight(), ITH_VRAM_WRITE);
 
             i = 0;
             for (y = lcdSurf->height - 1; y >= 0; y--)
@@ -2080,7 +2389,7 @@ static void SWFlip(ITUSurface *surf)
                     dest[i++] = src[lcdSurf->width * y + x];
                 }
             }
-            ithUnmapVram(dest, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+            ithUnmapVram(dest, ithLcdGetPitch() * ithLcdGetHeight());
             ituUnlockSurface(lcdSurf);
         }
     }
@@ -2092,7 +2401,7 @@ static void SWFlip(ITUSurface *surf)
         if (lcdSurf->format == ITU_RGB565 || ITU_ARGB1555 || ITU_ARGB4444)
         {
             uint16_t *src  = (uint16_t *)ituLockSurface(lcdSurf, 0, 0, lcdSurf->width, lcdSurf->height);
-            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP, ITH_VRAM_WRITE);
+            uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetPitch() * ithLcdGetHeight(), ITH_VRAM_WRITE);
 
             i = 0;
             for (x = lcdSurf->width - 1; x >= 0; x--)
@@ -2102,15 +2411,15 @@ static void SWFlip(ITUSurface *surf)
                     dest[i++] = src[lcdSurf->width * y + x];
                 }
             }
-            ithUnmapVram(dest, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+            ithUnmapVram(dest, ithLcdGetPitch() * ithLcdGetHeight());
             ituUnlockSurface(lcdSurf);
         }
     }
 #ifdef SPEED_UP
     else
     {
-        uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP, ITH_VRAM_WRITE);
-        ithUnmapVram(dest, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+        uint16_t *dest = (uint16_t *)ithMapVram(swLcdAddr, ithLcdGetPitch() * ithLcdGetHeight(), ITH_VRAM_WRITE);
+        ithUnmapVram(dest, ithLcdGetPitch() * ithLcdGetHeight());
     }
 #endif
 
@@ -2125,9 +2434,9 @@ static void SWFlip(ITUSurface *surf)
 
         SelectObject(bitmapDc, bitmap);
 
-        ptr = ithMapVram(swLcdAddr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP, ITH_VRAM_READ | ITH_VRAM_WRITE);
-        memcpy(bits, ptr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
-        ithUnmapVram(ptr, ithLcdGetWidth() * ithLcdGetHeight() * CFG_LCD_BPP);
+        ptr = ithMapVram(swLcdAddr, ithLcdGetPitch() * ithLcdGetHeight(), ITH_VRAM_READ | ITH_VRAM_WRITE);
+        memcpy(bits, ptr, ithLcdGetPitch() * ithLcdGetHeight());
+        ithUnmapVram(ptr, ithLcdGetPitch() * ithLcdGetHeight());
 
         BitBlt(dc, 0, 0, ithLcdGetWidth(), ithLcdGetHeight(), bitmapDc, 0, 0, SRCCOPY);
 
@@ -2182,7 +2491,7 @@ static void SWTransformBlt(ITUSurface* dest, int dx, int dy, ITUSurface* src, in
 
         if (src->format == ITU_RGB565)
         {
-            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, 0, 0, src->width, src->height);
+            uint16_t *srcPtr = (uint16_t *)ituLockSurface(src, 0, 0, sw, sh);
             float len;
             float ABx, ABy, BCx, BCy, CDx, CDy, DAx, DAy;
             
@@ -2226,11 +2535,6 @@ static void SWTransformBlt(ITUSurface* dest, int dx, int dy, ITUSurface* src, in
                             continue;
                     }
 
-                    if (x == src->width-1)
-                    {
-                        x = src->width-1;
-                    }
-
                     if (IsOnPlaneABCD(x, y, x0, y0, x1, y1, x2, y2, x3, y3))
                     {
                         int v0x = x - x0;
@@ -2245,13 +2549,10 @@ static void SWTransformBlt(ITUSurface* dest, int dx, int dy, ITUSurface* src, in
                         float dbc = fabsf(CrossProduct(v1x, v1y, BCx, BCy));
                         float dcd = fabsf(CrossProduct(v2x, v2y, CDx, CDy));
                         float dda = fabsf(CrossProduct(v3x, v3y, DAx, DAy));
-                        int xx = src->width * dda / (dda + dbc);
-                        int yy = src->height * dab / (dab + dcd);
+                        int xx = sw * dda / (dda + dbc);
+                        int yy = sh * dab / (dab + dcd);
 
-                        if (xx >= sx && xx < sw && yy >= sy && yy < sh)
-                        {
-                            destPtr[dest->width * (dy + y) + (dx + x)] = srcPtr[src->width * yy + xx];
-                        }
+                        destPtr[dest->width * (dy + y) + (dx + x)] = srcPtr[src->width * yy + xx];
                     }
                 }
             }
@@ -2668,30 +2969,50 @@ void ituSWInit(void)
     {
         HDC              dc;
         BITMAPINFOHEADER *bmiHeader;
-        DWORD            *colors;
 
         win                        = GetForegroundWindow();
         assert(win);
 
-        bmiHeader                  = (BITMAPINFOHEADER *) calloc(1, sizeof(BITMAPINFOHEADER) + sizeof(DWORD) * 3);
-        assert(bmiHeader);
+        if (ithLcdGetFormat() == ITH_LCD_ARGB8888)
+        {
+            bmiHeader = (BITMAPINFOHEADER *) calloc(1, sizeof(BITMAPINFOHEADER));
 
-        bmiHeader->biSize          = sizeof(BITMAPINFOHEADER);
-        bmiHeader->biWidth         = ithLcdGetWidth();
-        bmiHeader->biHeight        = -(LONG)ithLcdGetHeight();
-        bmiHeader->biPlanes        = 1;
-        bmiHeader->biBitCount      = 16;
-        bmiHeader->biCompression   = BI_BITFIELDS;
-        bmiHeader->biSizeImage     = 0;
-        bmiHeader->biXPelsPerMeter = 0;
-        bmiHeader->biYPelsPerMeter = 0;
-        bmiHeader->biClrUsed       = 3;
-        bmiHeader->biClrImportant  = 0;
+            assert(bmiHeader);
 
-        colors                     = (DWORD *) (bmiHeader + 1);
-        colors[0]                  = 0xF800;
-        colors[1]                  = 0x07E0;
-        colors[2]                  = 0x001F;
+            bmiHeader->biSize = sizeof(BITMAPINFOHEADER);
+            bmiHeader->biWidth = ithLcdGetWidth();
+            bmiHeader->biHeight = -(LONG)ithLcdGetHeight();
+            bmiHeader->biPlanes = 1;
+            bmiHeader->biBitCount = 32;
+            bmiHeader->biCompression = BI_RGB;
+            bmiHeader->biSizeImage = ithLcdGetPitch() * ithLcdGetHeight();
+        }
+        else
+        {
+            DWORD            *colors;
+
+            bmiHeader = (BITMAPINFOHEADER *)calloc(1, sizeof(BITMAPINFOHEADER)+sizeof(DWORD)* 3);
+
+            assert(bmiHeader);
+
+            bmiHeader->biSize = sizeof(BITMAPINFOHEADER);
+            bmiHeader->biWidth = ithLcdGetWidth();
+            bmiHeader->biHeight = -(LONG)ithLcdGetHeight();
+            bmiHeader->biPlanes = 1;
+            bmiHeader->biBitCount = 16;
+            bmiHeader->biCompression = BI_BITFIELDS;
+            bmiHeader->biSizeImage = 0;
+            bmiHeader->biXPelsPerMeter = 0;
+            bmiHeader->biYPelsPerMeter = 0;
+            bmiHeader->biClrUsed = 3;
+            bmiHeader->biClrImportant = 0;
+
+            colors = (DWORD *)(bmiHeader + 1);
+
+            colors[0] = 0xF800;
+            colors[1] = 0x07E0;
+            colors[2] = 0x001F;
+        }
 
         dc                         = GetDC(win);
         assert(dc);

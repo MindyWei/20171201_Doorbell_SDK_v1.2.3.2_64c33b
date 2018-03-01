@@ -37,6 +37,7 @@ typedef struct JPG_DECODER_TAG
 	uint8_t     *DisplayAddrY;
     uint8_t     *DisplayAddrU;
     uint8_t     *DisplayAddrV;
+    JPG_COLOR_SPACE     colorFmt;
 } JPG_DECODER;
 
 
@@ -66,27 +67,58 @@ ite_mjpeg_decode_display(
 	frame_PitchY  = gptJPG_DECODER->framePitchY;
 	frame_PitchUV = gptJPG_DECODER->framePitchUV;
 	
-	if (!Jbuf_sys_addr)
+	if (ithGetDeviceId() == 0x9850 && ithGetRevisionId() > 0 &&  ithIsTilingModeOn())
 	{
-		Jbuf_vram_addr = itpVmemAlignedAlloc(32,(frame_PitchY * frame_height * 3 ) ); //for YUV420
-		if(!Jbuf_vram_addr) printf("Jbuf_sys_addr Alloc Buffer Fail!!\n");
-		
-		Jbuf_sys_addr = (uint8_t*) ithMapVram(Jbuf_vram_addr,(frame_PitchY * frame_height * 3 ) , ITH_VRAM_WRITE);
-		gptJPG_DECODER->frameBufCount = 0;
-		gptJPG_DECODER->currDisplayFrameBufIndex = 0;
+		uint32_t real_height_ForTile;
+
+		real_height_ForTile = (frame_height  + 0x7f)/ 0x80;
+
+		if (!Jbuf_sys_addr)
+		{
+			Jbuf_vram_addr = itpVmemAlignedAlloc(128*1024,(frame_PitchY * 128 * real_height_ForTile * 3 ) ); //for YUV420
+			if(!Jbuf_vram_addr) printf("Jbuf_sys_addr Alloc Buffer Fail!!\n");
+			
+			Jbuf_sys_addr = (uint8_t*) ithMapVram(Jbuf_vram_addr,(frame_PitchY * 128 * real_height_ForTile * 3 ) , ITH_VRAM_WRITE);
+			gptJPG_DECODER->frameBufCount = 0;
+			gptJPG_DECODER->currDisplayFrameBufIndex = 0;
+		}
+
+		if(!gptJPG_DECODER->frameBufCount)
+		{
+			gptJPG_DECODER->OutAddrY[0] = Jbuf_sys_addr;
+			gptJPG_DECODER->OutAddrU[0] = gptJPG_DECODER->OutAddrY[0]  + (frame_PitchY * 128 * real_height_ForTile); 
+			gptJPG_DECODER->OutAddrV[0] = gptJPG_DECODER->OutAddrU[0]  + (frame_PitchUV * 128 * real_height_ForTile);
+
+			gptJPG_DECODER->frameBufCount = 1;
+		}
+	}
+    else
+	{
+		if (!Jbuf_sys_addr)
+		{
+			Jbuf_vram_addr = itpVmemAlignedAlloc(32,(frame_PitchY * frame_height * 4 ) ); //for YUV422
+			if(!Jbuf_vram_addr) printf("Jbuf_sys_addr Alloc Buffer Fail!!\n");
+			
+			Jbuf_sys_addr = (uint8_t*) ithMapVram(Jbuf_vram_addr,(frame_PitchY * frame_height * 4 ) , ITH_VRAM_WRITE);
+			gptJPG_DECODER->frameBufCount = 0;
+			gptJPG_DECODER->currDisplayFrameBufIndex = 0;
+		}
+
+		if(!gptJPG_DECODER->frameBufCount)
+		{
+			gptJPG_DECODER->OutAddrY[0] = Jbuf_sys_addr;
+			gptJPG_DECODER->OutAddrU[0] = gptJPG_DECODER->OutAddrY[0]  + (frame_PitchY  * frame_height); 
+			gptJPG_DECODER->OutAddrV[0] = gptJPG_DECODER->OutAddrU[0]  + (frame_PitchUV * frame_height);
+
+			gptJPG_DECODER->OutAddrY[1] = gptJPG_DECODER->OutAddrV[0]  + (frame_PitchUV * frame_height);
+			gptJPG_DECODER->OutAddrU[1] = gptJPG_DECODER->OutAddrY[1]  + (frame_PitchY  * frame_height);
+			gptJPG_DECODER->OutAddrV[1] = gptJPG_DECODER->OutAddrU[1]  + (frame_PitchUV * frame_height);
+			gptJPG_DECODER->frameBufCount = 2;
+		}
 	}
 
-	if(!gptJPG_DECODER->frameBufCount)
-	{
-		gptJPG_DECODER->OutAddrY[0] = Jbuf_sys_addr;
-		gptJPG_DECODER->OutAddrU[0] = gptJPG_DECODER->OutAddrY[0]  + (frame_PitchY * frame_height); 
-		gptJPG_DECODER->OutAddrV[0] = gptJPG_DECODER->OutAddrU[0]  + (frame_PitchY * frame_height >> 2);
-
-		gptJPG_DECODER->OutAddrY[1] = gptJPG_DECODER->OutAddrV[0]  + (frame_PitchY * frame_height >> 2);
-		gptJPG_DECODER->OutAddrU[1] = gptJPG_DECODER->OutAddrY[1]  + (frame_PitchY * frame_height);
-		gptJPG_DECODER->OutAddrV[1] = gptJPG_DECODER->OutAddrU[1]  + (frame_PitchY * frame_height >> 2);
-		gptJPG_DECODER->frameBufCount = 2;
-	}
+	if(gptJPG_DECODER->frameBufCount ==1)
+			gptJPG_DECODER->currDisplayFrameBufIndex = 0;
 
 	switch (gptJPG_DECODER->currDisplayFrameBufIndex)
     {
@@ -103,8 +135,10 @@ ite_mjpeg_decode_display(
 	        break;
     }
 
-	if(gptJPG_DECODER->currDisplayFrameBufIndex >= 1) 	gptJPG_DECODER->currDisplayFrameBufIndex = 0;
-	else gptJPG_DECODER->currDisplayFrameBufIndex++;	
+	if(gptJPG_DECODER->currDisplayFrameBufIndex >= 1) 	
+        gptJPG_DECODER->currDisplayFrameBufIndex = 0;
+    else 
+        gptJPG_DECODER->currDisplayFrameBufIndex++;	
 }
 
 static av_cold int
@@ -131,8 +165,8 @@ ite_mjpeg_decode_init(
     initParam.outColorSpace = JPG_COLOR_SPACE_YUV420;
 
     initParam.dispMode      = JPG_DISP_CENTER; 
-	initParam.width         = ithLcdGetWidth();
-    initParam.height        = ithLcdGetHeight();
+	initParam.width         = avctx->width;
+    initParam.height        = avctx->height;
 
     iteJpg_CreateHandle(&mjDecCtxt->pHJpeg, &initParam, 0);
 
@@ -165,8 +199,8 @@ ite_mjpeg_decode_frame(
         JPG_USER_INFO   jpgUserInfo    = {0};
         int             buf_size       = avpkt->size;
         AVFrame         *picture       = data;
-        uint8_t   *pStar         = avpkt->data;
-        uint8_t   *pEnd          = pStar + buf_size;
+        uint8_t   *pStart        = avpkt->data;
+        uint8_t   *pEnd          = pStart + buf_size;
 		
 		JPG_RECT        destRect       = {0};
 
@@ -174,7 +208,7 @@ ite_mjpeg_decode_frame(
         // set src type
         inStreamInfo.streamIOType          = JPG_STREAM_IO_READ;
         inStreamInfo.streamType            = JPG_STREAM_MEM;
-        inStreamInfo.jstream.mem[0].pAddr  = pStar;
+        inStreamInfo.jstream.mem[0].pAddr  = pStart;
         inStreamInfo.jstream.mem[0].length = buf_size;
         inStreamInfo.validCompCnt          = 1;
         iteJpg_SetStreamInfo(mjDecCtxt->pHJpeg, &inStreamInfo, 0, 0);
@@ -212,29 +246,50 @@ ite_mjpeg_decode_frame(
 		gptJPG_DECODER->frameWidth  =  jpgUserInfo.real_width;
 		gptJPG_DECODER->framePitchY  = jpgUserInfo.comp1Pitch;
 		gptJPG_DECODER->framePitchUV = jpgUserInfo.comp23Pitch;
+        gptJPG_DECODER->colorFmt     = jpgUserInfo.colorFormate;
 		
 		ite_mjpeg_decode_display();
 
         outStreamInfo.streamIOType         = JPG_STREAM_IO_WRITE;
         outStreamInfo.streamType           = JPG_STREAM_MEM;
 
-		outStreamInfo.jstream.mem[0].pAddr  = gptJPG_DECODER->DisplayAddrY; // get output buf;
-        outStreamInfo.jstream.mem[0].pitch  = gptJPG_DECODER->framePitchY;
-        outStreamInfo.jstream.mem[0].length = gptJPG_DECODER->framePitchY * gptJPG_DECODER->frameHeight;
-        // U
-        outStreamInfo.jstream.mem[1].pAddr  = gptJPG_DECODER->DisplayAddrU;
-        outStreamInfo.jstream.mem[1].pitch  = gptJPG_DECODER->framePitchUV;
-        outStreamInfo.jstream.mem[1].length = gptJPG_DECODER->framePitchUV * gptJPG_DECODER->frameHeight >> 1;
-        // V
-        outStreamInfo.jstream.mem[2].pAddr  = gptJPG_DECODER->DisplayAddrV;
-        outStreamInfo.jstream.mem[2].pitch  = gptJPG_DECODER->framePitchUV;
-        outStreamInfo.jstream.mem[2].length = gptJPG_DECODER->framePitchUV * gptJPG_DECODER->frameHeight >> 1;
-		
+		if (ithGetDeviceId() == 0x9850 && ithGetRevisionId() > 0 &&  ithIsTilingModeOn())
+        {
+            uint32_t real_height_ForTile;
+            real_height_ForTile = (gptJPG_DECODER->frameHeight  + 0x7f)/ 0x80;
+
+            outStreamInfo.jstream.mem[0].pAddr  = gptJPG_DECODER->DisplayAddrY; // get output buf;
+            outStreamInfo.jstream.mem[0].pitch  = gptJPG_DECODER->framePitchY;
+            outStreamInfo.jstream.mem[0].length = gptJPG_DECODER->framePitchY * 128 * real_height_ForTile;
+            // U
+            outStreamInfo.jstream.mem[1].pAddr  = gptJPG_DECODER->DisplayAddrU;
+            outStreamInfo.jstream.mem[1].pitch  = gptJPG_DECODER->framePitchUV;
+            outStreamInfo.jstream.mem[1].length = gptJPG_DECODER->framePitchUV * 128 * real_height_ForTile;
+            // V
+            outStreamInfo.jstream.mem[2].pAddr  = gptJPG_DECODER->DisplayAddrV;
+            outStreamInfo.jstream.mem[2].pitch  = gptJPG_DECODER->framePitchUV;
+            outStreamInfo.jstream.mem[2].length = gptJPG_DECODER->framePitchUV * 128 * real_height_ForTile;
+        }else
+        {
+            outStreamInfo.jstream.mem[0].pAddr  = gptJPG_DECODER->DisplayAddrY; // get output buf;
+            outStreamInfo.jstream.mem[0].pitch  = gptJPG_DECODER->framePitchY;
+            outStreamInfo.jstream.mem[0].length = gptJPG_DECODER->framePitchY * gptJPG_DECODER->frameHeight;
+            // U
+            outStreamInfo.jstream.mem[1].pAddr  = gptJPG_DECODER->DisplayAddrU;
+            outStreamInfo.jstream.mem[1].pitch  = gptJPG_DECODER->framePitchUV;
+            outStreamInfo.jstream.mem[1].length = gptJPG_DECODER->framePitchUV * gptJPG_DECODER->frameHeight;
+            // V
+            outStreamInfo.jstream.mem[2].pAddr  = gptJPG_DECODER->DisplayAddrV;
+            outStreamInfo.jstream.mem[2].pitch  = gptJPG_DECODER->framePitchUV;
+            outStreamInfo.jstream.mem[2].length = gptJPG_DECODER->framePitchUV * gptJPG_DECODER->frameHeight;
+        }
+
+        /*
 		printf("\n\tY=0x%x, u=0x%x, v=0x%x\n",
 					outStreamInfo.jstream.mem[0].pAddr,
 					outStreamInfo.jstream.mem[1].pAddr,
 					outStreamInfo.jstream.mem[2].pAddr);
-
+        */
 
         outStreamInfo.validCompCnt         = 3;
         jpgRst                             = iteJpg_SetStreamInfo(mjDecCtxt->pHJpeg, 0, &outStreamInfo, 0);
@@ -265,7 +320,7 @@ ite_mjpeg_decode_frame(
         }
 		
 		iteJpg_GetStatus(mjDecCtxt->pHJpeg, &jpgUserInfo, 0); 
-	   	printf("\n\tresult = %d\n", jpgUserInfo.status); 
+	   	//printf("\n\tresult = %d\n", jpgUserInfo.status); 
 
         jpgRst = iteJpg_WaitIdle(mjDecCtxt->pHJpeg, 0);
         if (jpgRst != JPG_ERR_OK)

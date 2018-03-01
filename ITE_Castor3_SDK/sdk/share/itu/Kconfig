@@ -108,6 +108,16 @@ config ITU_UCL_ENABLE
     help_chs
         使用软件解压缩功能。
 
+config ITU_ASSERT_THREAD
+    bool "Assert thread"
+    default n
+    help
+        Assert call APIs on the same thread.
+    help_cht
+        開啟呼叫APIs時是否在同一執行緒的功能。
+    help_chs
+        开启呼叫的API时是否在同一执行绪的功能。
+
 endmenu
 
 config BUILD_FFMPEG

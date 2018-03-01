@@ -94,8 +94,8 @@ static uint32_t        IIC0_GPIO_SDA      = 0;
 static uint32_t        IIC0_GPIO_SCL      = 0;
 #endif
 #if (defined CFG_IIC1_GPIO_CONFIG_1)
-static uint32_t        IIC1_GPIO_SDA      = 25;
-static uint32_t        IIC1_GPIO_SCL      = 26;
+static uint32_t        IIC1_GPIO_SDA      = 25;//86;//86 for TARGET_BOARD_S
+static uint32_t        IIC1_GPIO_SCL      = 26;//87;//87 for TARGET_BOARD_S
 #elif (defined CFG_IIC1_GPIO_CONFIG_2)
     #if(defined CFG_CHIP_PKG_IT9856)
 static uint32_t        IIC1_GPIO_SDA      = 88;
@@ -1091,6 +1091,7 @@ mmpIicInitialize(
 		else
 #if (defined CFG_IIC1_GPIO_CONFIG_1)
 			ithWriteRegMaskA(ITH_GPIO_BASE + ITH_GPIO2_MODE_REG, (0x3 << 18 | 0x3 << 20), (0x3 << 18 | 0x3 << 20));
+            //ithWriteRegMaskA(ITH_GPIO_BASE + ITH_GPIO6_MODE_REG, (0x2 << 12 | 0x2 << 14), (0x3 << 12 | 0x3 << 14));//for TARGET_BOARD_S
 #elif (defined CFG_IIC1_GPIO_CONFIG_2)
     #if(defined CFG_CHIP_PKG_IT9856)
             ithWriteRegMaskA(ITH_GPIO_BASE + ITH_GPIO6_MODE_REG, (0x2 << 16 | 0x2 << 18), (0x3 << 16 | 0x3 << 18));

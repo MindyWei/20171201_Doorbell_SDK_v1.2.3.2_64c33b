@@ -87,7 +87,7 @@ void ituAnalogClockDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
         hour += aclk->minute / 60.0f;
 
         angle = 360.0f / 12.0f * hour;
-#if (CFG_CHIP_FAMILY == 9850)
+#if (CFG_CHIP_FAMILY != 9070)
         ituRotate(dest, x + aclk->hourIcon->widget.rect.x, y + aclk->hourIcon->widget.rect.y, aclk->hourIcon->surf, aclk->hourX, aclk->hourY, angle, 1.0f, 1.0f);
 #else
         ituRotate(dest, x + aclk->hourIcon->widget.rect.x + aclk->hourX, y + aclk->hourIcon->widget.rect.y + aclk->hourY, aclk->hourIcon->surf, aclk->hourX, aclk->hourY, angle, 1.0f, 1.0f);
@@ -97,7 +97,7 @@ void ituAnalogClockDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
     if (aclk->minuteIcon && aclk->minuteIcon->surf)
     {
         angle = 360.0f / 60.0f * aclk->minute;
-#if (CFG_CHIP_FAMILY == 9850)
+#if (CFG_CHIP_FAMILY != 9070)
         ituRotate(dest, x + aclk->minuteIcon->widget.rect.x, y + aclk->minuteIcon->widget.rect.y, aclk->minuteIcon->surf, aclk->minuteX, aclk->minuteY, angle, 1.0f, 1.0f);
 #else
         ituRotate(dest, x + aclk->minuteIcon->widget.rect.x + aclk->minuteX, y + aclk->minuteIcon->widget.rect.y + aclk->minuteY, aclk->minuteIcon->surf, aclk->minuteX, aclk->minuteY, angle, 1.0f, 1.0f);
@@ -107,7 +107,7 @@ void ituAnalogClockDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
     if (aclk->secondIcon && aclk->secondIcon->surf)
     {
         angle = 360.0f / 60.0f * aclk->second;
-#if (CFG_CHIP_FAMILY == 9850)
+#if (CFG_CHIP_FAMILY != 9070)
         ituRotate(dest, x + aclk->secondIcon->widget.rect.x, y + aclk->secondIcon->widget.rect.y, aclk->secondIcon->surf, aclk->secondX, aclk->secondY, angle, 1.0f, 1.0f);
 #else
         ituRotate(dest, x + aclk->secondIcon->widget.rect.x + aclk->secondX, y + aclk->secondIcon->widget.rect.y + aclk->secondY, aclk->secondIcon->surf, aclk->secondX, aclk->secondY, angle, 1.0f, 1.0f);
@@ -120,6 +120,7 @@ void ituAnalogClockDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 void ituAnalogClockInit(ITUAnalogClock* aclk)
 {
     assert(aclk);
+    ITU_ASSERT_THREAD();
 
     memset(aclk, 0, sizeof (ITUAnalogClock));
 

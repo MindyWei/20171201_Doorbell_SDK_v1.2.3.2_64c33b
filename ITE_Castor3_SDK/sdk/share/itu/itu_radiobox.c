@@ -12,6 +12,7 @@ bool ituRadioBoxClone(ITUWidget* widget, ITUWidget** cloned)
     ITURadioBox* radiobox = (ITURadioBox*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -122,6 +123,7 @@ void ituRadioBoxOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituRadioBoxInit(ITURadioBox* radiobox)
 {
     assert(radiobox);
+    ITU_ASSERT_THREAD();
 
     memset(radiobox, 0, sizeof (ITURadioBox));
 
@@ -149,6 +151,7 @@ void ituRadioBoxSetChecked(ITURadioBox* radiobox, bool checked)
 {
     ITCTree* parent = ((ITCTree*)radiobox)->parent;
     assert(radiobox);
+    ITU_ASSERT_THREAD();
 
     if (parent)
     {
@@ -175,5 +178,6 @@ void ituRadioBoxSetChecked(ITURadioBox* radiobox, bool checked)
 bool ituRadioBoxIsChecked(ITURadioBox* radiobox)
 {
     assert(radiobox);
+    ITU_ASSERT_THREAD();
     return radiobox->checkbox.checked;
 }

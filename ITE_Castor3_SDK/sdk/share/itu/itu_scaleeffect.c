@@ -37,6 +37,7 @@ void ituScaleEffectStart(struct ITUEffectTag* effect, struct ITUWidgetTag* widge
     ITUScaleEffect* se = (ITUScaleEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStartImpl(effect, widget);
 
@@ -52,6 +53,7 @@ void ituScaleEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widget
     ITUScaleEffect* se = (ITUScaleEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStopImpl(effect, widget);
 
@@ -65,6 +67,7 @@ void ituScaleEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widget
 void ituScaleEffectInit(ITUScaleEffect* se, bool enlarge)
 {
     assert(se);
+    ITU_ASSERT_THREAD();
 
     memset(se, 0, sizeof (ITUScaleEffect));
 

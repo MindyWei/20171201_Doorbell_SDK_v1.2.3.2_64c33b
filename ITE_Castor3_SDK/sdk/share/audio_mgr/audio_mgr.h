@@ -105,7 +105,7 @@ extern "C" {
 #define LOG_END                                   )), 1 : 0));
 
 // for 907X can not reset I2S when DA & AD enable
-#define SMTK_AUDIO_SPECIAL_CASE_BUFFER_SIZE     128*1024//  6 * 1024
+#define SMTK_AUDIO_SPECIAL_CASE_BUFFER_SIZE     64*1024//  6 * 1024
 
 #define SMTK_AUDIO_READ_BUFFER_THREAD
 #ifdef SMTK_AUDIO_READ_BUFFER_THREAD
@@ -625,6 +625,8 @@ typedef struct SMTK_AUDIO_MGR_TAG
     int                      nDuration;
     MMP_INT                  nReading;
     int                      nEnableSxaDmx;
+    int                      Nfilequeque;
+    MMP_BOOL                 bQuickPlay;
 } SMTK_AUDIO_MGR;
 
 #ifdef SMTK_AUDIO_PARSING_M4A_DATA
@@ -1099,6 +1101,12 @@ smtkAudioMgrGetLrc(char *filename);
 /* copy lrc's pointer */
 SMTK_AUDIO_LRC_INFO *
 smtkAudioMgrCopyLrc();
+
+MMP_INT smtkSetFileQueue(SMTK_AUDIO_PARAM_NETWORK tmpNetwork);
+
+void FFmpeg_pause(int pause);
+
+void smtkSetQuickPlayFlag(void);
 
 int *smtkAudioMgrGetCallbackFunction();
 

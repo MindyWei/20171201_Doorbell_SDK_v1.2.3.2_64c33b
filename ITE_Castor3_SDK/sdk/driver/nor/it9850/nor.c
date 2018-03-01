@@ -98,6 +98,7 @@ typedef enum
     WIN_W25X32V,
     WIN_W25Q32BV,
     WIN_W25Q64BV,
+    WIN_W25Q128JV,
     UNKNOW_VENDOR = 0xFFFF
 }NOR_VENDOR_ID;
 
@@ -214,7 +215,8 @@ NOR_VENDOR_CONTEXT nor_support_vendor[] = {
     {0xEF, 0x3015, 0x14, "WIN__W25X16A",    WIN_W25X16A},
     {0xEF, 0x3016, 0x15, "WIN_W25X32V",     WIN_W25X32V},
     {0xEF, 0x4016, 0x15, "WIN_W25Q32BV",    WIN_W25Q32BV},
-    {0xEF, 0x4017, 0x16, "WIN__W25Q64BV",   WIN_W25Q64BV}
+    {0xEF, 0x4017, 0x16, "WIN__W25Q64BV",   WIN_W25Q64BV},
+    {0xEF, 0x4018, 0x17, "WIN__W25Q128JV",  WIN_W25Q128JV}
 };
 
 //=============================================================================
@@ -432,6 +434,7 @@ norGetContext(
     	break;
 		
 	 case GD_GD25Q128C:    // 16 MB
+	 case WIN_W25Q128JV:
 	    norObject->context.bytesPerPage       = 256;
 	    norObject->context.pagesPerSector     = 16;
 	    norObject->context.bytesPerSector     = 4*1024;

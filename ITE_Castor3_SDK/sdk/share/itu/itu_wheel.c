@@ -10,17 +10,6 @@
 
 static const char wheelName[] = "ITUWheel";
 
-//SPEED BASE range: 3 ~ 5
-#define STEP_SPEED_BASE 5  //4
-#define MOTION_FACTOR 20  //60
-#define MOTION_THRESHOLD 40
-#define PROCESS_STAGE1 0.1f  //0.2f
-#define PROCESS_STAGE2 0.2f  //0.4f
-//MAX_INIT_POWER range: 2.0 ~ 4.5
-#define MAX_INIT_POWER 4.5
-#define FOCUSFONT_POS_Y_FIX_DIV ITU_WHEEL_FOCUS_FONT_FIX_POS
-#define SLIDE_INIT_FRAME 3
-
 static void use_normal_color(ITUWidget* widget, ITUColor* color)
 {
 	ITUWheel* wheel = (ITUWheel*)widget;
@@ -72,7 +61,7 @@ static bool focus_change(ITUWidget* widget, int newfocus, int line)
 	//printf("===[wheel][last][child %d][focusIndex %d][focusStr: %s][line: %d]===\n", wheel->focus_c, wheel->focusIndex, ituTextGetString(text), line);
 
 	wheel->focus_c = newfocus;
-	wheel->focusIndex = newfocus - wheel->focus_dev;
+	wheel->focusIndex = newfocus;
 	child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->focus_c);
 	text = (ITUText*)child;
 
@@ -141,7 +130,7 @@ static void cycle_arrange(ITUWidget* widget, bool shiftway)
 
 		if (wheel->cycle_arr[i] == wheel->focus_c)
 		{
-			int focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV);
+			int focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV);
 			wheel->layout_ci = (fy - wheel->focus_c * child->rect.height) * (-1);
 			ituWidgetSetY(child, focus_fy);
 			//printf("===[wheel][cycle][focus at child %d][fy %d][layout_ci %d]===\n", wheel->focus_c, focus_fy, wheel->layout_ci);
@@ -236,6 +225,226 @@ static int get_max_focusindex(ITUWidget* widget)
 	return realcount;
 }
 
+void refix_wheel_layout(ITUWheel* wheel)
+{
+	if (wheel->cycle_tor > 0)
+	{
+		int i, si = wheel->focus_c;
+
+		for (i = 0; i < (wheel->itemCount / 2 + wheel->cycle_tor); i++)
+		{
+			si--;
+			if (si < wheel->minci)
+				si = wheel->maxci;
+		}
+
+
+		for (i = 0; i < (wheel->itemCount + 2 * wheel->cycle_tor); i++)
+		{
+			wheel->cycle_arr[i] = si;
+
+			if ((si + 1) > wheel->maxci)
+				si = wheel->minci;
+			else
+				si++;
+		}
+	}
+}
+
+void set_wheel_font_size(ITUWheel* wheel, ITUText* text, int size)
+{
+	int shiftx = wheel->org_totalframe;
+
+	if (wheel->fontsquare == 1)
+	{
+		ituTextSetFontSize(text, size);
+
+		/*if ((shiftx == 0) && (size % 2))
+		{
+			shiftx = 1;
+			ituWidgetSetX(text, text->widget.rect.x + shiftx);
+			ituWidgetSetCustomData(text, shiftx);
+			printf(">>>>>\n");
+		}
+		else if ((shiftx != 0) && ((size % 2) == 0))
+		{
+			shiftx = 0;
+			ituWidgetSetX(text, text->widget.rect.x - 1);
+			ituWidgetSetCustomData(text, shiftx);
+			printf("<<<<<\n");
+		}*/
+	}
+	else
+	{
+		ituTextSetFontHeight(text, size);
+	}
+}
+
+void wheel_font_size_cal(ITUWheel* wheel)
+{
+	ITUText* textp;
+	ITUText* textf;
+	ITUText* textn;
+	ITUWidget* widget = (ITUWidget*)wheel;
+	int count = itcTreeGetChildCount(wheel);
+	int sizep, sizef, sizen;
+	int size_dev = wheel->focusFontHeight - wheel->fontHeight;
+
+	textf = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex);
+	ituWidgetSetColor(textf, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
+
+	if (wheel->cycle_tor == 0)
+	{
+		if (wheel->focusIndex > 0)
+			textp = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex - 1);
+		else
+			textp = NULL;
+
+		if (wheel->focusIndex < (count - 1))
+			textn = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex + 1);
+		else
+			textn = NULL;
+	}
+
+	if (widget->flags & ITU_DRAGGING)
+	{
+		int height = textf->widget.rect.height;
+		//int f_dist = textf->widget.rect.y - ((widget->rect.height - height) / 2);
+		int f_dist = wheel->focus_dev;
+		float f_step_value = fabs((float)size_dev * f_dist / height);
+
+		if ((f_dist > 0) && (f_dist < (height / wheel->drag_change_factor)))
+		{
+			if (textp)
+			{
+				sizep = wheel->fontHeight + (int)(f_step_value);
+				sizef = wheel->focusFontHeight - (int)(f_step_value);
+
+				//sizep -= (sizep % 2);
+
+				set_wheel_font_size(wheel, textp, sizep);
+				set_wheel_font_size(wheel, textf, sizef);
+				//printf("[fix count %d]size p %d\n", wheel->fix_count, sizep);
+			}
+		}
+		else if ((f_dist < 0) && (f_dist > (0 - (height / wheel->drag_change_factor))))
+		{
+			if (textn)
+			{
+				sizen = wheel->fontHeight + (int)(f_step_value);
+				sizef = wheel->focusFontHeight - (int)(f_step_value);
+
+				//sizen -= (sizen % 2);
+
+				set_wheel_font_size(wheel, textn, sizen);
+				set_wheel_font_size(wheel, textf, sizef);
+				//printf("[fix count %d]size n %d\n", wheel->fix_count, sizen);
+			}
+		}
+	}
+	else if ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0))
+	{
+		int height = textf->widget.rect.height;
+		int init_frame_dev = wheel->totalframe - wheel->org_totalframe;
+		float frame_dev = (float)(wheel->frame - wheel->org_totalframe) / init_frame_dev;
+		int f_dist = -1 * (int)(wheel->focus_dev * (1.0 - frame_dev));
+		float f_step_value = fabs((float)size_dev * f_dist / height);
+
+		if (f_dist >= 0)
+		{
+			if (textp)
+			{
+				sizep = wheel->fontHeight + (int)(f_step_value);
+				sizef = wheel->focusFontHeight - (int)(f_step_value);
+
+				set_wheel_font_size(wheel, textp, sizep);
+				set_wheel_font_size(wheel, textf, sizef);
+				//printf("[step %.3f]size p %d\n", f_step_value, sizep);
+			}
+		}
+		else if (f_dist <= 0)
+		{
+			if (textn)
+			{
+				sizen = wheel->fontHeight + (int)(f_step_value);
+				sizef = wheel->focusFontHeight - (int)(f_step_value);
+
+				set_wheel_font_size(wheel, textn, sizen);
+				set_wheel_font_size(wheel, textf, sizef);
+				//printf("[step %.3f]size n %d\n", f_step_value, sizen);
+			}
+		}
+	}
+	else if (wheel->sliding)
+	{
+		if (wheel->inc < 0)
+		{
+			if (textn)
+			{
+				sizen = wheel->fontHeight + (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+				sizef = wheel->focusFontHeight - (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+
+				//sizen -= (sizen % 2);
+
+				set_wheel_font_size(wheel, textn, sizen);
+				set_wheel_font_size(wheel, textf, sizef);
+			}
+		}
+		else if (wheel->inc > 0)
+		{
+			if (textp)
+			{
+				sizep = wheel->fontHeight + (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+				sizef = wheel->focusFontHeight - (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+
+				//sizep -= (sizep % 2);
+
+				set_wheel_font_size(wheel, textp, sizep);
+				set_wheel_font_size(wheel, textf, sizef);
+			}
+		}
+	}
+	else if (wheel->focus_dev > 0)
+	{
+		if (textn)
+		{
+			sizen = wheel->fontHeight + (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+			sizef = wheel->focusFontHeight - (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+
+			//sizen -= (sizen % 2);
+
+			set_wheel_font_size(wheel, textn, sizen);
+			set_wheel_font_size(wheel, textf, sizef);
+		}
+	}
+	else if (wheel->focus_dev < 0)
+	{
+		if (textp)
+		{
+			sizep = wheel->fontHeight + (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+			sizef = wheel->focusFontHeight - (int)(size_dev * ((float)wheel->frame / wheel->totalframe));
+
+			//sizep -= (sizep % 2);
+
+			set_wheel_font_size(wheel, textp, sizep);
+			set_wheel_font_size(wheel, textf, sizef);
+		}
+	}
+
+	if (wheel->focus_dev && (wheel->frame == wheel->totalframe))
+	{
+		ITUText* text = NULL;
+		
+		if (wheel->focus_dev > 0)
+			text = textn;
+		else
+			text = textp;
+
+		if (text)
+			ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
+	}
+}
+
 bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3)
 {
     bool result = false;
@@ -243,7 +452,11 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 	ITUWidget* child_check = (ITUWidget*)itcTreeGetChildAt(wheel, 0);
 	int good_center;
-	int fitc = (widget->rect.height / child_check->rect.height);
+	int base_size = ((child_check != NULL) ? (child_check->rect.height) : (widget->rect.height));
+	int fitc = (widget->rect.height / base_size);
+
+	if (child_check == NULL)
+		return false;
 
 	if ((widget->rect.height % child_check->rect.height) > (child_check->rect.height / 2))
 		fitc++;
@@ -252,6 +465,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 	widget->rect.height = (fitc * child_check->rect.height) + (fitc + 1);
 
     assert(wheel);
+
+	if ((ev == ITU_EVENT_LAYOUT) || (ev == ITU_EVENT_LANGUAGE))
+		result |= ituFlowWindowUpdate(widget, ev, arg1, arg2, arg3);
 
 	if (ev == ITU_EVENT_LAYOUT)
 	{
@@ -290,6 +506,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 			if (wheel->itemCount != (fitc + 2 + fitmod))
 			{
 				wheel->itemCount = (fitc + 2 + fitmod);
+
+				if (wheel->itemCount > count)
+					wheel->itemCount = count;
 			}
 
 			for (i = 0; i < count; i++)
@@ -311,12 +530,23 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					if ((realcount - 1) == wheel->focusIndex)
 					{
 						wheel->focus_c = i;
-						wheel->focus_dev = i - wheel->focusIndex;
 					}
 
 					if (wheel->minci == 0)
 						wheel->minci = i;
 				}
+
+				if (i == 0)
+				{
+					get_normal_color(widget);
+					use_normal_color(widget, &color);
+				}
+				ituWidgetSetColor(child, color.alpha, color.red, color.green, color.blue);
+
+				if (wheel->fontsquare == 1)
+					ituTextSetFontSize(text, wheel->fontHeight);
+				else
+					ituTextSetFontHeight(text, wheel->fontHeight);
 			}
 
 			if ((wheel->minci == 1) && (realcount == count))
@@ -347,13 +577,12 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					use_normal_color(widget, &color);
 					height = child->rect.height;
 					fy = 0 - height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * height);
-					//fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * height);
 					wheel->tempy = fy - (height * wheel->cycle_tor * 2);
 				}
 
 				child = (ITUWidget*)itcTreeGetChildAt(wheel, si);
 				text = (ITUText*)child;
-				focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV);
+				focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV);
 
 				if (si == wheel->focus_c)
 				{
@@ -364,9 +593,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						ituTextSetFontSize(text, wheel->focusFontHeight);
 					else
 						ituTextSetFontHeight(text, wheel->focusFontHeight);
-					//fy -= (wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV;
+					//fy -= (wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV;
 					wheel->layout_ci = (fy - wheel->focus_c * height) * (-1);
-					//wheel->layout_ci += ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV);
+					//wheel->layout_ci += ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV);
 					//printf("===[wheel][layout][focus at child %d][fy %d][layout_ci %d]===\n", wheel->focus_c, fy, wheel->layout_ci);
 					ituWidgetSetY(child, focus_fy);
 					//printf("===[wheel %s][layout][focus child %d][%s][fy %d]===\n", widget->name, si, ituTextGetString(text), focus_fy);
@@ -386,7 +615,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				wheel->cycle_arr[i] = si;
 				wheel->cycle_arr_count++;
 				//str = ituTextGetString(text);
-				//printf("===[wheel][layout][child %d][%s][fy %d]===\n", si, str, fy);
+				//printf("===[wheel %s][layout][child %d][%s][fy %d]===\n", widget->name, si, ituTextGetString(text), fy);
 
 				//child->rect.height = height = height0;
 				fy += height;
@@ -396,11 +625,13 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				else
 					si++;
 			}
-			widget->dirty = true;
-			result |= widget->dirty;
+			//widget->dirty = true;
+			//result |= widget->dirty;
 
-			widget->flags |= ITU_UNDRAGGING;
-			//widget->flags &= ~ITU_DRAGGING;
+			//fix for undragging trigger timer will doing trash animation
+			//wheel->frame = wheel->totalframe;
+
+			//widget->flags |= ITU_UNDRAGGING;
 		}
 		else //LAYOUT no cycle
 		{
@@ -418,7 +649,6 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 				if (str && str[0] != '\0')
 				{
-					wheel->focus_dev = i;
 					break;
 				}
 			}
@@ -426,6 +656,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 			for (i = 0; i < count; ++i)
 			{
 				ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
+				//ituWidgetSetCustomData(child, 0);
 
 				if (i == 0)
 				{
@@ -433,8 +664,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					//memcpy(&color, &NColor, sizeof (ITUColor));
 					use_normal_color(widget, &color);
 					height = child->rect.height;
-					//fy = 0 - (height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-					fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * height);
+					fy = 0 - ((wheel->focusIndex - good_center + 1) * height);
 					wheel->layout_ci = fy;
 					//printf("===[wheel %s][layout][child %d][fy %d]===\n", widget->name, i, fy);
 				}
@@ -456,7 +686,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 				//child->rect.height = height = height0;
 
-				if (i == (wheel->focusIndex + wheel->focus_dev))
+				if (i == (wheel->focusIndex))
 				{
 					ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 
@@ -471,14 +701,15 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 	}
 
 	//if (wheel->cycle_tor > 0)
-	if ((ev == ITU_EVENT_LAYOUT) || (ev == ITU_EVENT_LANGUAGE))
-		result |= ituFlowWindowUpdate(widget, ev, arg1, arg2, arg3);
+	//if ((ev == ITU_EVENT_LAYOUT) || (ev == ITU_EVENT_LANGUAGE))
+	//	result |= ituFlowWindowUpdate(widget, ev, arg1, arg2, arg3);
 
     if (widget->flags & ITU_TOUCHABLE)
     {
         if (ev == ITU_EVENT_TOUCHSLIDEUP || ev == ITU_EVENT_TOUCHSLIDEDOWN)
         {
             wheel->touchCount = 0;
+			wheel->focus_dev = 0;
 
 			if (ituWidgetIsEnabled(widget) && !wheel->inc && !result)
             {
@@ -500,7 +731,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
                         wheel->inc = 0;
                     }
 					
-                    if (ev == ITU_EVENT_TOUCHSLIDEUP)
+					if (ev == ITU_EVENT_TOUCHSLIDEUP)
                     {
 						int fmax = get_max_focusindex(widget);
 
@@ -522,14 +753,14 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								wheel->frame = 0;
 								wheel->sliding = 1;
 
-								if ((arg1 >= MOTION_THRESHOLD) && (widget->flags & ITU_DRAGGABLE))
+								if ((arg1 >= ITU_WHEEL_MOTION_THRESHOLD) && (widget->flags & ITU_DRAGGABLE))
 								{
 									wheel->slide_step = arg1;
-									if (arg1 > (MOTION_THRESHOLD * 3 / 2))
+									if (arg1 > (ITU_WHEEL_MOTION_THRESHOLD * 3 / 2))
 									{
-										wheel->totalframe = SLIDE_INIT_FRAME;
+										wheel->totalframe = ITU_WHEEL_SLIDE_INIT_FRAME;
 
-										wheel->slide_itemcount = (arg1 / MOTION_THRESHOLD) * STEP_SPEED_BASE;
+										wheel->slide_itemcount = (arg1 / ITU_WHEEL_MOTION_THRESHOLD) * ITU_WHEEL_STEP_SPEED_BASE;
 										//printf("[SLIDE 1st count %d]\n", wheel->slide_itemcount);
 									}
 									else
@@ -539,7 +770,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								{
 									if (widget->flags & ITU_DRAGGABLE)
 									{
-										wheel->slide_step = MOTION_THRESHOLD;
+										wheel->slide_step = ITU_WHEEL_MOTION_THRESHOLD;
 										wheel->slide_itemcount = 0;
 									}
 									else
@@ -548,12 +779,12 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							}
                         }
                     }
-                    else if (ev == ITU_EVENT_TOUCHSLIDEDOWN)
+					else if (ev == ITU_EVENT_TOUCHSLIDEDOWN)
                     {
 						if ((wheel->focusIndex >= 0) || (wheel->cycle_tor > 0))
                         {
                             ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, 0);
-
+							printf("fc %d\n", wheel->focusIndex);
 							if (wheel->sliding)
 							{
 								wheel->frame = wheel->totalframe + 1;
@@ -568,14 +799,14 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								wheel->frame = 0;
 								wheel->sliding = 1;
 
-								if ((arg1 >= MOTION_THRESHOLD) && (widget->flags & ITU_DRAGGABLE))
+								if ((arg1 >= ITU_WHEEL_MOTION_THRESHOLD) && (widget->flags & ITU_DRAGGABLE))
 								{
 									wheel->slide_step = arg1;
-									if (arg1 > (MOTION_THRESHOLD * 3 / 2))
+									if (arg1 > (ITU_WHEEL_MOTION_THRESHOLD * 3 / 2))
 									{
-										wheel->totalframe = SLIDE_INIT_FRAME;
+										wheel->totalframe = ITU_WHEEL_SLIDE_INIT_FRAME;
 
-										wheel->slide_itemcount = (arg1 / MOTION_THRESHOLD) * STEP_SPEED_BASE;
+										wheel->slide_itemcount = (arg1 / ITU_WHEEL_MOTION_THRESHOLD) * ITU_WHEEL_STEP_SPEED_BASE;
 										//printf("[SLIDE 1st count %d]\n", wheel->slide_itemcount);
 									}
 									else
@@ -585,7 +816,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								{
 									if (widget->flags & ITU_DRAGGABLE)
 									{
-										wheel->slide_step = MOTION_THRESHOLD;
+										wheel->slide_step = ITU_WHEEL_MOTION_THRESHOLD;
 										wheel->slide_itemcount = 0;
 									}
 									else
@@ -616,6 +847,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 				wheel->idle = 1;
 
+				//for long drag check
+				if (abs(y - wheel->touchY) >= ITU_DRAG_DISTANCE)
+					widget->flags |= ITU_LONG_DRAG;
+
 				if (wheel->cycle_tor <= 0)
 				{
 					if (ituWidgetIsInside(widget, x, y))
@@ -629,32 +864,48 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						use_normal_color(widget, &color);
 
 						height = child->rect.height;
-						fc = wheel->focusIndex + wheel->focus_dev;
+						fc = wheel->focusIndex;
 						fmax = get_max_focusindex(widget);
 						offset = y - wheel->touchY;
 
 						if (wheel->scal > 0)
+						{
 							offset /= wheel->scal;
+						}
+
+						wheel->focus_dev = offset - ((wheel->fix_count * height / wheel->drag_change_factor) * ((offset < 0) ? (-1) : (1)));
 
 						if (((offset > 0) && (wheel->focusIndex > 0)) || ((offset < 0) && (wheel->focusIndex < fmax)))
 						{
 							for (i = 0; i < count; ++i)
 							{
+								if (i == 0)
+								{
+									wheel_font_size_cal(wheel);
+								}
+
 								child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
-								//fy = 0 - child->rect.height * ((wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)) + (wheel->fix_count * ((offset >= 0) ? (1) : (-1))));
-								fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * height);
+								fy = 0 - ((wheel->focusIndex - good_center + 1) * height);
 								fy += i * child->rect.height;
 								fy += offset;
-								fy += (wheel->fix_count * child->rect.height) * ((offset > 0) ? (-1) : (1));
+								fy += (wheel->fix_count * child->rect.height / wheel->drag_change_factor) * ((offset > 0) ? (-1) : (1));
+
+								
+
+								if (i == wheel->focusIndex)
+									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
+								else
+									ituWidgetSetColor(child, color.alpha, color.red, color.green, color.blue);
+								
 								ituWidgetSetY(child, fy);
 							}
 						}
 
-						if ((offset >= height) || (offset <= (0 - height)))
+						if ((offset >= (height / wheel->drag_change_factor)) || (offset <= (0 - (height / wheel->drag_change_factor))))
 						{
 							if (offset > 0)
 							{
-								shift = offset / height;
+								shift = offset / (height / wheel->drag_change_factor);
 
 								if ((wheel->fix_count < shift) && (wheel->focusIndex > 0))
 								{
@@ -665,17 +916,18 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 										ituTextSetFontSize(text, wheel->fontHeight);
 									else
 										ituTextSetFontHeight(text, wheel->fontHeight);
+
+									wheel->fix_count++;
+
 									fc--;
 									wheel->focusIndex--;
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
-
-									wheel->fix_count++;
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 									//printf("===[wheel][A][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
@@ -688,24 +940,25 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 										ituTextSetFontSize(text, wheel->fontHeight);
 									else
 										ituTextSetFontHeight(text, wheel->fontHeight);
+
+									wheel->fix_count--;
+
 									fc++;
 									wheel->focusIndex++;
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
-
-									wheel->fix_count--;
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 									//printf("===[wheel][B][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
 							}
 							else
 							{
-								shift = (-1) * offset / height;
+								shift = (-1) * offset / (height / wheel->drag_change_factor);
 
 								if ((wheel->fix_count < shift) && (wheel->focusIndex < fmax))
 								{
@@ -721,10 +974,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 
 									wheel->fix_count++;
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -744,10 +997,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 
 									wheel->fix_count--;
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -773,10 +1026,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 
 									wheel->fix_count--;
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -799,10 +1052,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, fc);
 									text = (ITUText*)child;
 									ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
-									if (wheel->fontsquare == 1)
-										ituTextSetFontSize(text, wheel->focusFontHeight);
-									else
-										ituTextSetFontHeight(text, wheel->focusFontHeight);
+									//if (wheel->fontsquare == 1)
+									//	ituTextSetFontSize(text, wheel->focusFontHeight);
+									//else
+									//	ituTextSetFontHeight(text, wheel->focusFontHeight);
 
 									wheel->fix_count--;
 									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -820,6 +1073,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					{
 						int i, fy, fm, offset, shift, count = itcTreeGetChildCount(wheel);
 						ITUWidget* child;
+						ITUWidget* childf = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->focusIndex);
+						ITUWidget* child_outside_one = NULL;
+						bool shift_check = true;
 
 						offset = y - wheel->touchY;
 						child = (ITUWidget*)itcTreeGetChildAt(wheel, 0);
@@ -827,47 +1083,74 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						if (wheel->scal > 0)
 							offset /= wheel->scal;
 
+						//fix for the side effect that focusindex change will make the last cycle_arr item outside
 						for (i = 0; i < wheel->cycle_arr_count; i++)
 						{
-							child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-							
-							if (i == 0)
-								fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
+							int fix_value;
+							int fix_count_mod = abs(wheel->fix_count + 1) / wheel->drag_change_factor;
+							ITUWidget* childlocal = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
 
-							ituWidgetSetY(child, fy + offset + ((offset>0)?(-1):(1)) * ((wheel->fix_count) ? (child->rect.height * wheel->fix_count) : (0)));
+							if (i == 0)
+							{
+								fy = 0 - childlocal->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * childlocal->rect.height);
+							}
+
+							fix_value = fy + offset + ((offset > 0) ? (-1) : (1)) * ((fix_count_mod) ? (childlocal->rect.height * fix_count_mod) : (0));
+
+							if ((offset > 0) && (i == (wheel->cycle_arr_count - 1)))
+							{
+								int more_outside_one = (((wheel->cycle_arr[wheel->cycle_arr_count - 1] + 1) > wheel->maxci) ? (wheel->minci) : ((wheel->cycle_arr[wheel->cycle_arr_count - 1] + 1)));
+								child_outside_one = (ITUWidget*)itcTreeGetChildAt(wheel, more_outside_one);
+								//printf("ouside is %d\n", more_outside_one);
+							}
+							else if ((offset < 0) && (i == 0))
+							{
+								int more_outside_one = (((wheel->cycle_arr[0] - 1) < wheel->minci) ? (wheel->maxci) : ((wheel->cycle_arr[0] - 1)));
+								child_outside_one = (ITUWidget*)itcTreeGetChildAt(wheel, more_outside_one);
+								//printf("ouside is %d\n", more_outside_one);
+							}
+
+							ituWidgetSetY(childlocal, fix_value);
 							fy += child->rect.height;
+
+							if (child_outside_one != NULL)
+							{
+								if (i == 0)
+									fy -= childlocal->rect.height * 2;
+								ituWidgetSetY(child_outside_one, fix_value);
+								if (i == 0)
+									fy += childlocal->rect.height * 2;
+								child_outside_one = NULL;
+							}
 						}
 
-						if ((offset >= child->rect.height) || (offset <= (0 - child->rect.height)))
+						if ((offset > (child->rect.height / wheel->drag_change_factor)) || (offset < (0 - (child->rect.height / wheel->drag_change_factor))))
 						{
 							if (offset > 0)
 							{
-								shift = offset / child->rect.height;
+								shift = offset / (child->rect.height / wheel->drag_change_factor);
 
 								if (wheel->fix_count < shift)
 								{
-									for (i = 0; i < wheel->cycle_arr_count; i++)
-									{
-										wheel->cycle_arr[i]--;
-
-										if (wheel->cycle_arr[i] < wheel->minci)
-											wheel->cycle_arr[i] = wheel->maxci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
-									}
 									wheel->fix_count++;
 									fm = wheel->focus_c - 1;
 
 									if (fm < wheel->minci)
 										fm = wheel->maxci;
 
-									focus_change(widget, fm, __LINE__);
-									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									if (((wheel->fix_count - 1) % wheel->drag_change_factor) == 0)
+									{
+										for (i = 0; i < wheel->cycle_arr_count; i++)
+										{
+											wheel->cycle_arr[i]--;
+
+											if (wheel->cycle_arr[i] < wheel->minci)
+												wheel->cycle_arr[i] = wheel->maxci;
+										}
+
+										focus_change(widget, fm, __LINE__);
+										ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									}
 									//printf("===[wheel][A][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
 								else if (wheel->fix_count > shift)
@@ -875,60 +1158,54 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[0]);
 									ituWidgetSetY(child, wheel->tempy);
 
-									for (i = 0; i < wheel->cycle_arr_count; i++)
-									{
-										wheel->cycle_arr[i]++;
-
-										if (wheel->cycle_arr[i] > wheel->maxci)
-											wheel->cycle_arr[i] = wheel->minci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
-									}
 									wheel->fix_count--;
 									fm = wheel->focus_c + 1;
 
 									if (fm > wheel->maxci)
 										fm = wheel->minci;
 
-									focus_change(widget, fm, __LINE__);
-									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									if (((wheel->fix_count + 0) % wheel->drag_change_factor) == 0)
+									{
+										for (i = 0; i < wheel->cycle_arr_count; i++)
+										{
+											wheel->cycle_arr[i]++;
+
+											if (wheel->cycle_arr[i] > wheel->maxci)
+												wheel->cycle_arr[i] = wheel->minci;
+										}
+
+										focus_change(widget, fm, __LINE__);
+										ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									}
 									//printf("===[wheel][B][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
 							}
 							else
 							{
-								shift = (-1) * offset / child->rect.height;
+								shift = (-1) * offset / (child->rect.height / wheel->drag_change_factor);
 
 								if (wheel->fix_count < shift)
 								{
-									for (i = 0; i < wheel->cycle_arr_count; i++)
-									{
-										wheel->cycle_arr[i]++;
-
-										if (wheel->cycle_arr[i] > wheel->maxci)
-											wheel->cycle_arr[i] = wheel->minci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
-									}
 									wheel->fix_count++;
 									fm = wheel->focus_c + 1;
 
 									if (fm > wheel->maxci)
 										fm = wheel->minci;
 
-									focus_change(widget, fm, __LINE__);
-									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
-									ituWidgetUpdate(widget, ITU_EVENT_CHANGED, 0, 0, 0);
+									if (((wheel->fix_count - 1) % wheel->drag_change_factor) == 0)
+									{
+										for (i = 0; i < wheel->cycle_arr_count; i++)
+										{
+											wheel->cycle_arr[i]++;
+
+											if (wheel->cycle_arr[i] > wheel->maxci)
+												wheel->cycle_arr[i] = wheel->minci;
+										}
+
+										focus_change(widget, fm, __LINE__);
+										ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									}
+									//ituWidgetUpdate(widget, ITU_EVENT_CHANGED, 0, 0, 0);
 									//printf("===[wheel][C][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
 								else if (wheel->fix_count > shift)
@@ -936,28 +1213,25 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[wheel->cycle_arr_count - 1]);
 									ituWidgetSetY(child, wheel->tempy);
 
-									for (i = 0; i < wheel->cycle_arr_count; i++)
-									{
-										wheel->cycle_arr[i]--;
-
-										if (wheel->cycle_arr[i] < wheel->minci)
-											wheel->cycle_arr[i] = wheel->maxci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
-									}
 									wheel->fix_count--;
 									fm = wheel->focus_c - 1;
 
 									if (fm < wheel->minci)
 										fm = wheel->maxci;
 
-									focus_change(widget, fm, __LINE__);
-									ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									if (((wheel->fix_count + 0) % wheel->drag_change_factor) == 0)
+									{
+										for (i = 0; i < wheel->cycle_arr_count; i++)
+										{
+											wheel->cycle_arr[i]--;
+
+											if (wheel->cycle_arr[i] < wheel->minci)
+												wheel->cycle_arr[i] = wheel->maxci;
+										}
+
+										focus_change(widget, fm, __LINE__);
+										ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+									}
 									//printf("===[wheel][D][wheel->fix_count %d][shift %d]===\n", wheel->fix_count, shift);
 								}
 							}
@@ -977,13 +1251,6 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 										if (wheel->cycle_arr[i] > wheel->maxci)
 											wheel->cycle_arr[i] = wheel->minci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
 									}
 									wheel->fix_count--;
 									fm = wheel->focus_c + 1;
@@ -1009,13 +1276,6 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 										if (wheel->cycle_arr[i] < wheel->minci)
 											wheel->cycle_arr[i] = wheel->maxci;
-
-										child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
-
-										if (i == 0)
-											fy = 0 - child->rect.height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * child->rect.height);
-
-										fy += child->rect.height;
 									}
 									wheel->fix_count--;
 									fm = wheel->focus_c - 1;
@@ -1031,7 +1291,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						}
 
 						child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->focusIndex);
-						ituWidgetSetY(child, child->rect.y - ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV));
+						ituWidgetSetY(child, child->rect.y - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV));
 						result = true;
 					}
 				}
@@ -1042,6 +1302,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 			int x = arg2 - widget->rect.x;
 			int y = arg3 - widget->rect.y;
 			//printf("[x,y,touchy] [%d,%d,%d]\n",x ,y , wheel->touchY);
+
+			widget->flags &= ~ITU_LONG_DRAG;
+
             if (ituWidgetIsEnabled(widget) && (widget->flags & ITU_DRAGGABLE) && !result)
             {
                 if (ituWidgetIsInside(widget, x, y))
@@ -1060,11 +1323,14 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				get_normal_color(widget);
 
 				//force to reset frame and total frame to default
-				wheel->totalframe = (int)ituWidgetGetCustomData(wheel);
+				wheel->totalframe = wheel->org_totalframe;
 
-				wheel->frame = wheel->totalframe;
+				//wheel->frame = wheel->totalframe;
+				//try fix continue update timer draw
+				wheel->frame = 0;
+				
+				
 				wheel->inc = 0;
-
 				//if (wheel->sliding == 1)
 				//{
 				//	wheel->idle = 1;
@@ -1098,16 +1364,18 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				wheel->inside = 0;
 				if ((count > 0) && (wheel->cycle_tor <= 0))
 				{
+					int offset, absoffset, interval;
+					int div_value;
+					offset = y - wheel->touchY;
+					interval = offset / child->rect.height;
+					offset -= (interval * child->rect.height);
+					absoffset = offset > 0 ? offset : -offset;
+					//wheel->focus_dev = offset - ((wheel->fix_count * child->rect.height / wheel->drag_change_factor) * ((offset < 0) ? (-1) : (1)));
+					wheel->focus_dev = 0;
+
 					if ((wheel->inc == 0) && (wheel->fix_count == 0))
 					{
-						int offset, absoffset, interval;
-						int div_value;
-						offset = y - wheel->touchY;
-						interval = offset / child->rect.height;
-						offset -= (interval * child->rect.height);
-						absoffset = offset > 0 ? offset : -offset;
-
-						if (absoffset > child->rect.height / 2)
+						if (absoffset > child->rect.height / wheel->mouseup_change_factor)
 						{
 							div_value = child->rect.height / wheel->totalframe;
 							div_value = (div_value == 0) ? (1) : (div_value);
@@ -1131,11 +1399,15 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							div_value = child->rect.height / wheel->totalframe;
 							div_value = (div_value == 0) ? (1) : (div_value);
 							wheel->frame = wheel->totalframe - absoffset / div_value;
+							wheel->org_totalframe = wheel->frame;
 
 							if (offset > 0)
 							{
 								wheel->inc = -child->rect.height;
 								wheel->focusIndex -= interval;// +1;
+
+								wheel->frame = wheel->totalframe;
+
 								if (interval == 0)
 									wheel->inc = 0;
 								//printf("===[wheel][3][frame %d][offset %d][inc %d][interval %d][focusIndex %d]===\n", wheel->frame, offset, wheel->inc, interval, wheel->focusIndex);
@@ -1144,12 +1416,16 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							{
 								wheel->inc = child->rect.height;
 								wheel->focusIndex -= interval;// -1;
+
+								wheel->frame = wheel->totalframe;
+
 								if (interval == 0)
 									wheel->inc = 0;
 								//printf("===[wheel][4][frame %d][offset %d][inc %d][interval %d][focusIndex %d]===\n", wheel->frame, offset, wheel->inc, interval, wheel->focusIndex);
 							}
 
-							soft_click = true;
+							if (!(widget->flags & ITU_LONG_DRAG))
+								soft_click = true;
 						}
 
 						if (wheel->inc > 0)
@@ -1161,28 +1437,28 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								wheel->inc = 0;
 								//printf("===[wheel][5]\n");
 							}
-							else
-							{
-								if (wheel->focusIndex >= fmax)
-								{
-									wheel->focusIndex = fmax;
-									wheel->frame = wheel->totalframe;
-									wheel->inc = 0;
-									//printf("===[wheel][6]\n");
-								}
-							}
+							//else
+							//{
+							//	if (wheel->focusIndex >= fmax)
+							//	{
+							//		wheel->focusIndex = fmax;
+							//		wheel->frame = wheel->totalframe;
+							//		wheel->inc = 0;
+							//		//printf("===[wheel][6]\n");
+							//	}
+							//}
 						}
 						else // if (wheel->inc < 0)
 						{
-							if (wheel->focusIndex <= 0)
-							{
-								wheel->focusIndex = 0;
-								wheel->frame = wheel->totalframe;
-								wheel->inc = 0;
-								//printf("===[wheel][7]\n");
-							}
-							else
-							{
+							//if (wheel->focusIndex <= 0)
+							//{
+							//	wheel->focusIndex = 0;
+							//	wheel->frame = wheel->totalframe;
+							//	wheel->inc = 0;
+							//	//printf("===[wheel][7]\n");
+							//}
+							//else
+							//{
 								if (wheel->focusIndex >= fmax)
 								{
 									wheel->focusIndex = fmax;
@@ -1190,7 +1466,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 									wheel->inc = 0;
 									//printf("===[wheel][8]\n");
 								}
-							}
+							//}
 
 							/*
 							if (wheel->idle == 0)
@@ -1248,6 +1524,10 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								}
 							}
 
+							wheel->inc = 0;
+							wheel->frame = 0;
+							widget->flags &= ~ITU_UNDRAGGING;
+							wheel->focus_dev = 0;
 							ituWheelGoto(wheel, goal);
 						}
 						else if (wheel->touchY > (c_bot + 2))
@@ -1265,15 +1545,20 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 								}
 							}
 
+							wheel->inc = 0;
+							wheel->frame = 0;
+							widget->flags &= ~ITU_UNDRAGGING;
+							wheel->focus_dev = 0;
 							ituWheelGoto(wheel, goal);
 						}
 
-						//printf("[soft click]\n");
+						//printf("[soft click][goal %d]\n", goal);
 					}
 					else
 					{
 						wheel->idle = 0;
-						ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+						if ((wheel->focusIndex >= 0) && (wheel->focusIndex <= fmax))
+							ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 					}
 				}
 				else if ((count > 0) && wheel->cycle_tor) //for cycle mode
@@ -1290,7 +1575,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						interval = offset / child->rect.height;
 						absoffset = offset > 0 ? offset : -offset;
 
-						if (absoffset > child->rect.height / 2)
+						if (absoffset > child->rect.height / wheel->mouseup_change_factor)
 						{
 							div_value = child->rect.height / wheel->totalframe;
 							div_value = (div_value == 0) ? (1) : (div_value);
@@ -1436,16 +1721,16 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							if (wheel->focusIndex < 0)
 							{
 								wheel->focus_c = wheel->maxci;
-								wheel->focusIndex = wheel->focus_c - wheel->focus_dev;
+								wheel->focusIndex = wheel->focus_c;
 								wheel->frame = wheel->totalframe;
 								wheel->inc = 0;
 							}
 							else
 							{
-								if (wheel->focusIndex >(wheel->maxci - wheel->focus_dev))
+								if (wheel->focusIndex > wheel->maxci)
 								{
 									wheel->focus_c = wheel->minci;
-									wheel->focusIndex = wheel->focus_c - wheel->focus_dev;
+									wheel->focusIndex = wheel->focus_c;
 									wheel->frame = wheel->totalframe;
 									wheel->inc = 0;
 								}
@@ -1456,16 +1741,16 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							if (wheel->focusIndex < 0)
 							{
 								wheel->focus_c = wheel->maxci;
-								wheel->focusIndex = wheel->focus_c - wheel->focus_dev;
+								wheel->focusIndex = wheel->focus_c;
 								wheel->frame = wheel->totalframe;
 								wheel->inc = 0;
 							}
 							else
 							{
-								if (wheel->focusIndex >(wheel->maxci - wheel->focus_dev))
+								if (wheel->focusIndex > wheel->maxci)
 								{
 									wheel->focus_c = wheel->minci;
-									wheel->focusIndex = wheel->focus_c - wheel->focus_dev;
+									wheel->focusIndex = wheel->focus_c;
 									wheel->frame = wheel->totalframe;
 									wheel->inc = 0;
 								}
@@ -1549,26 +1834,107 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 			widget->flags &= ~ITU_DRAGGING;
 			wheel->touchCount = 0;
+			widget->flags &= ~ITU_LONG_DRAG;
 		}
     }
     
-    if (ev == ITU_EVENT_TIMER)
-    {
+	if (ev == ITU_EVENT_TIMER)
+	{
 		if ((wheel->sliding) || (wheel->frame == wheel->totalframe))
 			result = true;
 
 		//fix for some case make slide_step too small and wheel will not stop
-		if (wheel->sliding && (wheel->slide_step < MOTION_THRESHOLD))
+		if (wheel->sliding && ((wheel->slide_step < ITU_WHEEL_MOTION_THRESHOLD) || (wheel->slide == 0)))
 		{
 			wheel->sliding = 0;
 			return result;
+		}
+
+		//try to fix idle check error
+		if ((wheel->idle == 1) && (wheel->inc == 0) && (wheel->frame == 0) && (wheel->focus_dev == 0))
+		{
+			if (!(widget->flags & ITU_DRAGGING))
+			{
+				wheel->idle = 0;
+				wheel->totalframe = wheel->org_totalframe;
+			}
 		}
 
 		if (wheel->cycle_tor <= 0) //non-cycle
 		{
 			int fmax = get_max_focusindex(widget);
 
-			if ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0))
+			if (0)//(wheel->focus_dev)
+			{
+				if (widget->flags & ITU_UNDRAGGING)
+					printf("UNDragging!\n");
+
+				if (wheel->sliding)
+					printf("sliding!\n");
+
+				if (widget->flags & ITU_DRAGGING)
+					printf("Dragging!\n");
+
+				printf("inc %d frame %d\n", wheel->inc, wheel->frame);
+			}
+
+			if ((wheel->focus_dev) && ((!(widget->flags & ITU_UNDRAGGING)) && (wheel->sliding == 0)) && (!(widget->flags & ITU_DRAGGING)))
+			{
+				int i, count = itcTreeGetChildCount(wheel);
+				ITUColor color;
+				ITUText* text;
+
+				result = true;
+
+				for (i = 0; i < count; ++i)
+				{
+					int fy;
+					ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
+					text = (ITUText*)itcTreeGetChildAt(wheel, i);
+					fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
+					fy += i * child->rect.height;
+					fy -= wheel->focus_dev * child->rect.height * wheel->frame / wheel->totalframe;
+
+					if (((wheel->focus_dev < 0) && (wheel->focusIndex == 0)) || ((wheel->focus_dev > 0) && (wheel->focusIndex == fmax)))
+					{
+						wheel->frame = wheel->totalframe;
+						break;
+					}
+
+					if (i == 0)
+					{
+						use_normal_color(widget, &color);
+						wheel_font_size_cal(wheel);
+					}
+
+					ituWidgetSetColor(text, color.alpha, color.red, color.green, color.blue);
+					ituWidgetSetY(child, fy);
+				}
+
+				wheel->frame++;
+
+				if (wheel->frame > wheel->totalframe)
+				{
+					bool fi_changed = true;
+
+					if ((wheel->focus_dev < 0) && (wheel->focusIndex > 0))
+						wheel->focusIndex--;
+					else if ((wheel->focus_dev > 0) && (wheel->focusIndex < fmax))
+						wheel->focusIndex++;
+					else
+						fi_changed = false;
+
+					wheel->frame = 0;
+					wheel->focus_dev = 0;
+
+					if (fi_changed)
+					{
+						ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
+						ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+					}
+				}
+			}
+			else if ((wheel->focus_dev) && ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0)))
 			{
 				int i, count = itcTreeGetChildCount(wheel);
 				ITUColor color;
@@ -1576,17 +1942,99 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 				for (i = 0; i < count; ++i)
 				{
-				   int fy;
+					int fy;
 					ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
 					text = (ITUText*)itcTreeGetChildAt(wheel, i);
-					//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-					fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+					fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
+					fy += i * child->rect.height;
+					fy += wheel->focus_dev * wheel->frame / wheel->totalframe;
+
+					if (i == 0)
+					{
+						use_normal_color(widget, &color);
+						wheel_font_size_cal(wheel);
+					}
+
+					//ituWidgetSetColor(text, color.alpha, color.red, color.green, color.blue);
+					ituWidgetSetY(child, fy);
+				}
+				//printf("[TIMER][frame %d]\n", wheel->frame);
+				wheel->frame++;
+
+				if (wheel->frame > wheel->totalframe)
+				{
+					bool fi_changed = true;
+
+					if ((wheel->inc > 0) && (wheel->focusIndex > 0))
+						wheel->focusIndex--;
+					else if ((wheel->inc < 0) && (wheel->focusIndex < fmax))
+						wheel->focusIndex++;
+					else
+						fi_changed = false;
+
+					wheel->frame = 0;
+
+					if (wheel->sliding == 0)
+					{
+						wheel->inc = 0;
+						wheel->idle = 0;
+					}
+					else
+					{
+						wheel->sliding = 0;
+					}
+
+					widget->flags &= ~ITU_UNDRAGGING;
+
+					for (i = 0; i < count; ++i)
+					{
+						ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
+						int fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
+						fy += i * child->rect.height;
+
+						if (i == 0)
+						{
+							use_normal_color(widget, &color);
+							wheel_font_size_cal(wheel);
+						}
+
+						//if (wheel->fontsquare == 1)
+						//	ituTextSetFontSize(text, wheel->fontHeight);
+						//else
+						//	ituTextSetFontHeight(text, wheel->fontHeight);
+						ituWidgetSetY(child, fy);
+					}
+
+					wheel->focus_dev = 0;
+
+					text = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex);
+					//ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
+					if (wheel->fontsquare == 1)
+						ituTextSetFontSize(text, wheel->focusFontHeight);
+					else
+						ituTextSetFontHeight(text, wheel->focusFontHeight);
+
+					if (fi_changed)
+						ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+				}
+			}
+			else if ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0))
+			{
+				int i, count = itcTreeGetChildCount(wheel);
+				ITUColor color;
+				ITUText* text;
+
+				for (i = 0; i < count; ++i)
+				{
+					int fy;
+					ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
+					text = (ITUText*)itcTreeGetChildAt(wheel, i);
+					fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 					fy += i * child->rect.height;
 					fy += wheel->inc * wheel->frame / wheel->totalframe;
 
 					if (i == 0)
 					{
-						//memcpy(&color, &NColor, sizeof (ITUColor));
 						use_normal_color(widget, &color);
 					}
 
@@ -1627,18 +2075,24 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					}
 
 					widget->flags &= ~ITU_UNDRAGGING;
+					wheel->focus_dev = 0;
 
 					for (i = 0; i < count; ++i)
 					{
 						ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
-						//int fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-						int fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+						int fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 						fy += i * child->rect.height;
 
 						ituWidgetSetY(child, fy);
 					}
 
-					text = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex + wheel->focus_dev);
+					//fix for focusindex outside the non - cycle sometime
+					if (wheel->focusIndex < 0)
+						wheel->focusIndex = 0;
+					else if (wheel->focusIndex > fmax)
+						wheel->focusIndex = fmax;
+
+					text = (ITUText*)itcTreeGetChildAt(wheel, wheel->focusIndex);
 					ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 					if (wheel->fontsquare == 1)
 						ituTextSetFontSize(text, wheel->focusFontHeight);
@@ -1666,12 +2120,12 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					if (i == 0)
 					{
 						height0 = height = child->rect.height;
-						//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-						fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+						fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 						use_normal_color(widget, &color);
+						wheel_font_size_cal(wheel);
 					}
 
-					if (i == wheel->focusIndex + wheel->focus_dev)
+					if (i == wheel->focusIndex)
 					{
 						ituWidgetSetColor(child, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 					}
@@ -1701,29 +2155,39 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 				//wheel->moving_step = 1;
 
-				if (wheel->shift_one) // && (widget->flags & ITU_DRAGGABLE))
-				{
-					wheel->frame = wheel->totalframe;
-					wheel->shift_one = 0;
-					wheel->sliding = 0;
-				}
+				//if (wheel->shift_one) // && (widget->flags & ITU_DRAGGABLE))
+				//{
+				//	wheel->frame = wheel->totalframe;
+				//	wheel->shift_one = 0;
+				//	wheel->sliding = 0;
+				//}
 				wheel->frame++;
 
 				if (wheel->frame > wheel->totalframe)
 				{
 					if ((wheel->inc > 0) && (wheel->focusIndex > 0))
 					{
-						if ((!((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0))) || (wheel->focusIndex == 1))
+						if ((!((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0))) || (wheel->focusIndex == 1))
 							wheel->idle = 0;
 						wheel->focusIndex--;
 						ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 					}
 					else if ((wheel->inc < 0) && (wheel->focusIndex < fmax))
 					{
-						if ((!((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0))) || (wheel->focusIndex == (fmax - 1)))
+						if ((!((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0))) || (wheel->focusIndex == (fmax - 1)))
 							wheel->idle = 0;
 						wheel->focusIndex++;
 						ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+					}
+
+					//fix bug the sliding can not go to end when touch boundary early
+					if (wheel->sliding)
+					{
+						if (((wheel->inc > 0) && (wheel->focusIndex <= 0)) || ((wheel->inc < 0) && (wheel->focusIndex >= fmax)))
+						{
+							wheel->totalframe = wheel->org_totalframe;
+							wheel->sliding = 0;
+						}
 					}
 
 
@@ -1731,26 +2195,26 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 					////////////////////////////////
 					//Force feedback algorithm
-					if ((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0))
+					if ((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0))
 					{
 						int y1;
 						float progress_range;
 						double pow_b;
-						double fix_mod = ((double)wheel->slide_step / MOTION_THRESHOLD);
+						double fix_mod = ((double)wheel->slide_step / ITU_WHEEL_MOTION_THRESHOLD);
 
-						if (fix_mod > MAX_INIT_POWER)
-							fix_mod = MAX_INIT_POWER;
+						if (fix_mod > ITU_WHEEL_MAX_INIT_POWER)
+							fix_mod = ITU_WHEEL_MAX_INIT_POWER;
 
-						pow_b = 5.0 * MAX_INIT_POWER / fix_mod;
+						pow_b = 5.0 * ITU_WHEEL_MAX_INIT_POWER / fix_mod;
 
-						y1 = (int)(pow(pow_b, (double)wheel->totalframe / (MOTION_FACTOR / (5.0 - fix_mod))));
+						y1 = (int)(pow(pow_b, (double)wheel->totalframe / (ITU_WHEEL_MOTION_FACTOR / (5.0 - fix_mod))));
 
-						if (y1 > MOTION_FACTOR)
-							y1 = MOTION_FACTOR;
+						if (y1 > ITU_WHEEL_MOTION_FACTOR)
+							y1 = ITU_WHEEL_MOTION_FACTOR;
 
 						printf("[ydiff %d] [pow_b %.3f] [totalframe %d]\n", wheel->slide_step, pow_b, wheel->totalframe);
 
-						progress_range = (float)wheel->totalframe / MOTION_FACTOR;
+						progress_range = (float)wheel->totalframe / ITU_WHEEL_MOTION_FACTOR;
 
 						if (wheel->slide_itemcount)
 						{
@@ -1758,16 +2222,16 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						}
 						else
 						{
-							if (progress_range <= PROCESS_STAGE1)
+							if (progress_range <= ITU_WHEEL_PROCESS_STAGE1)
 								wheel->totalframe += y1;
-							else if (progress_range <= PROCESS_STAGE2)
+							else if (progress_range <= ITU_WHEEL_PROCESS_STAGE2)
 								wheel->totalframe += y1 * 3;
 							else
 								wheel->totalframe += y1 * (int)fix_mod;
 						}
 
 						if (wheel->totalframe > 40)
-							wheel->totalframe = MOTION_FACTOR;
+							wheel->totalframe = ITU_WHEEL_MOTION_FACTOR;
 					}
 					else
 					{
@@ -1776,7 +2240,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 						//wheel->moving_step = 0;
 
-						wheel->totalframe = (int)ituWidgetGetCustomData(wheel);
+						wheel->totalframe = wheel->org_totalframe;
+						wheel->focus_dev = 0;
 
 						if (wheel->sliding == 1)
 							wheel->sliding = 0;
@@ -1788,8 +2253,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							if (i == 0)
 							{
 								height0 = height = child->rect.height;
-								//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-								fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+								fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 							}
 
 							text = (ITUText*)child;
@@ -1798,7 +2262,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 							child->rect.height = height = height0;
 
-							if (i == (wheel->focusIndex + wheel->focus_dev))
+							if (i == wheel->focusIndex)
 							{
 								ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 
@@ -1841,8 +2305,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					if (i == 0)
 					{
 						height0 = height = child->rect.height;
-						//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-						fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+						fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 						//memcpy(&color, &NColor, sizeof (ITUColor));
 						use_normal_color(widget, &color);
 					}
@@ -1856,7 +2319,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					{
 						ITUText* text = (ITUText*)child;
 
-						if (i == (wheel->focusIndex + wheel->focus_dev))
+						if (i == wheel->focusIndex)
 						{
 							int a = color.alpha + (wheel->focusColor.alpha - color.alpha) * (wheel->totalframe - wheel->frame) / wheel->totalframe;
 							int r = color.red + (wheel->focusColor.red - color.red) * (wheel->totalframe - wheel->frame) / wheel->totalframe;
@@ -1871,8 +2334,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							else
 								ituTextSetFontHeight(text, wheel->fontHeight + (wheel->focusFontHeight - wheel->fontHeight) * (wheel->totalframe - wheel->frame) / wheel->totalframe);
 						}
-						else if (((i == wheel->focusIndex + wheel->focus_dev - 1) && (wheel->inc > 0)) ||
-							((i == wheel->focusIndex + wheel->focus_dev + 1) && (wheel->inc < 0)))
+						else if (((i == wheel->focusIndex - 1) && (wheel->inc > 0)) ||
+							((i == wheel->focusIndex + 1) && (wheel->inc < 0)))
 						{
 							int a = color.alpha + (wheel->focusColor.alpha - color.alpha) * wheel->frame / wheel->totalframe;
 							int r = color.red + (wheel->focusColor.red - color.red) * wheel->frame / wheel->totalframe;
@@ -1898,11 +2361,11 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						wheel->frame = wheel->totalframe;
 				}
 
-				if ((wheel->shift_one) && (widget->flags & ITU_DRAGGABLE))
+				/*if ((wheel->shift_one) && (widget->flags & ITU_DRAGGABLE))
 				{
-					wheel->frame = wheel->totalframe;
-					wheel->shift_one = 0;
-				}
+				wheel->frame = wheel->totalframe;
+				wheel->shift_one = 0;
+				}*/
 
 				wheel->frame++;
 
@@ -1935,8 +2398,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						if (i == 0)
 						{
 							height0 = height = child->rect.height;
-							//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-							fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+							fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 						}
 
 						text = (ITUText*)child;
@@ -1945,7 +2407,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 						child->rect.height = height = height0;
 
-						if (i == wheel->focusIndex + wheel->focus_dev)
+						if (i == wheel->focusIndex)
 						{
 							ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 
@@ -1961,7 +2423,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						else
 						{
 							ituWidgetSetColor(child, color.alpha, color.red, color.green, color.blue);
-							
+
 							if (wheel->fontsquare == 1)
 								ituTextSetFontSize(text, wheel->fontHeight);
 							else
@@ -1990,8 +2452,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						if (i == 0)
 						{
 							height0 = height = child->rect.height;
-							//fy = 0 - (child->rect.height * (wheel->focusIndex + wheel->focus_dev - (wheel->itemCount / 2)));
-							fy = 0 - ((wheel->focusIndex + wheel->focus_dev - good_center + 1) * child->rect.height);
+							fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
 						}
 
 						text = (ITUText*)child;
@@ -2000,7 +2461,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 						child->rect.height = height = height0;
 
-						if (i == (wheel->focusIndex + wheel->focus_dev))
+						if (i == wheel->focusIndex)
 						{
 							ituWidgetSetColor(text, wheel->focusColor.alpha, wheel->focusColor.red, wheel->focusColor.green, wheel->focusColor.blue);
 
@@ -2045,6 +2506,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				int fy = 0;
 				int height = 0;
 
+				refix_wheel_layout(wheel);
+
 				for (i = 0; i < wheel->cycle_arr_count; i++)
 				{
 					ITUWidget* child;
@@ -2059,7 +2522,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						fy = 0 - height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * height);
 					}
 
-					focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV);
+					focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV);
 
 					child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
 					text = (ITUText*)child;
@@ -2068,9 +2531,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					{
 						/*
 						if (wheel->fontsquare == 1)
-							ituTextSetFontSize(text, wheel->focusFontHeight);
+						ituTextSetFontSize(text, wheel->focusFontHeight);
 						else
-							ituTextSetFontHeight(text, wheel->focusFontHeight); */
+						ituTextSetFontHeight(text, wheel->focusFontHeight); */
 
 						//if (child->rect.y != focus_fy)
 						//	printf("oh!....different %d %d\n", child->rect.y, focus_fy);
@@ -2082,9 +2545,9 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					{
 						/*
 						if (wheel->fontsquare == 1)
-							ituTextSetFontSize(text, wheel->fontHeight);
+						ituTextSetFontSize(text, wheel->fontHeight);
 						else
-							ituTextSetFontHeight(text, wheel->fontHeight); */
+						ituTextSetFontHeight(text, wheel->fontHeight); */
 
 						ituWidgetSetY(child, fy);
 						//printf("===[wheel][timer][child %d][str %s][fy %d]===\n", wheel->cycle_arr[i], ituTextGetString(text), fy);
@@ -2103,7 +2566,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						newfocus = wheel->focus_c - 1;
 						if (wheel->cycle_tor && (newfocus < wheel->minci))
 							newfocus = wheel->maxci;
-						
+
 						if (focus_change(widget, newfocus, __LINE__))
 						{
 							wheel->idle = 0;
@@ -2116,7 +2579,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						newfocus = wheel->focus_c + 1;
 						if (wheel->cycle_tor && (newfocus > wheel->maxci))
 							newfocus = wheel->minci;
-						
+
 						if (focus_change(widget, newfocus, __LINE__))
 						{
 							wheel->idle = 0;
@@ -2131,8 +2594,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							newfocus = wheel->focus_c - 1;
 							if (newfocus < wheel->minci)
 								newfocus = wheel->maxci;
-							
-							
+
+
 							if (focus_change(widget, newfocus, __LINE__))
 							{
 								wheel->idle = 0;
@@ -2148,8 +2611,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							newfocus = wheel->focus_c + 1;
 							if (newfocus > wheel->maxci)
 								newfocus = wheel->minci;
-							
-							
+
+
 							if (focus_change(widget, newfocus, __LINE__))
 							{
 								wheel->idle = 0;
@@ -2185,6 +2648,8 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 				ITUColor color;
 				ITUText* text;
 
+				refix_wheel_layout(wheel);
+
 				for (i = 0; i < wheel->cycle_arr_count; ++i)
 				{
 					ITUWidget* child;
@@ -2208,7 +2673,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 							ituTextSetFontSize(text, wheel->focusFontHeight);
 						else
 							ituTextSetFontHeight(text, wheel->focusFontHeight);
-						ituWidgetSetY(child, fy + (wheel->inc * wheel->frame / wheel->totalframe) - ((wheel->focusFontHeight - wheel->fontHeight) / FOCUSFONT_POS_Y_FIX_DIV));
+						ituWidgetSetY(child, fy + (wheel->inc * wheel->frame / wheel->totalframe) - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV));
 					}
 					else
 					{
@@ -2222,11 +2687,11 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 					fy += height;
 				}
 
-				if ((wheel->shift_one) && (widget->flags & ITU_DRAGGABLE))
+				/*if ((wheel->shift_one) && (widget->flags & ITU_DRAGGABLE))
 				{
-					wheel->frame = wheel->totalframe;
-					wheel->shift_one = 0;
-				}
+				wheel->frame = wheel->totalframe;
+				wheel->shift_one = 0;
+				}*/
 
 				wheel->frame++;
 
@@ -2247,7 +2712,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						}
 						if (focus_change(widget, newfocus, __LINE__))
 						{
-							if (!((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0)))
+							if (!((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0)))
 								wheel->idle = 0;
 							cycle_arrange(widget, true);
 							ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -2266,7 +2731,7 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						}
 						if (focus_change(widget, newfocus, __LINE__))
 						{
-							if (!((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0)))
+							if (!((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0)))
 								wheel->idle = 0;
 							cycle_arrange(widget, false);
 							ituExecActions(widget, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
@@ -2277,26 +2742,26 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
 					///////////////////////////////////
 					//Force feedback algorithm cycle-mode
-					if ((wheel->totalframe < MOTION_FACTOR) && (wheel->sliding > 0))
+					if ((wheel->totalframe < ITU_WHEEL_MOTION_FACTOR) && (wheel->sliding > 0))
 					{
 						int y1;
 						float progress_range;
 						double pow_b;
-						double fix_mod = ((double)wheel->slide_step / MOTION_THRESHOLD);
-						
-						if (fix_mod > MAX_INIT_POWER)
-							fix_mod = MAX_INIT_POWER;
+						double fix_mod = ((double)wheel->slide_step / ITU_WHEEL_MOTION_THRESHOLD);
 
-						pow_b = 5.0 * MAX_INIT_POWER / fix_mod;
+						if (fix_mod > ITU_WHEEL_MAX_INIT_POWER)
+							fix_mod = ITU_WHEEL_MAX_INIT_POWER;
 
-						y1 = (int)(pow(pow_b, (double)wheel->totalframe / (MOTION_FACTOR / (5.0 - fix_mod))));
+						pow_b = 5.0 * ITU_WHEEL_MAX_INIT_POWER / fix_mod;
 
-						if (y1 > MOTION_FACTOR)
-							y1 = MOTION_FACTOR;
-						
+						y1 = (int)(pow(pow_b, (double)wheel->totalframe / (ITU_WHEEL_MOTION_FACTOR / (5.0 - fix_mod))));
+
+						if (y1 > ITU_WHEEL_MOTION_FACTOR)
+							y1 = ITU_WHEEL_MOTION_FACTOR;
+
 						printf("[ydiff %d] [pow_b %.3f] [totalframe %d]\n", wheel->slide_step, pow_b, wheel->totalframe);
 
-						progress_range = (float)wheel->totalframe / MOTION_FACTOR;
+						progress_range = (float)wheel->totalframe / ITU_WHEEL_MOTION_FACTOR;
 
 						if (wheel->slide_itemcount)
 						{
@@ -2304,30 +2769,31 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 						}
 						else
 						{
-							if (progress_range <= PROCESS_STAGE1)
+							if (progress_range <= ITU_WHEEL_PROCESS_STAGE1)
 								wheel->totalframe += y1;
-							else if (progress_range <= PROCESS_STAGE2)
+							else if (progress_range <= ITU_WHEEL_PROCESS_STAGE2)
 								wheel->totalframe += y1 * 3;
 							else
 								wheel->totalframe += y1 * (int)fix_mod;
 						}
 
 						if (wheel->totalframe > 40)
-							wheel->totalframe = MOTION_FACTOR;
+							wheel->totalframe = ITU_WHEEL_MOTION_FACTOR;
 					}
 					else
 					{
 						wheel->inc = 0;
 						widget->flags &= ~ITU_UNDRAGGING;
-						wheel->totalframe = (int)ituWidgetGetCustomData(wheel);
+						wheel->totalframe = wheel->org_totalframe;
 
 						if (wheel->sliding == 1)
 							wheel->sliding = 0;
 					}
 				}
-			} 
+			}
 		}
-    }
+	}
+
     result |= widget->dirty;
     return widget->visible ? result : false;
 }
@@ -2374,7 +2840,7 @@ static void WheelOnValueChanged(ITUWheel* wheel, char* value)
 void ituWheelInit(ITUWheel* wheel)
 {
     assert(wheel);
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
     memset(wheel, 0, sizeof (ITUWheel));
 
@@ -2396,9 +2862,6 @@ void ituWheelLoad(ITUWheel* wheel, uint32_t base)
 
     ituFlowWindowLoad(&wheel->fwin, base);
 
-	//set custom data to original totalframe
-	ituWidgetSetCustomData(widget, wheel->totalframe);
-
     ituWidgetSetUpdate(wheel, ituWheelUpdate);
     ituWidgetSetDraw(wheel, ituWheelDraw);
     ituWidgetSetOnAction(wheel, ituWheelOnAction);
@@ -2418,7 +2881,7 @@ void ituWheelOnAction(ITUWidget* widget, ITUActionType action, char* param)
 		{
 			oldFlags = widget->flags;
 			widget->flags |= ITU_TOUCHABLE;
-			wheel->shift_one = 0;
+			//wheel->shift_one = 0;
 			ituWidgetUpdate(widget, ITU_EVENT_TOUCHSLIDEUP, 0, widget->rect.x, widget->rect.y);
 			if ((oldFlags & ITU_TOUCHABLE) == 0)
 				widget->flags &= ~ITU_TOUCHABLE;
@@ -2435,7 +2898,7 @@ void ituWheelOnAction(ITUWidget* widget, ITUActionType action, char* param)
 		{
 			oldFlags = widget->flags;
 			widget->flags |= ITU_TOUCHABLE;
-			wheel->shift_one = 0;
+			//wheel->shift_one = 0;
 			ituWidgetUpdate(widget, ITU_EVENT_TOUCHSLIDEDOWN, 0, widget->rect.x, widget->rect.y);
 			if ((oldFlags & ITU_TOUCHABLE) == 0)
 				widget->flags &= ~ITU_TOUCHABLE;
@@ -2495,7 +2958,7 @@ void ituWheelPrev(ITUWheel* wheel)
 	int fmax;
 
     assert(wheel);
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
 	fmax = get_max_focusindex((ITUWidget*)wheel);
 
@@ -2505,15 +2968,19 @@ void ituWheelPrev(ITUWheel* wheel)
 			wheel->focusIndex--;
 		else
 			wheel->focusIndex = fmax;
+
+		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
+		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 	}
 	else
 	{
-		if (wheel->focusIndex > 0)
-			wheel->focusIndex--;
+		//if (wheel->focusIndex > 0)
+		//	wheel->focusIndex--;
+		wheel->frame = 0;
+		wheel->focus_dev = -1;
 	}
 
-	ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
-	ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+	
 
 	/*
     if (wheel->focusIndex > 0)
@@ -2537,7 +3004,7 @@ void ituWheelNext(ITUWheel* wheel)
 	int fmax;
 
 	assert(wheel);
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
 	fmax = get_max_focusindex((ITUWidget*)wheel);
 
@@ -2547,15 +3014,19 @@ void ituWheelNext(ITUWheel* wheel)
 			wheel->focusIndex++;
 		else
 			wheel->focusIndex = 0;
+
+		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
+		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 	}
 	else
 	{
-		if (wheel->focusIndex < fmax)
-			wheel->focusIndex++;
+		//if (wheel->focusIndex < fmax)
+		//	wheel->focusIndex++;
+		wheel->frame = 0;
+		wheel->focus_dev = 1;
 	}
 
-	ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
-	ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+	
 
 	/*
     int count = itcTreeGetChildCount(wheel) - wheel->itemCount;
@@ -2581,11 +3052,11 @@ ITUWidget* ituWheelGetFocusItem(ITUWheel* wheel)
 	ITUWidget* item;
 
     assert(wheel);
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
 	if (wheel->focusIndex >= 0)
 	{
-		item = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->focus_dev + wheel->focusIndex);
+		item = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->focusIndex);
 		return item;
 	}
 	return NULL;
@@ -2604,7 +3075,18 @@ void ituWheelGoto(ITUWheel* wheel, int index)
 {
 	bool debug_print = false;
 
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
+
+	if (wheel)
+	{
+		ITUWidget* widget = (ITUWidget*)wheel;
+		if (widget->flags & ITU_LONG_DRAG)
+		{
+			if (debug_print)
+				printf("[WHEEL]Long dragging trigger, bypass goto!\n");
+			return;
+		}
+	}
 
 	if ((wheel->cycle_tor == 1) && (wheel->maxci == 0))
 		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
@@ -2618,7 +3100,7 @@ void ituWheelGoto(ITUWheel* wheel, int index)
 		wheel->frame = 0;
 		wheel->inc = 0;
 		wheel->focusIndex = index;
-		wheel->totalframe = (int)ituWidgetGetCustomData(wheel);
+		wheel->totalframe = wheel->org_totalframe;
 		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
 		ituWheelGoto(wheel, index);
 	}
@@ -2629,7 +3111,7 @@ void ituWheelGoto(ITUWheel* wheel, int index)
 			int i, shift, newfocus;
 			ITUWidget* widget = (ITUWidget*)wheel;
 
-			if ((index + wheel->focus_dev) > wheel->maxci)
+			if (index > wheel->maxci)
 				return;
 
 			if ((index == 0) && (wheel->focusIndex != 0))
@@ -2744,11 +3226,13 @@ void ituWheelGoto(ITUWheel* wheel, int index)
 			ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
 		}
 	}
+
+	ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
 }
 
 void ituWheelScal(ITUWheel* wheel, int scal)
 {
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
 	if (scal >= 1)
 		wheel->scal = scal;
@@ -2756,7 +3240,7 @@ void ituWheelScal(ITUWheel* wheel, int scal)
 
 bool ituWheelCheckIdle(ITUWheel* wheel)
 {
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 	return (wheel->idle <= 0) ? (true) : (false);
 }
 
@@ -2764,7 +3248,7 @@ bool ituWheelCheckIdle(ITUWheel* wheel)
 int ituWheelItemCount(ITUWheel* wheel)
 {
 	int count;
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
     
     count = get_max_focusindex(wheel) + 1;
 	return count;
@@ -2772,7 +3256,7 @@ int ituWheelItemCount(ITUWheel* wheel)
 
 bool ituWheelSetItemTree(ITUWheel* wheel, char** stringarr, int itemcount)
 {
-    //ITU_ASSERT_THREAD();
+    ITU_ASSERT_THREAD();
 
 	if ((!wheel) || (itemcount <= 0) || (itemcount > ITU_WHEEL_CYCLE_ARR_LIMIT) || (stringarr[itemcount - 1] == NULL))
 	{
@@ -2832,4 +3316,16 @@ bool ituWheelSetItemTree(ITUWheel* wheel, char** stringarr, int itemcount)
 		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
 		return true;
 	}
+}
+
+void ituWheelSetSlidable(ITUWheel* wheel, bool slidable)
+{
+	ITU_ASSERT_THREAD();
+
+	assert(wheel);
+
+	if (slidable)
+		wheel->slide = 1;
+	else
+		wheel->slide = 0;
 }

@@ -13,6 +13,7 @@ bool ituTextBoxClone(ITUWidget* widget, ITUWidget** cloned)
     ITUTextBox* textbox = (ITUTextBox*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -29,6 +30,8 @@ bool ituTextBoxClone(ITUWidget* widget, ITUWidget** cloned)
 
 void ituTextBoxSetString(ITUTextBox* textbox, char* string)
 {
+    ITU_ASSERT_THREAD();
+
     ituTextSetString(textbox, NULL);
     textbox->cursorIndex = 0;
     if (string)
@@ -48,6 +51,7 @@ void ituTextBoxInput(ITUTextBox* textbox, char* input)
     int i, len;
     char c, *suffix = NULL;
     assert(textbox);
+    ITU_ASSERT_THREAD();
 
     if (textbox->maxLen <= 0 || !input)
         return;
@@ -136,6 +140,7 @@ void ituTextBoxBack(ITUTextBox* textbox)
     char *ptr, *ptr0;
     int len = 0;
     assert(textbox);
+    ITU_ASSERT_THREAD();
 
     if (!text->string || textbox->cursorIndex == 0)
         return;
@@ -172,6 +177,7 @@ char* ituTextBoxGetString(ITUTextBox* textbox)
 {
     ITUText* text = &textbox->text;
     assert(text);
+    ITU_ASSERT_THREAD();
 
     if (text->string)
         return text->string;
@@ -404,6 +410,38 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                         char* pch2 = pch;
 
                         xx = 0;
+
+                        if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                        {
+                            char* pch3 = pch2;
+
+                            while (*pch3 != '\0')
+                            {
+                                int size2 = ituFtGetCharWidth(pch3, &w);
+                                if (size2 == 0)
+                                    break;
+
+                                if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                {
+                                    if (xx + w >= rect->width)
+                                    {
+                                        break;
+                                    }
+                                }
+                                xx += w;
+                                pch3 += size2;
+                            }
+
+                            if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                            {
+                                xx = rect->width / 2 - xx / 2;
+                            }
+                            else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                            {
+                                xx = rect->width - xx - 1;
+                            }
+                        }
+
                         while (*pch2 != '\0')
                         {
                             if (textbox->textboxFlags & ITU_TEXTBOX_CURSOR)
@@ -422,10 +460,40 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                                 if (xx + w >= rect->width)
                                 {
                                     xx = 0;
+                                    if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                    {
+                                        char* pch3 = pch2;
+
+                                        while (*pch3 != '\0')
+                                        {
+                                            int size2 = ituFtGetCharWidth(pch3, &w);
+                                            if (size2 == 0)
+                                                break;
+
+                                            if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                            {
+                                                if (xx + w >= rect->width)
+                                                {
+                                                    break;
+                                                }
+                                            }
+                                            xx += w;
+                                            pch3 += size2;
+                                        }
+
+                                        if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                                        {
+                                            xx = rect->width / 2 - xx / 2;
+                                        }
+                                        else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                        {
+                                            xx = rect->width - xx - 1;
+                                        }
+                                    }
                                     desty += textbox->lineHeight;
                                 }
                             }
-                            ituFtDrawChar(dest, destx + xx, desty, pch2);
+                            ituFtDrawChar(dest, destx + borderSize + xx, desty, pch2);
                             xx += w;
                             pch2 += size;
                             cursorIndex += size;
@@ -475,6 +543,37 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                             int size, w, xx = 0;
                             char* pch2 = pch;
 
+                            if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                            {
+                                char* pch3 = pch2;
+
+                                while (*pch3 != '\0')
+                                {
+                                    int size2 = ituFtGetCharWidth(pch3, &w);
+                                    if (size2 == 0)
+                                        break;
+
+                                    if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                    {
+                                        if (xx + w >= rect->width)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                    xx += w;
+                                    pch3 += size2;
+                                }
+
+                                if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                                {
+                                    xx = rect->width / 2 - xx / 2;
+                                }
+                                else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                {
+                                    xx = rect->width - xx - 1;
+                                }
+                            }
+                            
                             while (*pch2 != '\0')
                             {
                                 size = ituFtGetCharWidth(pch2, &w);
@@ -485,10 +584,40 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                                 if (xx + w >= rect->width)
                                 {
                                     xx = 0;
-                                    desty += textbox->lineHeight;
+                                    if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                    {
+                                        char* pch3 = pch2;
+
+                                        while (*pch3 != '\0')
+                                        {
+                                            int size2 = ituFtGetCharWidth(pch3, &w);
+                                            if (size2 == 0)
+                                                break;
+
+                                            if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                            {
+                                                if (xx + w >= rect->width)
+                                                {
+                                                    break;
+                                                }
+                                            }
+                                            xx += w;
+                                            pch3 += size2;
+                                        }
+
+                                        if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                                        {
+                                            xx = rect->width / 2 - xx / 2;
+                                        }
+                                        else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                        {
+                                            xx = rect->width - xx - 1;
+                                        }
+                                    }
+                                    yy += textbox->lineHeight;
                                 }
 
-                                ituFtDrawChar(dest, destx + borderSize + xx, desty, pch2);
+                                ituFtDrawChar(surf, borderSize + xx, yy, pch2);
                                 xx += w;
                                 pch2 += size;
                             }
@@ -638,7 +767,7 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                     destx += rect->width - w;
                     desty += rect->height - h;
                 }
-                ituFtDrawText(dest, destx, desty, &buf[index]);
+                ituFtDrawText(dest, destx + borderSize, desty, &buf[index]);
             }
             else if (desta > 0)
             {
@@ -739,7 +868,7 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                         dy += rect->height - h;
                     }
 
-                    ituFtDrawText(surf, dx, dy, &buf[index]);
+                    ituFtDrawText(surf, dx + borderSize, dy, &buf[index]);
                     ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);                
                     ituDestroySurface(surf);
                 }
@@ -852,6 +981,38 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                     char* pch2 = pch;
 
                     xx = 0;
+
+                    if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                    {
+                        char* pch3 = pch2;
+
+                        while (*pch3 != '\0')
+                        {
+                            int size2 = ituFtGetCharWidth(pch3, &w);
+                            if (size2 == 0)
+                                break;
+
+                            if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                            {
+                                if (xx + w >= rect->width)
+                                {
+                                    break;
+                                }
+                            }
+                            xx += w;
+                            pch3 += size2;
+                        }
+
+                        if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                        {
+                            xx = rect->width / 2 - xx / 2;
+                        }
+                        else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                        {
+                            xx = rect->width - xx - 1;
+                        }
+                    }
+
                     while (*pch2 != '\0')
                     {
                         if (*pch2 == '\r')
@@ -876,10 +1037,40 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                             if (xx + w >= rect->width)
                             {
                                 xx = 0;
+                                if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                {
+                                    char* pch3 = pch2;
+
+                                    while (*pch3 != '\0')
+                                    {
+                                        int size2 = ituFtGetCharWidth(pch3, &w);
+                                        if (size2 == 0)
+                                            break;
+
+                                        if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                        {
+                                            if (xx + w >= rect->width)
+                                            {
+                                                break;
+                                            }
+                                        }
+                                        xx += w;
+                                        pch3 += size2;
+                                    }
+
+                                    if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                                    {
+                                        xx = rect->width / 2 - xx / 2;
+                                    }
+                                    else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                    {
+                                        xx = rect->width - xx - 1;
+                                    }
+                                }
                                 desty += textbox->lineHeight;
                             }
                         }
-                        ituFtDrawChar(dest, destx + xx, desty, pch2);
+                        ituFtDrawChar(dest, destx + borderSize + xx, desty, pch2);
                         xx += w;
                         pch2 += size;
                         cursorIndex += size;
@@ -929,6 +1120,37 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                         int size, w, xx = 0;
                         char* pch2 = pch;
 
+                        if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                        {
+                            char* pch3 = pch2;
+
+                            while (*pch3 != '\0')
+                            {
+                                int size2 = ituFtGetCharWidth(pch3, &w);
+                                if (size2 == 0)
+                                    break;
+
+                                if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                {
+                                    if (xx + w >= rect->width)
+                                    {
+                                        break;
+                                    }
+                                }
+                                xx += w;
+                                pch3 += size2;
+                            }
+
+                            if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                            {
+                                xx = rect->width / 2 - xx / 2;
+                            }
+                            else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                            {
+                                xx = rect->width - xx - 1;
+                            }
+                        }
+
                         while (*pch2 != '\0')
                         {
                             size = ituFtGetCharWidth(pch2, &w);
@@ -939,10 +1161,40 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
                             if (xx + w >= rect->width)
                             {
                                 xx = 0;
-                                desty += textbox->lineHeight;
+                                if (text->layout == ITU_LAYOUT_MIDDLE_CENTER || text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                {
+                                    char* pch3 = pch2;
+
+                                    while (*pch3 != '\0')
+                                    {
+                                        int size2 = ituFtGetCharWidth(pch3, &w);
+                                        if (size2 == 0)
+                                            break;
+
+                                        if (textbox->textboxFlags & ITU_TEXTBOX_WORDWRAP)
+                                        {
+                                            if (xx + w >= rect->width)
+                                            {
+                                                break;
+                                            }
+                                        }
+                                        xx += w;
+                                        pch3 += size2;
+                                    }
+
+                                    if (text->layout == ITU_LAYOUT_MIDDLE_CENTER)
+                                    {
+                                        xx = rect->width / 2 - xx / 2;
+                                    }
+                                    else if (text->layout == ITU_LAYOUT_MIDDLE_RIGHT)
+                                    {
+                                        xx = rect->width - xx - 1;
+                                    }
+                                }
+                                yy += textbox->lineHeight;
                             }
 
-                            ituFtDrawChar(dest, destx + borderSize + xx, desty, pch2);
+                            ituFtDrawChar(surf, borderSize + xx, yy, pch2);
                             xx += w;
                             pch2 += size;
                         }
@@ -961,8 +1213,21 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
         ituWidgetDrawImpl(widget, dest, x, y, alpha);
         free(buf);
     }
+    else if (textbox->textboxFlags & ITU_TEXTBOX_CURSOR)
+    {
+        ITURectangle* rect = (ITURectangle*)&widget->rect;
+        int destx, desty;
+
+        destx = rect->x + x;
+        desty = rect->y + y;
+
+        if (textbox->cursorIndex == 0)
+            ituColorFill(dest, destx, desty, 1, text->fontHeight, &widget->color);
+    }
     else
+    {
         ituTextDraw(widget, dest, x + borderSize, y, alpha);
+    }
 
     if (ituWidgetIsActive(widget))
     {
@@ -1059,6 +1324,7 @@ void ituTextBoxOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituTextBoxInit(ITUTextBox* textbox)
 {
     assert(textbox);
+    ITU_ASSERT_THREAD();
 
     memset(textbox, 0, sizeof (ITUTextBox));
 

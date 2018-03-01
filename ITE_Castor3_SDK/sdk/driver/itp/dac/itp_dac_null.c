@@ -345,3 +345,8 @@ void itp_codec_set_i2s_sample_rate(int samplerate)
 {
     (void)samplerate;
 }
+
+int itp_codec_get_DA_running(void){
+    return false;
+}
+

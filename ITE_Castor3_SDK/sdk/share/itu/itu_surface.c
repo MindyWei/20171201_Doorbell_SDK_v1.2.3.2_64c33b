@@ -1,5 +1,8 @@
+#include <sys/endian.h>
+#include <sys/ioctl.h>
 #include <assert.h>
 #include <malloc.h>
+#include <unistd.h>
 #include "ucl/ucl.h"
 #include "ite/itp.h"
 #include "ite/itu.h"
@@ -36,7 +39,74 @@ ITUSurface *ituSurfaceDecompress(ITUSurface *surf)
     if (surf->flags & ITU_JPEG)
     {
         flags   = surf->flags & ~(ITU_COMPRESSED | ITU_STATIC | ITU_JPEG);
-        retSurf = ituJpegLoad(surf->width, surf->height, (uint8_t *)surf->addr, surf->size, 0);
+
+        if (surf->format == ITU_ARGB8888)
+        {
+            int ret, jpegSize, alphaSize, alphaCompressSize;
+            uint8_t *jpegData, *alphaData;
+            uint8_t* buf;
+            
+            memcpy(&jpegSize, (uint8_t*)surf->addr, 4);
+            jpegData = (uint8_t*)surf->addr + 4;
+            memcpy(&alphaSize, jpegData + jpegSize, 4);
+            alphaSize = be32toh(alphaSize);
+            memcpy(&alphaCompressSize, jpegData + jpegSize + 4, 4);
+            alphaCompressSize = be32_to_cpu(alphaCompressSize);
+            alphaData = (uint8_t*)jpegData + jpegSize;
+
+            buf = malloc(alphaSize);
+            if (!buf)
+            {
+                LOG_ERR "out of memory: %d\n", alphaSize LOG_END
+                return NULL;
+            }
+
+        #if defined(CFG_DCPS_ENABLE) && !defined(CFG_ITU_UCL_ENABLE)
+            // hardware decompress
+            ioctl(ITP_DEVICE_DECOMPRESS, ITP_IOCTL_INIT, NULL);
+
+            ret = write(ITP_DEVICE_DECOMPRESS, alphaData, alphaCompressSize);
+            if (ret != alphaCompressSize)
+            {
+                LOG_ERR "decompress write error: %d != %d\n", ret, alphaCompressSize LOG_END
+                free(buf);
+                return NULL;
+            }
+
+            ret = read(ITP_DEVICE_DECOMPRESS, buf, alphaSize);
+            if (ret != alphaSize)
+            {
+                LOG_ERR "decompress read error: %d != %d\n", ret, alphaSize LOG_END
+                free(buf);
+                return NULL;
+            }
+            ioctl(ITP_DEVICE_DECOMPRESS, ITP_IOCTL_EXIT, NULL);
+
+        #else
+            // software decompress
+            if (ucl_init() != UCL_E_OK)
+            {
+                LOG_ERR "internal error - ucl_init() failed !!!\n" LOG_END
+                free(buf);
+                return NULL;
+            }
+
+            ret = alphaSize;
+            if (ucl_nrv2e_decompress_8((const ucl_bytep)alphaData + 8, alphaCompressSize, buf, &ret, NULL) != UCL_E_OK || ret != alphaSize)
+            {
+                LOG_ERR "internal error - decompression failed\n" LOG_END
+                free(buf);
+                return NULL;
+            }
+        #endif     // defined(CFG_DCPS_ENABLE) && !defined(CFG_ITU_UCL_ENABLE)
+
+            retSurf = ituJpegAlphaLoad(surf->width, surf->height, buf, jpegData, jpegSize);
+            free(buf);
+        }
+        else
+        {
+            retSurf = ituJpegLoad(surf->width, surf->height, (uint8_t *)surf->addr, surf->size, 0);
+        }
     }
     else
     {

@@ -23,6 +23,7 @@ static void ScaleFadeEffectStart(struct ITUEffectTag* effect, struct ITUWidgetTa
     ITUScaleFadeEffect* sfe = (ITUScaleFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituScaleEffectStart(effect, widget);
 
@@ -34,6 +35,7 @@ static void ScaleFadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag
     ITUScaleFadeEffect* sfe = (ITUScaleFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituScaleEffectStop(effect, widget);
 
@@ -43,6 +45,7 @@ static void ScaleFadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag
 void ituScaleFadeEffectInit(ITUScaleFadeEffect* sfe, bool fadeIn)
 {
     assert(sfe);
+    ITU_ASSERT_THREAD();
 
     memset(sfe, 0, sizeof (ITUScaleFadeEffect));
 

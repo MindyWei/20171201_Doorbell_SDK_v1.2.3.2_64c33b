@@ -92,6 +92,7 @@ void i2s_get_volstep_range(unsigned *max, unsigned *normal, unsigned *min);
 void i2s_set_linein_bypass(int bypass);
 #if (CFG_CHIP_FAMILY == 9850)
 void i2s_mute_volume(int mute);
+void i2s_enable_fading(int yesno);
 #endif
 
 /* AD */

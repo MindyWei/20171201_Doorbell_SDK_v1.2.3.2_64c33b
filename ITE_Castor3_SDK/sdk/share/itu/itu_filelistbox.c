@@ -142,6 +142,7 @@ void ituFileListBoxExit(ITUWidget* widget)
 {
     ITUFileListBox* flistbox = (ITUFileListBox*) widget;
     assert(flistbox);
+    ITU_ASSERT_THREAD();
 
     if (flistbox->flistboxFlags & ITU_FILELIST_BUSYING)
         flistbox->flistboxFlags |= ITU_FILELIST_DESTROYING;
@@ -388,6 +389,7 @@ void ituFileListOnSelection(ITUListBox* listbox, ITUScrollText* item, bool confi
 void ituFileListBoxInit(ITUFileListBox* flistbox, int width, char* path)
 {
     assert(flistbox);
+    ITU_ASSERT_THREAD();
 
     memset(flistbox, 0, sizeof (ITUFileListBox));
 
@@ -446,6 +448,7 @@ void ituFileListSetPath(ITUFileListBox* flistbox, char* path)
     pthread_t task;
     pthread_attr_t attr;
     assert(flistbox);
+    ITU_ASSERT_THREAD();
 
     if ((flistbox->flistboxFlags & ITU_FILELIST_BUSYING) ||
         (flistbox->flistboxFlags & ITU_FILELIST_DESTROYING))

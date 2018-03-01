@@ -51,6 +51,7 @@ void ituScrollEffectStart(struct ITUEffectTag* effect, struct ITUWidgetTag* widg
     ITUScrollEffect* se = (ITUScrollEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStartImpl(effect, widget);
 
@@ -64,6 +65,7 @@ void ituScrollEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widge
     ITUScrollEffect* se = (ITUScrollEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStopImpl(effect, widget);
 
@@ -75,6 +77,7 @@ void ituScrollEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widge
 void ituScrollEffectInit(ITUScrollEffect* se, ITUScrollType type)
 {
     assert(se);
+    ITU_ASSERT_THREAD();
 
     memset(se, 0, sizeof (ITUScrollEffect));
 

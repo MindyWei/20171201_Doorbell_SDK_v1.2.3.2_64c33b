@@ -11,6 +11,7 @@ void ituCheckBoxExit(ITUWidget* widget)
 {
     ITUCheckBox* checkbox = (ITUCheckBox*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (checkbox->focusCheckedSurf)
     {
@@ -33,6 +34,7 @@ bool ituCheckBoxClone(ITUWidget* widget, ITUWidget** cloned)
     ITUSurface* surf;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -150,8 +152,10 @@ bool ituCheckBoxUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int a
             }
         }
     }
-
-    result |= ituButtonUpdate(widget, ev, arg1, arg2, arg3);
+    else
+    {
+        result |= ituButtonUpdate(widget, ev, arg1, arg2, arg3);
+    }
 
     if (ev == ITU_EVENT_LAYOUT)
     {
@@ -299,6 +303,7 @@ void ituCheckBoxOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituCheckBoxInit(ITUCheckBox* checkbox)
 {
     assert(checkbox);
+    ITU_ASSERT_THREAD();
 
     memset(checkbox, 0, sizeof (ITUCheckBox));
 
@@ -356,32 +361,21 @@ void ituCheckBoxSetChecked(ITUCheckBox* checkbox, bool checked)
     ITUWidget* widget = (ITUWidget*) checkbox;
     ITUText* text = &checkbox->btn.text;
     assert(checkbox);
+    ITU_ASSERT_THREAD();
 
-    if (widget->active)
-    {
-        ituWidgetSetColor(widget, checkbox->btn.focusColor.alpha, checkbox->btn.focusColor.red, checkbox->btn.focusColor.green, checkbox->btn.focusColor.blue);
-        if (checked)
-        {
-            ituWidgetSetColor(text, checkbox->checkedFontColor.alpha, checkbox->checkedFontColor.red, checkbox->checkedFontColor.green, checkbox->checkedFontColor.blue);
-        }
-        else
-        {
-            ituWidgetSetColor(text, checkbox->orgFontColor.alpha, checkbox->orgFontColor.red, checkbox->orgFontColor.green, checkbox->orgFontColor.blue);
-        }
-    }
+    if (checked && checkbox->checkedFontColor.alpha > 0)
+        ituWidgetSetColor(text, checkbox->checkedFontColor.alpha, checkbox->checkedFontColor.red, checkbox->checkedFontColor.green, checkbox->checkedFontColor.blue);
     else
-    {
-        if (checked)
-        {
-            ituWidgetSetColor(widget, checkbox->checkedColor.alpha, checkbox->checkedColor.red, checkbox->checkedColor.green, checkbox->checkedColor.blue);
-            ituWidgetSetColor(text, checkbox->checkedFontColor.alpha, checkbox->checkedFontColor.red, checkbox->checkedFontColor.green, checkbox->checkedFontColor.blue);
-        }
-        else
-        {
-            ituWidgetSetColor(widget, checkbox->btn.bgColor.alpha, checkbox->btn.bgColor.red, checkbox->btn.bgColor.green, checkbox->btn.bgColor.blue);
-            ituWidgetSetColor(text, checkbox->orgFontColor.alpha, checkbox->orgFontColor.red, checkbox->orgFontColor.green, checkbox->orgFontColor.blue);
-        }
-    }
+        ituWidgetSetColor(text, checkbox->orgFontColor.alpha, checkbox->orgFontColor.red, checkbox->orgFontColor.green, checkbox->orgFontColor.blue);
+
+    if (checked && checkbox->checkedColor.alpha > 0)
+        ituWidgetSetColor(widget, checkbox->checkedColor.alpha, checkbox->checkedColor.red, checkbox->checkedColor.green, checkbox->checkedColor.blue);
+    else
+        ituWidgetSetColor(widget, checkbox->btn.bgColor.alpha, checkbox->btn.bgColor.red, checkbox->btn.bgColor.green, checkbox->btn.bgColor.blue);
+
+    if (widget->active && checkbox->btn.focusColor.alpha > 0)
+        ituWidgetSetColor(widget, checkbox->btn.focusColor.alpha, checkbox->btn.focusColor.red, checkbox->btn.focusColor.green, checkbox->btn.focusColor.blue);
+
     checkbox->checked = checked;
     widget->dirty = true;
 }
@@ -389,6 +383,7 @@ void ituCheckBoxSetChecked(ITUCheckBox* checkbox, bool checked)
 bool ituCheckBoxIsChecked(ITUCheckBox* checkbox)
 {
     assert(checkbox);
+    ITU_ASSERT_THREAD();
     return checkbox->checked;
 }
 
@@ -423,6 +418,8 @@ void ituCheckBoxLoadStaticData(ITUCheckBox* checkbox)
 
 void ituCheckBoxReleaseSurface(ITUCheckBox* checkbox)
 {
+    ITU_ASSERT_THREAD();
+
     if (checkbox->focusCheckedSurf)
     {
         ituSurfaceRelease(checkbox->focusCheckedSurf);

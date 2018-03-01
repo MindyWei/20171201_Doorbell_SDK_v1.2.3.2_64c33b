@@ -10,6 +10,7 @@ static void ituMeterExit(ITUWidget* widget)
 {
     ITUMeter* meter = (ITUMeter*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 }
 
 bool ituMeterUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3)
@@ -20,65 +21,70 @@ bool ituMeterUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 
     if ((ev == ITU_EVENT_MOUSEDOWN) || (ev == ITU_EVENT_MOUSEMOVE && meter->pressed))
     {
-        if (ituWidgetIsEnabled(widget))
+        if ((ev == ITU_EVENT_MOUSEDOWN) || (ev == ITU_EVENT_MOUSEMOVE && --meter->delayCount <= 0))
         {
-            int x = arg2 - widget->rect.x;
-            int y = arg3 - widget->rect.y;
-
-            if (ituWidgetIsInside(widget, x, y))
+            if (ituWidgetIsEnabled(widget))
             {
-                int orgX, orgY, vx1, vy1, vx2, vy2, dot, det, value;
-                float angle;
+                int x = arg2 - widget->rect.x;
+                int y = arg3 - widget->rect.y;
 
-                orgX = widget->rect.width / 2;
-                orgY = widget->rect.height / 2;
-
-                vx2 = x - orgX;
-                vy2 = y - orgY;
-
-                if (vx2 * vx2 + vy2 * vy2 >= meter->minRadius * meter->minRadius)
+                if (ituWidgetIsInside(widget, x, y))
                 {
-                    vx1 = 0;
-                    vy1 = -orgY;
+                    int orgX, orgY, vx1, vy1, vx2, vy2, dot, det, value;
+                    float angle;
 
-                    dot = vx1 * vx2 + vy1 *vy2;
-                    det = vx1 * vy2 - vy1 * vx2;
-                    angle = atan2f(det, dot) * (float)(180.0f / M_PI);
+                    orgX = widget->rect.width / 2;
+                    orgY = widget->rect.height / 2;
 
-                    if ((angle < meter->startAngle && meter->startAngle < meter->endAngle) || angle < 0)
-                        angle += 360.0f;
+                    vx2 = x - orgX;
+                    vy2 = y - orgY;
 
-                    //printf("(%d, %d) (%d, %d) angle=%f\n", vx1, vy1, vx2, vy2, angle);
-
-                    if (meter->startAngle < meter->endAngle)
+                    if (vx2 * vx2 + vy2 * vy2 >= meter->minRadius * meter->minRadius)
                     {
-                        if (meter->startAngle <= angle && angle <= meter->endAngle)
+                        vx1 = 0;
+                        vy1 = -orgY;
+
+                        dot = vx1 * vx2 + vy1 *vy2;
+                        det = vx1 * vy2 - vy1 * vx2;
+                        angle = atan2f(det, dot) * (float)(180.0f / M_PI);
+
+                        if ((angle < meter->startAngle && meter->startAngle < meter->endAngle) || angle < 0)
+                            angle += 360.0f;
+
+                        //printf("(%d, %d) (%d, %d) angle=%f\n", vx1, vy1, vx2, vy2, angle);
+
+                        if (meter->startAngle < meter->endAngle)
                         {
-                            int range = meter->endAngle - meter->startAngle;
-                            value = (int)roundf((angle - meter->startAngle) * meter->maxValue / range);
+                            if (meter->startAngle <= angle && angle <= meter->endAngle)
+                            {
+                                int range = meter->endAngle - meter->startAngle;
+                                value = (int)roundf((angle - meter->startAngle) * meter->maxValue / range);
 
-                            ituMeterSetValue(meter, value);
+                                ituMeterSetValue(meter, value);
 
-                            ituExecActions((ITUWidget*)meter, meter->actions, ITU_EVENT_CHANGED, value);
-                            result = widget->dirty = true;
+                                ituExecActions((ITUWidget*)meter, meter->actions, ITU_EVENT_CHANGED, value);
+                                result = widget->dirty = true;
+                            }
                         }
-                    }
-                    else if (meter->startAngle > meter->endAngle)
-                    {
-                        if (meter->startAngle >= angle && angle >= meter->endAngle)
+                        else if (meter->startAngle > meter->endAngle)
                         {
-                            int range = meter->startAngle - meter->endAngle;
-                            value = (int)roundf((meter->startAngle - angle) * meter->maxValue / range);
+                            if (meter->startAngle >= angle && angle >= meter->endAngle)
+                            {
+                                int range = meter->startAngle - meter->endAngle;
+                                value = (int)roundf((meter->startAngle - angle) * meter->maxValue / range);
 
-                            ituMeterSetValue(meter, value);
+                                ituMeterSetValue(meter, value);
 
-                            ituExecActions((ITUWidget*)meter, meter->actions, ITU_EVENT_CHANGED, value);
-                            result = widget->dirty = true;
+                                ituExecActions((ITUWidget*)meter, meter->actions, ITU_EVENT_CHANGED, value);
+                                result = widget->dirty = true;
+                            }
                         }
+                        meter->pressed = true;
+                        meter->delayCount = meter->delay;
                     }
-                    meter->pressed = true;
                 }
             }
+
         }
     }
     else if (ev == ITU_EVENT_MOUSEUP)
@@ -131,7 +137,7 @@ void ituMeterDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alp
             angle = meter->startAngle + (meter->endAngle - meter->startAngle) * meter->value / (float)meter->maxValue;
         else if (meter->endAngle < meter->startAngle)
             angle = meter->startAngle - (meter->startAngle - meter->endAngle) * meter->value / (float)meter->maxValue;
-#if (CFG_CHIP_FAMILY == 9850)
+#if (CFG_CHIP_FAMILY != 9070)
         ituRotate(dest, x + meter->pointerIcon->widget.rect.x, y + meter->pointerIcon->widget.rect.y, meter->pointerIcon->surf, meter->pointerX, meter->pointerY, angle, 1.0f, 1.0f);
 #else
         ituRotate(dest, x + meter->pointerIcon->widget.rect.x + meter->pointerX, y + meter->pointerIcon->widget.rect.y + meter->pointerY, meter->pointerIcon->surf, meter->pointerX, meter->pointerY, angle, 1.0f, 1.0f);        
@@ -144,6 +150,7 @@ void ituMeterDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alp
 void ituMeterInit(ITUMeter* meter)
 {
     assert(meter);
+    ITU_ASSERT_THREAD();
 
     memset(meter, 0, sizeof (ITUMeter));
 
@@ -173,6 +180,7 @@ void ituMeterLoad(ITUMeter* meter, uint32_t base)
 void ituMeterSetValue(ITUMeter* meter, int value)
 {
     assert(meter);
+    ITU_ASSERT_THREAD();
 
     if (value < 0 || value > meter->maxValue)
     {

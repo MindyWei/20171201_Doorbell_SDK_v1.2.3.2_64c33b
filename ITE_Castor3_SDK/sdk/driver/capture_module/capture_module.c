@@ -26,6 +26,8 @@ CaptureModuleDriver CaptureModuleDriver_GetDevice(unsigned char* moduleName)
 		return (CaptureModuleDriver)GT5110E1CaptureModuleDriver_Create();
 	else if(moduleName == "adv7180.c")
 		return (CaptureModuleDriver)ADV7180CaptureModuleDriver_Create();
+	else if(moduleName == "pr2000.c")
+		return (CaptureModuleDriver)PR2000CaptureModuleDriver_Create();
 	else
 		return NULL;
 }

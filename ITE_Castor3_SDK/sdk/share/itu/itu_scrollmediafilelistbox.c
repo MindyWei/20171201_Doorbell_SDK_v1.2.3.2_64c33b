@@ -750,6 +750,7 @@ void ituScrollMediaFileListBoxOnAction(ITUWidget* widget, ITUActionType action, 
 void ituScrollMediaFileListBoxInit(ITUScrollMediaFileListBox* smflistbox, int width, char* path)
 {
     assert(smflistbox);
+    ITU_ASSERT_THREAD();
 
     memset(smflistbox, 0, sizeof (ITUScrollMediaFileListBox));
 
@@ -775,20 +776,24 @@ void ituScrollMediaFileListBoxLoad(ITUScrollMediaFileListBox* smflistbox, uint32
 
 int ituScrollMediaFileListBoxGetItemCount(ITUScrollMediaFileListBox* smflistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildCount(smflistbox) / 3;
 }
 
 ITCTree* ituScrollMediaFileListBoxGetLastPageItem(ITUScrollMediaFileListBox* smflistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(smflistbox, 0);
 }
 
 ITCTree* ituScrollMediaFileListBoxGetCurrPageItem(ITUScrollMediaFileListBox* smflistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(smflistbox, itcTreeGetChildCount(smflistbox) / 3);
 }
 
 ITCTree* ituScrollMediaFileListBoxGetNextPageItem(ITUScrollMediaFileListBox* smflistbox)
 {
+    ITU_ASSERT_THREAD();
     return itcTreeGetChildAt(smflistbox, itcTreeGetChildCount(smflistbox) * 2 / 3);
 }

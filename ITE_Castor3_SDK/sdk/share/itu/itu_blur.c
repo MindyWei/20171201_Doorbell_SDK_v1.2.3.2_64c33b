@@ -11,6 +11,7 @@ void ituBlurExit(ITUWidget* widget)
 {
     ITUBlur* blur = (ITUBlur*) widget;
     assert(blur);
+    ITU_ASSERT_THREAD();
 
     if (blur->maskSurf)
     {
@@ -27,6 +28,7 @@ bool ituBlurClone(ITUWidget* widget, ITUWidget** cloned)
     ITUBlur* newBlur;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -122,6 +124,7 @@ void ituBlurDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
 void ituBlurInit(ITUBlur* blur)
 {
     assert(blur);
+    ITU_ASSERT_THREAD();
 
     memset(blur, 0, sizeof (ITUBlur));
 

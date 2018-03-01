@@ -22,6 +22,7 @@ bool ituScrollTextClone(ITUWidget* widget, ITUWidget** cloned)
     ITUScrollText* stext = (ITUScrollText*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -318,6 +319,7 @@ void ituScrollTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_
 void ituScrollTextInit(ITUScrollText* text, int width)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     memset(text, 0, sizeof (ITUScrollText));
 
@@ -346,6 +348,7 @@ void ituScrollTextLoad(ITUScrollText* text, uint32_t base)
 void ituScrollTextSetDelay(ITUScrollText* text, int scrollDelay, int stopDelay)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     text->scrollDelay       = scrollDelay;
     text->stopDelay         = stopDelay;
@@ -355,6 +358,7 @@ void ituScrollTextSetDelay(ITUScrollText* text, int scrollDelay, int stopDelay)
 void ituScrollTextStart(ITUScrollText* text)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     text->state = READY;
     ituWidgetUpdate(text, ITU_EVENT_LAYOUT, 0, 0, 0);
@@ -363,6 +367,7 @@ void ituScrollTextStart(ITUScrollText* text)
 void ituScrollTextStop(ITUScrollText* text)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     text->state         = STOP;
     text->delayCount    = 0;
@@ -373,6 +378,7 @@ void ituScrollTextStop(ITUScrollText* text)
 void ituScrollTextSetString(ITUScrollText* text, char* string)
 {
     assert(text);
+    ITU_ASSERT_THREAD();
 
     ituTextSetString(&text->text, string);
     if (string)

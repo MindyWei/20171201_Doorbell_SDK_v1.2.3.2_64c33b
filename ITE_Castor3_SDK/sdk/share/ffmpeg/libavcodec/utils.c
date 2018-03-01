@@ -197,6 +197,13 @@ void setWaveInfo(AVCodecContext *avctx, ITE_WaveInfo *wavInfo, int nSize, int nI
     #endif
 }
 
+void WavHeaderReload(AVCodecContext  *avctx){
+    
+    setWaveInfo(avctx,&gWaveInfo,0,0);
+    av_log(NULL, AV_LOG_INFO, "format=%d bit=%d\n", gWaveInfo.format, gWaveInfo.bitsPerSample); 
+
+}
+
 static void
 createADTSHeader(
     unsigned char   *adtsHeader,

@@ -12,6 +12,7 @@ bool ituContainerClone(ITUWidget* widget, ITUWidget** cloned)
 {
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -301,20 +302,65 @@ void ituContainerDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t
     desty = rect->y + y;
     desta = alpha * widget->alpha / 255;
 
-    for (node = widget->tree.child; node; node = node->sibling)
+    if (widget->angle == 0)
     {
-        ITUWidget* child = (ITUWidget*)node;
+        for (node = widget->tree.child; node; node = node->sibling)
+        {
+            ITUWidget* child = (ITUWidget*)node;
 
-        if (child != ituScene->dragged)
-            ituWidgetSetClipping(widget, dest, x, y, &prevClip);
+            if (child != ituScene->dragged)
+                ituWidgetSetClipping(widget, dest, x, y, &prevClip);
 
-        if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
-            ituWidgetDraw(node, dest, destx, desty, desta);
+            if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
+                ituWidgetDraw(node, dest, destx, desty, desta);
 
-        if (child != ituScene->dragged)
-            ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+            if (child != ituScene->dragged)
+                ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
 
-        child->dirty = false;
+            child->dirty = false;
+        }
+    }
+    else
+    {
+        ITUSurface* surf;
+
+        surf = ituCreateSurface(rect->width, rect->height, 0, ITU_ARGB8888, NULL, 0);
+        if (surf)
+        {
+            ITUColor color = { 0, 0, 0, 0 };
+
+            ituColorFill(surf, 0, 0, rect->width, rect->height, &color);
+
+            for (node = widget->tree.child; node; node = node->sibling)
+            {
+                ITUWidget* child = (ITUWidget*)node;
+
+                if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
+                    ituWidgetDraw(node, surf, 0, 0, desta);
+
+                child->dirty = false;
+            }
+
+        #if (CFG_CHIP_FAMILY == 9070)
+            ituRotate(dest, destx + rect->width / 2, desty + rect->height / 2, surf, surf->width / 2, surf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+        #else
+            ituRotate(dest, destx, desty, surf, surf->width / 2, surf->height / 2, (float)widget->angle, 1.0f, 1.0f);
+        #endif
+            ituDestroySurface(surf);
+        }
+    }
+
+    {
+        ITCTree* node;
+
+        for (node = widget->tree.child; node; node = node->sibling)
+        {
+            ITUWidget* child = (ITUWidget*)node;
+            if (child->visible && child->type == ITU_CLIPPER)
+            {
+                ituClipperPostDraw(child, dest, destx, desty, alpha);
+            }
+        }
     }
 }
 
@@ -338,6 +384,7 @@ void ituContainerOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituContainerInit(ITUContainer* container)
 {
     assert(container);
+    ITU_ASSERT_THREAD();
 
     memset(container, 0, sizeof (ITUContainer));
 

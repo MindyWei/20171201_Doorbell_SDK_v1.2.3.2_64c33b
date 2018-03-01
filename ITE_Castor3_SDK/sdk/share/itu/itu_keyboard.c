@@ -45,6 +45,7 @@ void ituKeyboardOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituKeyboardInit(ITUKeyboard* keyboard)
 {
     assert(keyboard);
+    ITU_ASSERT_THREAD();
 
     memset(keyboard, 0, sizeof (ITUKeyboard));
 

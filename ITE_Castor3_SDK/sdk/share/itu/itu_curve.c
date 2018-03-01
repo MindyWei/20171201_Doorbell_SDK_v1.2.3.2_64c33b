@@ -12,6 +12,7 @@ void ituCurveExit(ITUWidget* widget)
 {
     ITUCurve* curve = (ITUCurve*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (curve->ctrlPointCount > 0)
     {
@@ -388,6 +389,7 @@ void ituCurveDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alp
 void ituCurveInit(ITUCurve* curve)
 {
     assert(curve);
+    ITU_ASSERT_THREAD();
 
     memset(curve, 0, sizeof (ITUCurve));
 

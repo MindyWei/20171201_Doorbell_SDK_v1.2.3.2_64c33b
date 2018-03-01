@@ -168,9 +168,10 @@ bool ituExecActions(struct ITUWidgetTag* widget, ITUAction* actions, ITUEvent ev
                 ituScene->actionQueueLen++;
                 
                 if (ev != ITU_EVENT_TIMER && ev != ITU_EVENT_SYNC)
+                {
                     widget->dirty = true;
-
-                result = true;
+                    result = true;
+                }
             }
             else
             {
@@ -356,19 +357,61 @@ void ituExecDelayQueue(ITUActionExecution delayQueue[ITU_ACTION_QUEUE_SIZE])
             }
             else
             {
-                if (action->cachedTarget)
+                ITUWidget* target;
+                char* param;
+
+                if (action->target[0] == '$')
                 {
-                    ituWidgetOnAction(action->cachedTarget, action->action, action->param);
+                    int index = atoi(&action->target[1]);
+                    ITUVariable* var = &ituScene->variables[index];
+
+                    if (var->cachedTarget)
+                    {
+                        target = var->cachedTarget;
+                    }
+                    else if (var->target[0] != '\0')
+                    {
+                        ITUWidget* widget = ituSceneFindWidget(ituScene, var->target);
+                        if (!widget)
+                            continue;
+
+                        target = widget;
+                        var->cachedTarget = (void*)target;
+                    }
+                    else
+                        continue;
                 }
                 else
                 {
-                    ITUWidget* target = ituSceneFindWidget(ituScene, action->target);
-                    if (!target)
-                        continue;
+                    if (action->cachedTarget)
+                    {
+                        target = action->cachedTarget;
+                    }
+                    else if (action->target[0] != '\0')
+                    {
+                        ITUWidget* widget = ituSceneFindWidget(ituScene, action->target);
+                        if (!widget)
+                            continue;
 
-                    ituWidgetOnAction(target, action->action, action->param);
-                    action->cachedTarget = (void*)target;
+                        target = widget;
+                        action->cachedTarget = (void*)target;
+                    }
+                    else
+                        continue;
                 }
+
+                if (action->param[0] == '$' && isdigit(action->param[1]))
+                {
+                    int index = atoi(&action->param[1]);
+                    ITUVariable* var = &ituScene->variables[index];
+
+                    param = var->param;
+                }
+                else
+                {
+                    param = action->param;
+                }
+                ituWidgetOnAction(target, action->action, param);
             }
         }
     }

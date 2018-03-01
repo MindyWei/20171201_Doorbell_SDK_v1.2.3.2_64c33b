@@ -250,6 +250,7 @@ void ituScrollBarOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituScrollBarInit(ITUScrollBar* bar)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     memset(bar, 0, sizeof (ITUScrollBar));
 
@@ -276,6 +277,7 @@ void ituScrollBarLoad(ITUScrollBar* bar, uint32_t base)
 void ituScrollBarSetLength(ITUScrollBar* bar, int length)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     if (length < 0)
     {
@@ -290,6 +292,7 @@ void ituScrollBarSetLength(ITUScrollBar* bar, int length)
 void ituScrollBarSetPosition(ITUScrollBar* bar, int pos)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     if (pos < 0 || pos > bar->length)
     {

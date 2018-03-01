@@ -76,6 +76,7 @@ bool ituSpriteButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, i
 void ituSpriteButtonInit(ITUSpriteButton* sbtn)
 {
     assert(sbtn);
+    ITU_ASSERT_THREAD();
 
     memset(sbtn, 0, sizeof (ITUSpriteButton));
 

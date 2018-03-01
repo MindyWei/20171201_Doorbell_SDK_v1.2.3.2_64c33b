@@ -15,6 +15,7 @@
 #include "ite/itc.h"
 #include "ite/ith.h"
 #include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include "gfx/gfx.h"
 
@@ -181,10 +182,11 @@ typedef enum
  */
 typedef enum
 {
-    ITU_PAGEFLOW_FOLD,  ///< Fold effect
-    ITU_PAGEFLOW_FLIP,  ///< Flip effect
-    ITU_PAGEFLOW_FLIP2, ///< Flip 2 pieces effect
-    ITU_PAGEFLOW_FOLD2  ///< Fold 2 effect, no clipping destWidth
+    ITU_PAGEFLOW_FOLD,      ///< Fold effect
+    ITU_PAGEFLOW_FLIP,      ///< Flip effect
+    ITU_PAGEFLOW_FLIP2,     ///< Flip 2 pieces effect
+    ITU_PAGEFLOW_FOLD2,     ///< Fold 2 effect, no clipping destWidth
+    ITU_PAGEFLOW_QUADRANGLE ///< Quadrangle
 } ITUPageFlowType;
 
 /**
@@ -585,6 +587,18 @@ void ituSurfaceSetClipping(ITUSurface* surf, int x, int y, int w, int h);
 ITUSurface* ituJpegLoad(int width, int height, uint8_t* data, int size, unsigned int flags);
 
 /**
+* Loads JPEG with alpha data to surface.
+*
+* @param width surface width.
+* @param height surface height.
+* @param alpha the alpha data.
+* @param data the JPEG data.
+* @param size the JPEG data size.
+* @return the loaded surface.
+*/
+ITUSurface* ituJpegAlphaLoad(int width, int height, uint8_t* alpha, uint8_t* data, int size);
+
+/**
  * Loads JPEG file to surface.
  *
  * @param width surface width. Could be 0.
@@ -594,6 +608,14 @@ ITUSurface* ituJpegLoad(int width, int height, uint8_t* data, int size, unsigned
  * @return the loaded surface.
  */
 ITUSurface *ituJpegLoadFile(int width, int height, char* filepath, unsigned int flags);
+
+/**
+* Saves surface to JPEG file.
+*
+* @param surf The surface to save.
+* @param filepath the JPEG file path.
+*/
+void ituJpegSaveFile(ITUSurface* surf, char* filepath);
 
 /**
  * Loads PNG data to surface.
@@ -615,6 +637,14 @@ ITUSurface *ituPngLoad(int width, int height, uint8_t *data, int size);
  * @return the loaded surface.
  */
 ITUSurface *ituPngLoadFile(int width, int height, char* filepath);
+
+/**
+* Saves surface to PNG file.
+*
+* @param surf The surface to save.
+* @param filepath the PNG file path.
+*/
+void ituPngSaveFile(ITUSurface* surf, char* filepath);
 
 /** @} */ // end of itu_jpeg
 
@@ -702,6 +732,14 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text);
  * Resets font cache to release memory resource.
  */
 void ituFtResetCache(void);
+
+/**
+* Is the character valid or not.
+*
+* @param text the text of character.
+* @return is the character valid or not.
+*/
+bool ituFtIsCharValid(const char* text);
 
 // Style definitions
 #define ITU_FT_STYLE_DEFAULT	0x0       ///< Default style
@@ -1336,6 +1374,7 @@ void ituWipeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* widget)
 #define ITU_TRANSFER_ALPHA      0x100000    ///< This widget will transfer self alpha value to children.
 #define ITU_FIT_TO_RECT         0x200000    ///< The image will fit to rectangle of this widget.
 #define ITU_CUT_BY_RECT         0x400000    ///< The image will cut by rectangle of this widget.
+#define ITU_LONG_DRAG           0x800000    ///< The widget has been dragging sufficient distance.
 
 /**
  * Widget layout definition
@@ -1431,7 +1470,10 @@ typedef enum
     ITU_BLUR,                   ///< Blur
     ITU_SCALECOVERFLOW,         ///< Scale cover flow
     ITU_WHEELBACKGROUND,        ///< Wheel background
-    ITU_DRAWPEN                 ///< Draw Pen
+    ITU_DRAWPEN,                ///< Draw Pen
+    ITU_WAVEBACKGROUND,         ///< Wave background
+	ITU_STEPWHEEL,              ///< Step Wheel
+    ITU_CLIPPER                 ///< Clipper
 } ITUWidgetType;
 
 /**
@@ -2162,6 +2204,7 @@ void ituWidgetHideImpl(ITUWidget* widget, ITUEffectType effect, int step);
 typedef struct ITULayerTag
 {
     ITUWidget widget;                                   ///< Base widget definition.
+    int hideDelay;                                      ///< Delay frames to hide
     uint8_t* buffer;                                    ///< Loaded file buffer
     ITUAction actions[ITU_ACTIONS_SIZE];                ///< Actions for events to trigger
 } ITULayer;
@@ -2426,6 +2469,8 @@ typedef struct
     ITUIcon icon;                   ///< Base icon widget definition.
     ITUGradientMode graidentMode;   ///< Gradient mode
     ITUColor graidentColor;         ///< Gradient end color
+    int orgWidth;                   ///< Original width for scale animation
+    int orgHeight;                  ///< Original height for scale animation
 } ITUBackground;
 
 /**
@@ -3958,6 +4003,8 @@ typedef struct ITUTrackBarTag
     int gap;                                ///< Gap on the both side.
     char tipName[ITU_WIDGET_NAME_SIZE];     ///< The name of widget to show the tip.
     ITUWidget* tip;                         ///< The widget to show the tip.
+    int delay;                              ///< The delay on playing. Unit is depend on ITU_EVENT_TIMER event.
+    int delayCount;                         ///< The delay count to play next frame.
 
     ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
 
@@ -4683,6 +4730,7 @@ void ituScrollBarSetPosition(ITUScrollBar* bar, int pos);
 #define ITU_ANIM_TRANSFORM          0x80    ///< Transform animation.
 #define ITU_ANIM_EASE_IN            0x100   ///< Cubic ease-in animation.
 #define ITU_ANIM_EASE_OUT           0x200   ///< Cubic ease-out animation.
+#define ITU_ANIM_MOTION_BLUR        0x400   ///< Mothin blur animation.
 
 /**
  * Animation widget definition. This is used for drawing animation.
@@ -4823,7 +4871,7 @@ void ituAnimationStop(ITUAnimation* animation);
  * @param animation The playing animation widget to goto.
  * @param keyframe The specified keyframe of animation widget to goto.
  */
-void ituAnimationGotoKeyframe(ITUAnimation* animation, int keyframe);
+void ituAnimationGoto(ITUAnimation* animation, int keyframe);
 
 /**
  * Gotos the specified frame of animation widget.
@@ -4832,15 +4880,6 @@ void ituAnimationGotoKeyframe(ITUAnimation* animation, int keyframe);
  * @param frame The specified frame of animation widget to goto.
  */
 void ituAnimationGotoFrame(ITUAnimation* animation, int frame);
-
-/**
- * Gotos the specified frame or keyframe of animation widget.
- * If the animation has 2 keyframes only, the frame parameter is mean to frame. Otherwise, it's mean to keyframe.
- *
- * @param animation The playing animation widget to goto.
- * @param frame The specified frame or keyframe of animation widget to goto.
- */
-void ituAnimationGoto(ITUAnimation* animation, int frame);
 
 /**
  * Resets the animation widget.
@@ -4865,6 +4904,17 @@ void ituAnimationReversePlay(ITUAnimation* animation, int keyframe);
 #define ITU_WHEEL_CYCLE_ARR_LIMIT 256
 #define ITU_WHEEL_FOCUS_FONT_FIX_POS 6
 #define ITU_WHEEL_MAX_STRING_LEN 20
+/* Wheel SPEED BASE range: 3 ~ 5 (4) */
+#define ITU_WHEEL_STEP_SPEED_BASE 5
+/* Wheel Motion Factor 20 40 (60) */
+#define ITU_WHEEL_MOTION_FACTOR 20
+#define ITU_WHEEL_MOTION_THRESHOLD 40
+#define ITU_WHEEL_PROCESS_STAGE1 0.1f
+#define ITU_WHEEL_PROCESS_STAGE2 0.2f
+/* ITU_WHEEL_MAX_INIT_POWER range: 2.0 ~ 4.5 */
+#define ITU_WHEEL_MAX_INIT_POWER 4.5
+#define ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV ITU_WHEEL_FOCUS_FONT_FIX_POS
+#define ITU_WHEEL_SLIDE_INIT_FRAME 3
 
 /**
  * Wheel widget definition.
@@ -4893,16 +4943,27 @@ typedef struct ITUWheelTag
     int fontHeight;             ///< Font height.
     int focusFontHeight;        ///< Font height of focused text.
 
-	int cycle_tor;
-	int cycle_arr_count;
-	int maxci;
-	int minci;
-	int layout_ci;
-	int fix_count;
-	int focus_c;
-	int focus_dev;
+	int cycle_tor;              ///< cycle mode or not
+	int cycle_arr_count;        ///< the variable to calculate active cycle item realtime
+	int maxci;                  ///< the variable to log max valid cycle index
+	int minci;                  ///< the variable to log min valid cycle index
+	int layout_ci;              ///< the variable to calculate layout shift for flowwindow
+	int fix_count;              ///< the count to log the drag change item
+	int focus_c;                ///< memo focus index for cycle mode.
+	int focus_dev;              ///< the variable use for calculate font size animation.
 
-	int fontsquare;
+	int fontsquare;             ///< the font square mode.
+	int mouseup_change_factor;  ///< the change factor when mouseup
+	int drag_change_factor;     ///< the change factor when dragging
+	int drag_last_pos;          ///< the variable to log last focus item position
+	int slide;                  ///< slide able or not
+	int org_totalframe;         ///< use to backup the original totalframe
+	int temp1;                  ///< temporary usage
+	int temp2;                  ///< temporary usage
+	int temp3;                  ///< temporary usage
+	int temp4;                  ///< temporary usage
+	int temp5;                  ///< temporary usage
+	int temp6;                  ///< temporary usage
 
 	int cycle_arr[ITU_WHEEL_CYCLE_ARR_LIMIT];
 
@@ -5035,7 +5096,231 @@ bool ituWheelCheckIdle(ITUWheel* wheel);
 */
 int ituWheelItemCount(ITUWheel* wheel);
 
+/**
+* Check the wheel is undel idle state or not when mouse up.
+*
+* @param wheel The wheel widget.
+* @param stringarr The string array used to set.
+* @param itemcount The new item count.(0 < itemcount <= stringarr_size or ITU_WHEEL_CYCLE_ARR_LIMIT)
+* @return true if successful, false for fail.
+*/
+bool ituWheelSetItemTree(ITUWheel* wheel, char** stringarr, int itemcount);
+
+/**
+* Set the wheel slide able or not.
+*
+* @param wheel The wheel widget.
+* @param slidable The slide enable or not.(true for enable, false for disable)
+*/
+void ituWheelSetSlidable(ITUWheel* wheel, bool slidable);
+
 /** @} */ // end of itu_widget_wheel
+
+/** @defgroup itu_widget_stepwheel StepWheel
+*  @{
+*/
+
+/**
+* StepWheel widget definition.
+*/
+typedef struct ITUStepWheelTag
+{
+	ITUFlowWindow fwin;         ///< Base flow window definition.
+	ITUColor focusColor;        ///< Focused text color
+	ITUColor normalColor;       ///< Normal text color  
+	int tempy;                  ///< temp use for y position
+	int shift_one;              ///< self check to use shift not slide
+	int sliding;                ///< self check sliding status
+	int scal;                   ///< self check scal factor
+	int moving_step;            ///< self check moving progress
+	int inside;                 ///< self check inside
+	int slide_step;             ///< step of each item when sliding
+	int slide_itemcount;        ///< slide total item range
+	int idle;                   ///< wheel idle state
+	int focusIndex;             ///< The index of focused item
+	int itemCount;              ///< Item count.
+	int totalframe;             ///< Total frame count of animation.
+	int inc;                    ///< Increment difference.
+	int frame;                  ///< Current frame.
+	int touchY;                 ///< Y coordinate of touch point.
+	int touchCount;             ///< Count time for touch behavior.
+	int fontHeight;             ///< Font height.
+	int focusFontHeight;        ///< Font height of focused text.
+	int stepFontHeight1;         ///< Font height of the step item next to the focus.(stage1)
+	int stepFontHeight2;         ///< Font height of the step item next to the focus.(stage2)
+	int stepFontHeight3;         ///< Font height of the step item next to the focus.(stage3)
+	int cycle_tor;              ///< cycle mode or not
+	int cycle_arr_count;        ///< the variable to calculate active cycle item realtime
+	int maxci;                  ///< the variable to log max valid cycle index
+	int minci;                  ///< the variable to log min valid cycle index
+	int layout_ci;              ///< the variable to calculate layout shift for flowwindow
+	int fix_count;              ///< the count to log the drag change item
+	int focus_c;                ///< memo focus index for cycle mode.
+	int focus_dev;              ///< the variable use for calculate font size animation.
+
+	int fontsquare;             ///< the font square mode.
+	int mouseup_change_factor;  ///< the change factor when mouseup
+	int drag_change_factor;     ///< the change factor when dragging
+	int drag_last_pos;          ///< the variable to log last focus item position
+	int slide;                  ///< slide able or not
+	int org_totalframe;         ///< use to backup the original totalframe
+	int temp1;                  ///< temporary usage
+	int temp2;                  ///< temporary usage
+	int temp3;                  ///< temporary usage
+	int temp4;                  ///< temporary usage
+	int temp5;                  ///< temporary usage
+	int temp6;                  ///< temporary usage
+
+	int cycle_arr[ITU_WHEEL_CYCLE_ARR_LIMIT];
+
+	ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
+
+	/**
+	* Called when the value is changed.
+	*
+	* @param wheel The stepwheel.
+	* @param value The new value.
+	*/
+	void(*OnValueChanged)(struct ITUStepWheelTag* wheel, char* value);
+
+} ITUStepWheel;
+
+/**
+* Initializes the stepwheel widget.
+*
+* @param wheel The stepwheel widget to initialize.
+*/
+void ituStepWheelInit(ITUStepWheel* wheel);
+
+/**
+* Loads the stepwheel widget. This is called by scene manager.
+*
+* @param wheel The stepwheel widget to load.
+* @param base The address in the scene file buffer.
+*/
+void ituStepWheelLoad(ITUStepWheel* wheel, uint32_t base);
+
+/**
+* Updates the stepwheel widget by specified event.
+*
+* @param widget The stepwheel widget to update.
+* @param ev The event to notify.
+* @param arg1 The event related argument #1.
+* @param arg2 The event related argument #2.
+* @param arg3 The event related argument #3.
+* @return true if the stepwheel widget is modified and need to be redraw, false if no need to be redraw.
+*/
+bool ituStepWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+* Draws the stepwheel widget to the specified surface.
+*
+* @param widget The stepwheel widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituStepWheelDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+* Called when the value is changed.
+*
+* @param wheel The stepwheel.
+* @param value The new value.
+*/
+#define ituStepWheelOnValueChanged(wheel, value)   ((ITUStepWheel*)(wheel))->OnValueChanged((ITUStepWheel*)(wheel), (value))
+
+/**
+* Sets OnValueChanged callback function of stepwheel.
+*
+* @param wheel Pointer referring to the stepwheel.
+* @param onValueChanged The callback function to set.
+*/
+#define ituStepWheelSetValueChanged(wheel, onValueChanged)  (((ITUStepWheel*)(wheel))->OnValueChanged = (onValueChanged))
+
+/**
+* Do the specified action. This is triggered by other widget's event.
+*
+* @param widget The stepwheel widget to do the action.
+* @param action The action to do.
+* @param param The parameter of action.
+*/
+void ituStepWheelOnAction(ITUWidget* widget, ITUActionType action, char* param);
+
+/**
+* Gotos the previous item of the stepwheel widget.
+*
+* @param wheel The stepwheel widget to goto.
+*/
+void ituStepWheelPrev(ITUStepWheel* wheel);
+
+/**
+* Gotos the next item of the stepwheel widget.
+*
+* @param wheel The stepwheel widget to goto.
+*/
+void ituStepWheelNext(ITUStepWheel* wheel);
+
+/**
+* Gets the focus item of stepwheel widget.
+*
+* @param wheel The stepwheel widget.
+* @return the focus item. NULL if not focused item.
+*/
+ITUWidget* ituStepWheelGetFocusItem(ITUStepWheel* wheel);
+
+/**
+* Gotos the specified index of item of the stepwheel widget.
+*
+* @param wheel The stepwheel widget to goto.
+* @param index The index of page to goto.
+*/
+void ituStepWheelGoto(ITUStepWheel* wheel, int index);
+
+/**
+* Set the specified scaling factor for the mouse move distance of the stepwheel widget.
+*
+* @param wheel The stepwheel widget.
+* @param scal The scal default is 1 and could be >= 1.
+*/
+void ituStepWheelScal(ITUStepWheel* wheel, int scal);
+
+/**
+* Check the stepwheel is undel idle state or not when mouse up.
+*
+* @param wheel The stepwheel widget.
+* @return true if the stepwheel is idle, false if the stepwheel is working.
+*/
+bool ituStepWheelCheckIdle(ITUStepWheel* wheel);
+
+/**
+* Get the stepwheel total item count.
+*
+* @param wheel The stepwheel widget.
+* @return the itemcount.
+*/
+int ituStepWheelItemCount(ITUStepWheel* wheel);
+
+/**
+* Check the stepwheel is under idle state or not when mouse up.
+*
+* @param wheel The stepwheel widget.
+* @param stringarr The string array used to set.
+* @param itemcount The new item count.(0 < itemcount <= stringarr_size or ITU_WHEEL_CYCLE_ARR_LIMIT)
+* @return true if successful, false for fail.
+*/
+bool ituStepWheelSetItemTree(ITUStepWheel* wheel, char** stringarr, int itemcount);
+
+/**
+* Set the stepwheel slide able or not.
+*
+* @param wheel The stepwheel widget.
+* @param slidable The slide enable or not.(true for enable, false for disable)
+*/
+void ituStepWheelSetSlidable(ITUStepWheel* wheel, bool slidable);
+
+/** @} */ // end of itu_widget_stepwheel
 
 /** @defgroup itu_widget_coverflow CoverFlow
  *  @{
@@ -5046,6 +5331,7 @@ int ituWheelItemCount(ITUWheel* wheel);
 #define ITU_COVERFLOW_ENABLE_ALL    0x4    ///< Enables all items of this cover flow.
 #define ITU_COVERFLOW_SLIDING       0x8    ///< This cover flow is under sliding.
 #define COVERFLOW_MAX_PROCARR_SIZE  10     ///< The queue array size for next(prev) action.
+#define COVERFLOW_MIN_SFRAME_PERCENT_SPLIT 80  ///< The minimum start frame(percentage) when mouse up under split mode.
 /**
  * CoverFlow widget definition.
  */
@@ -5060,12 +5346,30 @@ typedef struct ITUCoverFlowTag
 	int touchPos;                   ///< coordinate of touch point.
 	int touchCount;                 ///< Count time for touch behavior.
 	int bounceRatio;                ///< Bounce ratio.
-	int boundaryAlign;             ///< Set to align the boundary or not under non-cycle-mode.
+	int boundaryAlign;              ///< Set to align the boundary or not under non-cycle-mode.
 	int slideMaxCount;              ///< Slide max item count under non-cycle-mode.
 	int slideCount;                 ///< Slide item progress under non-cycle-mode.
-	int overlapsize;          ///< the overlap size
-	int procArr[10];      ///< the proc array used to comp inside.
-	uint32_t clock;      ///< time clock log
+	int overlapsize;                ///< the overlap size
+	int procArr[10];                ///< the proc array used to comp inside.
+	uint32_t clock;                 ///< time clock log
+	int movelog;                    ///< internal move log
+	int split;                      ///< split distance for non-cycle mode.
+	int slide_diff;                 ///< the slide diff temporary variable
+	int mousedown_position;         ///< the variable for mousedown log
+	int min_change_dist_factor;     ///< the minimum change factor when dragging (default:2 2~6)
+	int init_drag_xy;               ///< the variable for drag init position
+	int boundary_touch_memo;        ///< the variable to memo the position when touch boundary
+	int org_totalframe;             ///< the variable to log the original totalframe
+	int eye_motion;                 ///< the count of eye motion effect (default:0 0~2)
+	int boundary_memo1;             ///< the memo for left-top side boundary position.
+	int boundary_memo2;             ///< the memo for right-bottom side boundary position.
+	int prevnext_trigger;           ///< the force trigger for prev/next when slidemaxcount is 0.
+	int temp1;                      ///< for temporary usage
+	int temp2;                      ///< for temporary usage
+	int temp3;                      ///< for temporary usage
+	int temp4;                      ///< for temporary usage
+	int temp5;                      ///< for temporary usage
+	int temp6;                      ///< for temporary usage
 
     ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
 
@@ -5190,6 +5494,22 @@ ITUWidget* CoverFlowGetVisibleChild(ITUCoverFlow* coverflow, int index);
 */
 int CoverFlowGetFirstDisplayIndex(ITUCoverFlow* coverflow);
 
+/**
+* Get the dragging distance of the Coverflow.
+*
+* @param coverflow The coverflow widget.
+* @return the dragging distance (return 0 when the coverflow is not dragging or dragging back to the origin position).
+*/
+int CoverFlowGetDraggingDist(ITUCoverFlow* coverflow);
+
+/**
+* Check the coverflow widget is under idle or not.
+*
+* @param coverflow The coverflow widget.
+* @return the idle status of the coverflow widget, true is idle, false is not.
+*/
+bool CoverFlowCheckIdle(ITUCoverFlow* coverflow);
+
 /** @} */ // end of itu_widget_coverflow
 
 /** @defgroup itu_widget_popupbutton PopupButton
@@ -5204,6 +5524,8 @@ typedef struct
     int totalframe;         ///< Total frame count of animation.
     int incPercent;         ///< Percentage of increase.
     int alphaPercent;       ///< Percentage of transparent.
+	int orgFontSize;
+	int textScaleFactor;
     int frame;              ///< Current frame.
     ITURectangle orgRect;   ///< Keep the orginal rectangle of widget
     int orgAlpha;           ///< Keep the orginal alpha value of widget
@@ -5453,6 +5775,8 @@ typedef struct
     int pressed;                                ///< Is pressed or not
     int maxValue;                               ///< Maximum value. Unit is percentage.
     int minRadius;                              ///< Minimum radius. Unit is pixels.
+    int delay;                                  ///< The delay on playing. Unit is depend on ITU_EVENT_TIMER event.
+    int delayCount;                             ///< The delay count to play next frame.
 
     ITUAction actions[ITU_ACTIONS_SIZE];        ///< Actions for events to trigger
 
@@ -5713,12 +6037,12 @@ void ituVideoStop(ITUVideo* video);
 void ituVideoPause(ITUVideo* video);
 
 /**
- * Gotos the specified frame of video widget.
+ * Gotos the specified progress percentage of video widget.
  *
  * @param video The playing video widget to goto.
- * @param frame The specified frame of video widget to goto, in percentage.
+ * @param percentage The specified progress percentage of video widget to goto.
  */
-void ituVideoGoto(ITUVideo* video, int frame);
+void ituVideoGoto(ITUVideo* video, int percentage);
 
 /**
  * Gets the playing progress of video widget.
@@ -5727,6 +6051,9 @@ void ituVideoGoto(ITUVideo* video, int frame);
  * @return the percentage of playing progress.
  */
 int ituVideoGetPlayingPercentage(ITUVideo* video);
+
+void ituVideoSpeedUpDown(ITUVideo* video, float speed);
+
 
 /** @} */ // end of itu_widget_video
 
@@ -7046,6 +7373,14 @@ typedef struct ITUScaleCoverFlowTag
     int itemWidth;                  ///< Item width
     int itemHeight;                 ///< Item height
     int itemPos;                    ///< Item position
+	int offsetx;                    ///< internal use offsetx
+	int offsety;                    ///< internal use offsety
+	int orgFocusIndex;              ///< internal original focus index log
+	int currentFocusIndex;          ///< internal current focus index log
+	int draggable;                  ///< draggable
+	int concentration;              ///< concentration shift award to focus item
+	int layoutMemoX[ITU_WIDGET_CHILD_MAX];   ///< internal layout memo X array
+	int layoutMemoY[ITU_WIDGET_CHILD_MAX];   ///< internal layout memo Y array
 } ITUScaleCoverFlow;
 
 /**
@@ -7086,6 +7421,15 @@ bool ituScaleCoverFlowUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2,
  * @param alpha the alpha value to do the constant alphablending to the surface.
  */
 void ituScaleCoverFlowDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+* Do the specified action. This is triggered by other widget's event.
+*
+* @param widget The scalecoverflow widget to do the action.
+* @param action The action to do.
+* @param param The parameter of action.
+*/
+void ituScaleCoverFlowOnAction(ITUWidget* widget, ITUActionType action, char* param);
 
 /** @} */ // end of itu_widget_scalecoverflow
 
@@ -7333,8 +7677,167 @@ int ituDrawPenUSBStatus(ITUDrawPen* drawpen);
 */
 void ituDrawPenUSBSendID(ITUDrawPen* drawpen, unsigned int id);
 
+/**
+* Set the cursor of the DrawPen widget to show or not.
+*
+* @param drawpen The DrawPen widget.
+* @param switchon The switch for cursor. True is Enable cursor and false for not.
+*/
+void ituDrawPenCursorSwitch(ITUDrawPen* drawpen, bool switchon);
 
 /** @} */ // end of itu_widget_drawpen
+
+/** @defgroup itu_widget_wavebackground WaveBackground
+*  @{
+*/
+
+/**
+* Wave background widget definition.
+*/
+typedef struct
+{
+    ITUBackground bg;                       ///< Base background widget definition
+    int xstep;                              ///< Steps of x-coordinate
+    int ystep;                              ///< Steps of y-coordinate
+    int ampitude;                           ///< Wave ampitude. Unit is pixels.
+    int offsetx;                            ///< X coordinate of offset to start wave. Unit is pixels.
+    int offsety;                            ///< Y coordinate of offset to start wave. Unit is pixels.
+    int delay;                              ///< The delay on playing. Unit is depend on ITU_EVENT_TIMER event.
+    int totalframe;                         ///< Total frame count.
+    int frame;                              ///< Current frame.
+    int delayCount;                         ///< The delay count to play next frame.
+    int xcount;                             ///< The block count of X coordinate for computing.
+    int ycount;                             ///< The block count of Y coordinate for computing.
+    ITUPoint* waveMap;                      ///< Wave map.
+
+} ITUWaveBackground;
+
+/**
+* Initializes the wave background widget.
+*
+* @param wave The wave background widget to initialize.
+*/
+void ituWaveBackgroundInit(ITUWaveBackground* wave);
+
+/**
+* Loads the wave background widget. This is called by scene manager.
+*
+* @param wave The wave background widget to load.
+* @param base The address in the scene file buffer.
+*/
+void ituWaveBackgroundLoad(ITUWaveBackground* wave, uint32_t base);
+
+/**
+* Exits the wave background widget.
+*
+* @param widget The wave background widget to exit.
+*/
+void ituWaveBackgroundExit(ITUWidget* widget);
+
+/**
+* Updates the wave background widget by specified event.
+*
+* @param widget The wave background widget to update.
+* @param ev The event to notify.
+* @param arg1 The event related argument #1.
+* @param arg2 The event related argument #2.
+* @param arg3 The event related argument #3.
+* @return true if the wave background widget is modified and need to be redraw, false if no need to be redraw.
+*/
+bool ituWaveBackgroundUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+* Draws the wave background widget to the specified surface.
+*
+* @param widget The wave background widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituWaveBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/** @} */ // end of itu_widget_wavebackground
+
+/** @defgroup itu_widget_clipper Clipper
+*  @{
+*/
+/**
+* Clipper widget definition. This is used for drawing label.
+*/
+typedef struct
+{
+    ITUWidget widget;           ///< Base widget definition.
+    int outside;             	///< Clipping outside or not.
+    ITUSurface* maskSurf;       ///< The mask surface.
+} ITUClipper;
+
+/**
+* Initializes the clipper widget.
+*
+* @param clipper The clipper widget to initialize.
+*/
+void ituClipperInit(ITUClipper* clipper);
+
+/**
+* Loads the clipper widget. This is called by scene manager.
+*
+* @param clipper The clipper widget to load.
+* @param base The address in the scene file buffer.
+*/
+void ituClipperLoad(ITUClipper* clipper, uint32_t base);
+
+/**
+* Exits the clipper widget.
+*
+* @param widget The blur widget to exit.
+*/
+void ituClipperExit(ITUWidget* widget);
+
+/**
+* Clones the clipper widget.
+*
+* @param widget The clipper widget to clone.
+* @param cloned Retrieved cloned clipper widget.
+* @return true if clone is success, false otherwise.
+*/
+bool ituClipperClone(ITUWidget* widget, ITUWidget** cloned);
+
+/**
+* Updates the clipper widget by specified event.
+*
+* @param widget The clipper widget to update.
+* @param ev The event to notify.
+* @param arg1 The event related argument #1.
+* @param arg2 The event related argument #2.
+* @param arg3 The event related argument #3.
+* @return true if the clipper widget is modified and need to be redraw, false if no need to be redraw.
+*/
+bool ituClipperUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+* Draws the clipper widget to the specified surface.
+*
+* @param widget The clipper widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituClipperDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+* Post-draws the clipper widget to the specified surface.
+*
+* @param widget The clipper widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituClipperPostDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/** @} */ // end of itu_widget_clipper
 
 /** @} */ // end of itu_widget
 
@@ -7415,6 +7918,7 @@ typedef struct
     ITUCommand commands[ITU_COMMAND_SIZE];                      ///< Queued command to execute.
     char path[PATH_MAX];                                        ///< Loaded file path
     ITUVariable variables[ITU_VARIABLE_SIZE];                   ///< Variables
+    pthread_t threadID;
 } ITUScene;
 
 extern ITUScene* ituScene;  ///< Current loaded scene
@@ -7671,6 +8175,18 @@ void ituUnPressWidgetImpl(ITUWidget* widget);
 void ituScreenshot(ITUSurface* surf, char* filepath);
 
 /**
+* Takes a screenshot with specified rectangle to the specified file path.
+*
+* @param surf The surface to take the screenshot.
+* @param x the x coordinate of surface, in pixels.
+* @param y the y coordinate of surface, in pixels.
+* @param w the width to screenshot, in pixels. 0 will be the width of surface.
+* @param h the height to screenshot, in pixels. 0 will be the height of surface.
+* @param filepath The file path to save to.
+*/
+void ituScreenshotRect(ITUSurface* surf, int x, int y, int w, int h, char* filepath);
+
+/**
  * Gets layer widget.
  *
  * @param widget the widget belong to.
@@ -7698,6 +8214,45 @@ void ituPreloadFontCache(ITUWidget* widget, ITUSurface* surf);
 * @param h the glyph height, in pixels.
 */
 void ituDrawGlyphEmpty(ITUSurface* surf, int x, int y, ITUGlyphFormat format, const uint8_t* bitmap, int w, int h);
+
+/**
+* Gets target widget on specified variable.
+*
+* @param index the variable index.
+* @return The target widget. NULL if not set or out of bound.
+*/
+ITUWidget* ituGetVarTarget(int index);
+
+/**
+* Sets target widget to specified variable.
+*
+* @param index the variable index.
+* @param target The target widget. NULL to clear target variable.
+*/
+void ituSetVarTarget(int index, ITUWidget* target);
+
+/**
+* Gets parameter on specified variable.
+*
+* @param index the variable index.
+* @return The parameter. NULL if out of bound.
+*/
+char* ituGetVarParam(int index);
+
+/**
+* Sets parameter to specified variable.
+*
+* @param index the variable index.
+* @param param The parameter. NULL to clear parameter variable.
+*/
+void ituSetVarParam(int index, char* param);
+
+/**
+* Checks current thread is valid or not.
+*
+* @param file the file line.
+*/
+void ituAssertThread(const char *file);
 
 /** @} */ // end of itu_util
 

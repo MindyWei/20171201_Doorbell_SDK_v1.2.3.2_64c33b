@@ -12,6 +12,7 @@ void ituIconListBoxExit(ITUWidget* widget)
     ITUIconListBox* ilistbox = (ITUIconListBox*) widget;
     int i;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     for (i = 0; i < ITU_ICON_LISTBOX_TYPE_COUNT; i++)
     {
@@ -255,6 +256,7 @@ void ituIconListBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 void ituIconListBoxInit(ITUIconListBox* ilistbox, int width)
 {
     assert(ilistbox);
+    ITU_ASSERT_THREAD();
 
     memset(ilistbox, 0, sizeof (ITUIconListBox));
 
@@ -354,6 +356,7 @@ void ituIconListBoxLoadStaticData(ITUIconListBox* ilistbox)
 void ituIconListBoxReleaseSurface(ITUIconListBox* ilistbox)
 {
     int i;
+    ITU_ASSERT_THREAD();
 
     for (i = 0; i < ITU_ICON_LISTBOX_TYPE_COUNT; i++)
     {

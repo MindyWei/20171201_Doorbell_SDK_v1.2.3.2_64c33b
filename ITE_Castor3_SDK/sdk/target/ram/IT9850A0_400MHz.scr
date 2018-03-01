@@ -271,7 +271,7 @@ write(0x0320, 0xf04a);                              // update phase from average
 if (read_mask(0x0000, 0x1000)==0x0000) {
     write(0x0348, 0xe002);                          // B0DTDQSI
     write(0x0334, 0x0000);                          // MCLKP Out Setting & MA &CMD
-    write(0x0336, 0xc000);                          // ODT Enable & MDQS IO Driving
+    write(0x0336, 0xeec0);                          // ODT Enable & MDQS IO Driving
     write(0x0330, 0x8000);                          // IO Driving
     write(0x0332, 0x1400);                          // odt 150 ohm
     write(0x0396, 0xa000);                          // MAX GNT
@@ -401,7 +401,7 @@ if (read_mask(0x0000, 0x1000)==0x0000) {
 } else {
     write(0x0348, 0xe002);                          // B0DTDQSI
     write(0x0334, 0x0000);                          // MCLKP Out Setting & MA &CMD
-    write(0x0336, 0xc000);                          // ODT Enable & MDQS IO Driving
+    write(0x0336, 0xeec0);                          // ODT Enable & MDQS IO Driving
     write(0x0330, 0x8000);                          // IO Driving
     write(0x0332, 0x1400);                          // odt 150 ohm
     write(0x0396, 0xa000);                          // MAX GNT
@@ -529,9 +529,9 @@ if (read_mask(0x0000, 0x1000)==0x0000) {
 // Memory Priority Setting for Arbitration, original priority USB > ARM > RISC > AHB > ISP
 //swap the priority ISP > USB > AHB > RISC > ARM
 write(0x0376, 0x0100);
-write(0x0378, 0x0302);
+write(0x0378, 0x0307);
 write(0x037a, 0x0504);
-write(0x037c, 0x0706);
+write(0x037c, 0x0206);
 write(0x037e, 0x1413);
 write(0x0380, 0x0908);
 write(0x0382, 0x0b0a);
@@ -540,6 +540,20 @@ write(0x0386, 0x0f0e);
 write(0x0388, 0x110d);
 write(0x038a, 0x1512);
 
+// Enable memory BIST for adjusting the input data delay
+write(0x03a6, 0x0000);
+write(0x03aa, 0x03ff); // 8 MB
+
+write(0x03a8, 0x0000);
+write(0x03a8, 0x0300); // enable Bist
+wait(25*1000);         // wait 25 ms
+
+write(0x03a8, 0x0000);
+write(0x03a8, 0x0310); // enable Bist
+wait(25*1000);         // wait 25 ms
+
+// Disable absorber for hold-time margin at low temperature
+write(0x0338, 0x0200);
 // ==============================================
 //           End of Memory Setting
 // ==============================================

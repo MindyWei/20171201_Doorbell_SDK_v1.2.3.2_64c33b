@@ -143,6 +143,7 @@ static void ImageCoverFlowExit(ITUImageCoverFlow* imagecoverflow)
     ITUCoverFlow* coverflow = (ITUCoverFlow*) widget;
     ITCTree* node;
     assert(imagecoverflow);
+    ITU_ASSERT_THREAD();
 
     if (coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_BUSYING)
         coverflow->coverFlowFlags |= ITU_IMAGECOVERFLOW_DESTROYING;
@@ -177,6 +178,7 @@ void ituImageCoverFlowExit(ITUWidget* widget)
 {
     ITUImageCoverFlow* imagecoverflow = (ITUImageCoverFlow*) widget;
     assert(imagecoverflow);
+    ITU_ASSERT_THREAD();
 
     ImageCoverFlowExit(imagecoverflow);
 
@@ -201,6 +203,8 @@ bool ituImageCoverFlowUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2,
                 ITUIcon* icon = (ITUIcon*)itcTreeGetChildAt(widget, imagecoverflow->imageIndex);
                 char* filepath = strdup(imagecoverflow->filePath);
 				char* ext = strrchr(filepath, '.');
+
+                icon->widget.flags |= ITU_FIT_TO_RECT;
 
 				if (stricmp(ext, ".png") == 0)
 					ituIconLoadPngData(icon, imagecoverflow->imageData, imagecoverflow->imageSize);
@@ -283,6 +287,7 @@ void ituImageCoverFlowDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, ui
 void ituImageCoverFlowInit(ITUImageCoverFlow* imageCoverFlow, ITULayout layout, char* path)
 {
     assert(imageCoverFlow);
+    ITU_ASSERT_THREAD();
 
     memset(imageCoverFlow, 0, sizeof (ITUImageCoverFlow));
 
@@ -326,14 +331,23 @@ void ituImageCoverFlowOnAction(ITUWidget* widget, ITUActionType action, char* pa
 
 void ituImageCoverFlowReload(ITUImageCoverFlow* imagecoverflow)
 {
+	int retry_max_count = 30;
     ITUCoverFlow* coverflow = (ITUCoverFlow*) imagecoverflow;
     assert(imagecoverflow);
+    ITU_ASSERT_THREAD();
 
-    if ((coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_BUSYING) ||
-        (coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_DESTROYING))
-    {
-        return;
-    }
+	while (((coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_BUSYING) ||
+		(coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_DESTROYING)) && (retry_max_count > 0))
+	{
+		usleep(10000);
+		retry_max_count--;
+	}
+
+	if ((coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_BUSYING) ||
+		(coverflow->coverFlowFlags & ITU_IMAGECOVERFLOW_DESTROYING))
+	{
+		return;
+	}
 
     if (strlen(imagecoverflow->path) > 0)
     {

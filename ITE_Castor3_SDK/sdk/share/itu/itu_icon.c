@@ -12,6 +12,7 @@ void ituIconExit(ITUWidget* widget)
 {
     ITUIcon* icon = (ITUIcon*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (icon->filePath)
     {
@@ -42,6 +43,7 @@ bool ituIconClone(ITUWidget* widget, ITUWidget** cloned)
     ITUIcon* icon = (ITUIcon*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -82,11 +84,13 @@ static void IconLoadExternalData(ITUIcon* icon, ITULayer* layer)
         layer = ituGetLayer(widget);
 
     surf = ituLayerLoadExternalSurface(layer, (uint32_t)icon->staticSurf);
-
-    if (surf->flags & ITU_COMPRESSED)
-        icon->surf = ituSurfaceDecompress(surf);
-    else
-        icon->surf = ituCreateSurface(surf->width, surf->height, surf->pitch, surf->format, (const uint8_t*)surf->addr, surf->flags);
+    if (surf)
+    {
+        if (surf->flags & ITU_COMPRESSED)
+            icon->surf = ituSurfaceDecompress(surf);
+        else
+            icon->surf = ituCreateSurface(surf->width, surf->height, surf->pitch, surf->format, (const uint8_t*)surf->addr, surf->flags);
+    }
 }
 
 static void IconLoadImage(ITUIcon* icon, char* path)
@@ -383,6 +387,7 @@ void ituIconDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
 void ituIconInit(ITUIcon* icon)
 {
     assert(icon);
+    ITU_ASSERT_THREAD();
 
     memset(icon, 0, sizeof (ITUIcon));
 
@@ -426,6 +431,7 @@ bool ituIconLoadJpegData(ITUIcon* icon, uint8_t* data, int size)
     bool result = false;
 
     assert(icon);
+    ITU_ASSERT_THREAD();
 
     if (widget->flags & ITU_LOADING)
     {
@@ -509,6 +515,7 @@ void ituIconLoadJpegFile(ITUIcon* icon, char* filepath)
 {
     ITUWidget* widget = (ITUWidget*)icon;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if ((widget->flags & ITU_LOADING) || (widget->flags & ITU_LOADED))
         return;
@@ -533,6 +540,7 @@ void ituIconLoadJpegFileSync(ITUIcon* icon, char* filepath)
 {
     ITUWidget* widget = (ITUWidget*)icon;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (strlen(filepath) > 0)
     {
@@ -564,6 +572,7 @@ bool ituIconLoadPngData(ITUIcon* icon, uint8_t* data, int size)
     bool result = false;
 
     assert(icon);
+    ITU_ASSERT_THREAD();
 
     if (widget->flags & ITU_LOADING)
     {
@@ -643,6 +652,7 @@ void ituIconLoadPngFile(ITUIcon* icon, char* filepath)
 {
     ITUWidget* widget = (ITUWidget*)icon;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if ((widget->flags & ITU_LOADING) || (widget->flags & ITU_LOADED))
         return;
@@ -667,6 +677,7 @@ void ituIconLoadPngFileSync(ITUIcon* icon, char* filepath)
 {
     ITUWidget* widget = (ITUWidget*)icon;
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     if (strlen(filepath) > 0)
     {
@@ -706,6 +717,8 @@ void ituIconLoadStaticData(ITUIcon* icon)
 
 void ituIconReleaseSurface(ITUIcon* icon)
 {
+    ITU_ASSERT_THREAD();
+
     if (icon->surf)
     {
         ituSurfaceRelease(icon->surf);
@@ -717,6 +730,7 @@ void ituIconLinkSurface(ITUIcon* icon, ITUIcon* src)
 {
     assert(icon);
     assert(src);
+    ITU_ASSERT_THREAD();
 
     if (icon->surf)
     {

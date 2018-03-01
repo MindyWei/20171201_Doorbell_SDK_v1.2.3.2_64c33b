@@ -12,6 +12,7 @@ bool ituBorderWindowClone(ITUWidget* widget, ITUWidget** cloned)
     ITUBorderWindow* bwin = (ITUBorderWindow*)widget;
     assert(widget);
     assert(cloned);
+    ITU_ASSERT_THREAD();
 
     if (*cloned == NULL)
     {
@@ -150,6 +151,7 @@ void ituBorderWindowDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint
 void ituBorderWindowInit(ITUBorderWindow* bwin)
 {
     assert(bwin);
+    ITU_ASSERT_THREAD();
 
     memset(bwin, 0, sizeof (ITUBorderWindow));
 
@@ -176,6 +178,7 @@ void ituBorderWindowAdd(ITUBorderWindow* bwin, ITUWidget* child, ITULayout layou
 {
     assert(bwin);
     assert(child);
+    ITU_ASSERT_THREAD();
 
     ituWidgetAdd(&bwin->widget, child);
     bwin->widgets[layout] = child;

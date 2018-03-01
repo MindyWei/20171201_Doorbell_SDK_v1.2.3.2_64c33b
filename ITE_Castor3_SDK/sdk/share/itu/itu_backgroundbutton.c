@@ -20,14 +20,19 @@ bool ituBackgroundButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg
     {
 		int x = arg2 - widget->rect.x;
 		int y = arg3 - widget->rect.y;
-		int16_t aa;
+		/*int16_t aa;
 		int16_t bb;
 		int32_t cc;
 		aa = (int16_t)x;
 		bb = (int16_t)y;
 		cc = (aa << 16) | bb;
 
-		ituWidgetSetCustomData(widget, cc);
+		ituWidgetSetCustomData(widget, cc);*/
+		int* xy_info = (int*)ituWidgetGetCustomData(widget);
+		xy_info[0] = x;
+		xy_info[1] = y;
+		xy_info[2] = 1;
+		ituWidgetSetCustomData(widget, xy_info);
 
         if (ituWidgetIsEnabled(widget) && !result)
         {
@@ -48,6 +53,12 @@ bool ituBackgroundButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg
             int x = arg2 - widget->rect.x;
             int y = arg3 - widget->rect.y;
 
+			int* xy_info = (int*)ituWidgetGetCustomData(widget);
+			xy_info[0] = -1;
+			xy_info[1] = -1;
+			xy_info[2] = 0;
+			ituWidgetSetCustomData(widget, xy_info);
+
             if (ituWidgetIsInside(widget, x, y))
             {
                 result |= ituExecActions((ITUWidget*)bgbtn, bgbtn->actions, ev, 0);
@@ -58,6 +69,22 @@ bool ituBackgroundButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg
             }
         }
     }
+	else if (ev == ITU_EVENT_MOUSEMOVE)
+	{
+		int x = arg2 - widget->rect.x;
+		int y = arg3 - widget->rect.y;
+
+		if (ituWidgetIsInside(widget, x, y))
+		{
+			int* xy_info = (int*)ituWidgetGetCustomData(widget);
+			if (xy_info[2])
+			{
+				xy_info[0] = x;
+				xy_info[1] = y;
+				ituWidgetSetCustomData(widget, xy_info);
+			}
+		}
+	}
     else if (ev == ITU_EVENT_MOUSEDOUBLECLICK || ev == ITU_EVENT_MOUSELONGPRESS ||
         ev == ITU_EVENT_TOUCHSLIDELEFT || ev == ITU_EVENT_TOUCHSLIDEUP || ev == ITU_EVENT_TOUCHSLIDERIGHT || ev == ITU_EVENT_TOUCHSLIDEDOWN)
     {
@@ -151,6 +178,7 @@ void ituBackgroundButtonOnAction(ITUWidget* widget, ITUActionType action, char* 
 void ituBackgroundButtonInit(ITUBackgroundButton* bgbtn)
 {
     assert(bgbtn);
+    ITU_ASSERT_THREAD();
 
     memset(bgbtn, 0, sizeof (ITUBackgroundButton));
 
@@ -164,9 +192,18 @@ void ituBackgroundButtonInit(ITUBackgroundButton* bgbtn)
 
 void ituBackgroundButtonLoad(ITUBackgroundButton* bgbtn, uint32_t base)
 {
-    assert(bgbtn);
+	int32_t cc = 0;
+	int* xy_info = (int*)malloc(sizeof(int) * 3);
+	xy_info[0] = -1;
+	xy_info[1] = -1;
+	xy_info[2] = 0;
+	
+	assert(bgbtn);
 
     ituBackgroundLoad(&bgbtn->bg, base);
+
+	ituWidgetSetCustomData(bgbtn, xy_info);
+
     ituWidgetSetUpdate(bgbtn, ituBackgroundButtonUpdate);
     ituWidgetSetOnAction(bgbtn, ituBackgroundButtonOnAction);
 }
@@ -174,9 +211,14 @@ void ituBackgroundButtonLoad(ITUBackgroundButton* bgbtn, uint32_t base)
 
 void ituBackgroundButtonMouseDownXY(ITUWidget* widget, int* x, int* y)
 {
-	int32_t xy;
+	//int32_t xy;
+	int* xy_info = (int*)ituWidgetGetCustomData(widget);
+    ITU_ASSERT_THREAD();
 
-	xy = (char*)ituWidgetGetCustomData(widget);
-	*x = (xy >> 16);
-	*y = (xy << 16) >> 16;
+	//xy = (char*)ituWidgetGetCustomData(widget);
+	//*x = (xy >> 16);
+	//*y = (xy << 16) >> 16;
+
+	*x = xy_info[0];
+	*y = xy_info[1];
 }

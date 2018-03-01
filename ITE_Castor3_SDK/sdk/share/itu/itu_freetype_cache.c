@@ -14,13 +14,15 @@
 #include "ite/itu.h"
 #include "itu_private.h"
 
-#define MAX_SBIT_CACHE 512
+#define MAX_SBIT_CACHE 128
 
 /* this simple record is used to model a given `installed' face */
 typedef struct
 {
     char*           filepathname;
     char*           filename;
+    uint8_t*        array;
+    int             array_size;
     int             face_index;
     int             cmap_index;
     int             num_indices;
@@ -200,10 +202,21 @@ static FT_Error face_requester(FTC_FaceID face_id,
 
     FT_UNUSED(request_data);
 
-    error = FT_New_Face(lib,
-                        font->filepathname,
-                        font->face_index,
-                        aface);
+    if (font->array)
+    {
+        error = FT_New_Memory_Face(lib,
+            font->array,
+            font->array_size,
+            font->face_index,
+            aface);
+    }
+    else
+    {
+        error = FT_New_Face(lib,
+            font->filepathname,
+            font->face_index,
+            aface);
+    }
     if (error)
     {
         LOG_ERR "FT_New_Face fail: %d\n", error LOG_END
@@ -255,7 +268,12 @@ int ituFtLoadFont(int index, char* filename, ITUGlyphFormat format)
 
     font = &ft.fonts[index];
 
-    if (font->filepathname)
+    if (font->array)
+    {
+        FTC_Manager_RemoveFaceID(ft.cache_manager, font->scaler.face_id);
+        font->array = NULL;
+    }
+    else if (font->filepathname)
     {
         FTC_Manager_RemoveFaceID(ft.cache_manager, font->scaler.face_id);
         free((void*) font->filepathname);
@@ -313,6 +331,83 @@ int ituFtLoadFont(int index, char* filename, ITUGlyphFormat format)
     default:
         LOG_ERR "unknown glyph format: %d\n", format LOG_END
         return __LINE__;
+    }
+    font->format = format;
+
+    if (!ft.current_font)
+        ft.current_font = font;
+
+    if (!ft.default_font)
+        ft.default_font = font;
+
+    return FT_Err_Ok;
+}
+
+int ituFtLoadFontArray(int index, uint8_t* array, int size, ITUGlyphFormat format)
+{
+    FT_Error error;
+    FT_Face  face;
+    TFont* font;
+
+    assert(index >= 0);
+    assert(index < ITU_FREETYPE_MAX_FONTS);
+    assert(array);
+    assert(size > 0);
+
+    if (index >= ITU_FREETYPE_MAX_FONTS)
+    {
+        LOG_ERR "out of font index: %d >= \n", index, ITU_FREETYPE_MAX_FONTS LOG_END
+            return __LINE__;
+    }
+
+    font = &ft.fonts[index];
+
+    if (font->array)
+    {
+        FTC_Manager_RemoveFaceID(ft.cache_manager, font->scaler.face_id);
+        font->array = NULL;
+    }
+    else if (font->filepathname)
+    {
+        FTC_Manager_RemoveFaceID(ft.cache_manager, font->scaler.face_id);
+        free((void*)font->filepathname);
+        font->filepathname = NULL;
+    }
+
+    error = FT_New_Memory_Face(ft.library, array, size, 0, &face);
+    if (error)
+    {
+        LOG_ERR "couldn't open font array: %d\n", error LOG_END
+        return error;
+    }
+
+    font->array = array;
+    font->array_size = size;
+    font->face_index = 0;
+    font->cmap_index = face->charmap ? FT_Get_Charmap_Index(face->charmap) : 0;
+    font->num_indices = 0x110000L;
+
+    FT_Done_Face(face);
+    face = NULL;
+
+    font->scaler.face_id = (FTC_FaceID)font;
+
+    switch (format)
+    {
+    case ITU_GLYPH_1BPP:
+        font->load_flags = FT_LOAD_TARGET_MONO | FT_LOAD_RENDER;
+        font->render_mode = FT_RENDER_MODE_MONO;
+        break;
+
+    case ITU_GLYPH_4BPP:
+    case ITU_GLYPH_8BPP:
+        font->load_flags = FT_LOAD_TARGET_NORMAL;
+        font->render_mode = FT_RENDER_MODE_NORMAL;
+        break;
+
+    default:
+        LOG_ERR "unknown glyph format: %d\n", format LOG_END
+            return __LINE__;
     }
     font->format = format;
 
@@ -521,6 +616,7 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                     if ((tfont->format == ITU_GLYPH_4BPP) && (sbit->format == FT_PIXEL_MODE_GRAY || sbit->format == FT_PIXEL_MODE_GRAY2))
                     {
                         FT_Bitmap  source;
+                    	int yy;
 
                         source.rows = sbit->height;
                         source.width = sbit->width;
@@ -528,11 +624,17 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                         source.buffer = sbit->buffer;
                         source.pixel_mode = sbit->format;
                         Bitmap_Convert_GRAY4(ft.library, &source, &ft.bitmap);
-                        ituDrawGlyph(surf, x + x_advance + sbit->left, y + tfont->scaler.height - sbit->top, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+
+	                    yy = y + tfont->scaler.height - sbit->top;
+	                    if (yy < 0)
+	                        yy = 0;
+	                    ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
                     }
                     else
                     {
                         ITUGlyphFormat format;
+                    	int yy;
+
                         switch (sbit->format)
                         {
                         case FT_PIXEL_MODE_MONO:
@@ -547,7 +649,10 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                             format = ITU_GLYPH_8BPP;
                             break;
                         }
-                        ituDrawGlyph(surf, x + x_advance + sbit->left, y + tfont->scaler.height - sbit->top, format, sbit->buffer, sbit->width, sbit->height);
+	                    yy = y + tfont->scaler.height - sbit->top;
+	                    if (yy < 0)
+	                        yy = 0;
+	                    ituDrawGlyph(surf, x + x_advance + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
                     }
                 }
 
@@ -585,8 +690,7 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
 
                 if (glyph->format == FT_GLYPH_FORMAT_OUTLINE)
                 {
-                    //error = FT_Glyph_To_Bitmap(&glyph, tfont->render_mode, NULL, 0);
-                    error = FT_Outline_Embolden(&face->glyph->outline, 2 * 64);
+                    error = FT_Glyph_To_Bitmap(&glyph, tfont->render_mode, NULL, 0);
                     if (error)
                     {
                         LOG_ERR "FT_Glyph_To_Bitmap fail: %d\n", error LOG_END
@@ -594,7 +698,8 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                         continue;
                     }
                 }
-                else if (glyph->format == FT_GLYPH_FORMAT_BITMAP)
+                
+                if (glyph->format == FT_GLYPH_FORMAT_BITMAP)
                 {
                     FT_BitmapGlyph  bitmap = (FT_BitmapGlyph)glyph;
                     FT_Bitmap*      source = &bitmap->bitmap;
@@ -603,12 +708,20 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                     {
                         if ((tfont->format == ITU_GLYPH_4BPP) && (sbit->format == FT_PIXEL_MODE_GRAY || sbit->format == FT_PIXEL_MODE_GRAY2))
                         {
+                        	int yy;
+
                             Bitmap_Convert_GRAY4(ft.library, source, &ft.bitmap);
-                            ituDrawGlyph(surf, x + x_advance + sbit->left, y + tfont->scaler.height - sbit->top, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+
+	                        yy = y + tfont->scaler.height - sbit->top;
+	                        if (yy < 0)
+	                            yy = 0;
+	                        ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
                         }
                         else
                         {
                             ITUGlyphFormat format;
+                        	int yy;
+
                             switch (sbit->format)
                             {
                             case FT_PIXEL_MODE_MONO:
@@ -624,7 +737,10 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                                 format = ITU_GLYPH_8BPP;
                                 break;
                             }
-                            ituDrawGlyph(surf, x + x_advance + sbit->left, y + tfont->scaler.height - sbit->top, format, sbit->buffer, sbit->width, sbit->height);
+                            yy = y + tfont->scaler.height - source->rows;
+	                        if (yy < 0)
+	                            yy = 0;
+                            ituDrawGlyph(surf, x + x_advance + bitmap->left, yy, format, source->buffer, source->width, source->rows);
                         }
                     }
                 }
@@ -1005,7 +1121,10 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
 				}
 				else
 				{
-					ituDrawGlyph(surf, x + sbit->left, y + tfont->scaler.height - sbit->top, format, bitmapGlyph->bitmap.buffer, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows);
+					int yy = y + tfont->scaler.height - sbit->top;
+					if (yy < 0)
+						yy = 0;
+					ituDrawGlyph(surf, x + sbit->left, yy, format, bitmapGlyph->bitmap.buffer, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows);
 				}
 			}
 			else
@@ -1062,6 +1181,7 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                     if ((tfont->format == ITU_GLYPH_4BPP) && (sbit->format == FT_PIXEL_MODE_GRAY || sbit->format == FT_PIXEL_MODE_GRAY2))
                     {
                         FT_Bitmap  source;
+                    	int yy;
 
                         source.rows = sbit->height;
                         source.width = sbit->width;
@@ -1069,11 +1189,15 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                         source.buffer = sbit->buffer;
                         source.pixel_mode = sbit->format;
                         Bitmap_Convert_GRAY4(ft.library, &source, &ft.bitmap);
-                        ituDrawGlyph(surf, x + sbit->left, y + tfont->scaler.height - sbit->top, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+	                    yy = y + tfont->scaler.height - sbit->top;
+	                    if (yy < 0)
+	                        yy = 0;
+	                    ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
                     }
                     else
                     {
                         ITUGlyphFormat format;
+                    	int yy;
                         switch (sbit->format)
                         {
                         case FT_PIXEL_MODE_MONO:
@@ -1088,7 +1212,10 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                             format = ITU_GLYPH_8BPP;
                             break;
                         }
-                        ituDrawGlyph(surf, x + sbit->left, y + tfont->scaler.height - sbit->top, format, sbit->buffer, sbit->width, sbit->height);
+	                    yy = y + tfont->scaler.height - sbit->top;
+	                    if (yy < 0)
+	                        yy = 0;
+	                    ituDrawGlyph(surf, x + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
                     }
                 }
             }
@@ -1142,12 +1269,19 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                     {
                         if ((tfont->format == ITU_GLYPH_4BPP) && (sbit->format == FT_PIXEL_MODE_GRAY || sbit->format == FT_PIXEL_MODE_GRAY2))
                         {
+                        	int yy;
+
                             Bitmap_Convert_GRAY4(ft.library, source, &ft.bitmap);
-                            ituDrawGlyph(surf, x + sbit->left, y + tfont->scaler.height - sbit->top, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+
+	                        yy = y + tfont->scaler.height - sbit->top;
+	                        if (yy < 0)
+	                            yy = 0;
+	                        ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
                         }
                         else
                         {
                             ITUGlyphFormat format;
+                        	int yy;
                             switch (sbit->format)
                             {
                             case FT_PIXEL_MODE_MONO:
@@ -1163,7 +1297,10 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                                 format = ITU_GLYPH_8BPP;
                                 break;
                             }
-                            ituDrawGlyph(surf, x + bitmap->left, y + tfont->scaler.height - source->rows, format, source->buffer, source->width, source->rows);
+	                        yy = y + tfont->scaler.height - source->rows;
+	                        if (yy < 0)
+	                            yy = 0;
+	                        ituDrawGlyph(surf, x + bitmap->left, yy, format, source->buffer, source->width, source->rows);
                         }
                     }
                 }
@@ -1251,4 +1388,48 @@ void ituFtSetFontStyleValue(unsigned int style, int value)
         ft.bold_size = value;
         break;
     }
+}
+
+bool ituFtIsCharValid(const char* text)
+{
+    FT_Error error = FT_Err_Ok;
+    int len;
+    wchar_t buf;
+    bool result = false;
+    assert(text);
+
+    if (!ft.current_font)
+    {
+        LOG_ERR "current font not exist\n" LOG_END
+        goto end;
+    }
+
+    len = strlen(text);
+    len = mbtowc(&buf, text, len);
+
+    if (len > 0)
+    {
+        FT_UInt gindex;
+        int     charcode;
+        TFont*  tfont = ft.current_font;
+
+        charcode = buf;
+        gindex = FTC_CMapCache_Lookup(ft.cmap_cache, tfont->scaler.face_id, tfont->cmap_index, charcode);
+        if (gindex == 0 && tfont != ft.default_font)
+        {
+            ft.default_font->scaler.width = tfont->scaler.width;
+            ft.default_font->scaler.height = tfont->scaler.height;
+            ft.default_font->scaler.pixel = 1;
+            tfont = ft.default_font;
+            gindex = FTC_CMapCache_Lookup(ft.cmap_cache, tfont->scaler.face_id, tfont->cmap_index, charcode);
+        }
+
+        if (gindex)
+        {
+            result = true;
+            goto end;
+        }
+    }
+end:
+    return result;
 }

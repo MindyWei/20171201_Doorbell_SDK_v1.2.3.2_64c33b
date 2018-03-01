@@ -23,6 +23,7 @@ static void FadeEffectStart(struct ITUEffectTag* effect, struct ITUWidgetTag* wi
     ITUFadeEffect* fe = (ITUFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStartImpl(effect, widget);
 
@@ -34,6 +35,7 @@ static void FadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* wid
     ITUFadeEffect* fe = (ITUFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituEffectStopImpl(effect, widget);
 
@@ -43,6 +45,7 @@ static void FadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTag* wid
 void ituFadeEffectInit(ITUFadeEffect* fe, bool fadeIn)
 {
     assert(fe);
+    ITU_ASSERT_THREAD();
 
     memset(fe, 0, sizeof (ITUFadeEffect));
 

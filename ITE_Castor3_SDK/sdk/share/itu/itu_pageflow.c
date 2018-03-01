@@ -34,6 +34,7 @@ ITUWidget* PageFlowGetVisibleChild(ITUPageFlow* pageflow, int index)
 	int i = 0;
 	ITCTree *child, *tree = (ITCTree*)pageflow;
 	assert(tree);
+    ITU_ASSERT_THREAD();
 
 	for (child = tree->child; child; child = child->sibling)
 	{
@@ -1347,6 +1348,7 @@ void ituPageFlowOnAction(ITUWidget* widget, ITUActionType action, char* param)
 void ituPageFlowInit(ITUPageFlow* pageFlow)
 {
     assert(pageFlow);
+    ITU_ASSERT_THREAD();
 
     memset(pageFlow, 0, sizeof (ITUPageFlow));
 
@@ -1374,6 +1376,7 @@ void ituPageFlowLoad(ITUPageFlow* pageFlow, uint32_t base)
 void ituPageFlowGoto(ITUPageFlow* pageFlow, int index)
 {
     assert(pageFlow);
+    ITU_ASSERT_THREAD();
 
     if (pageFlow->focusIndex == index)
         return;
@@ -1386,6 +1389,8 @@ void ituPageFlowPrev(ITUPageFlow* pageflow)
 {
     ITUWidget* widget = (ITUWidget*) pageflow;
     unsigned int oldFlags = widget->flags;
+
+    ITU_ASSERT_THREAD();
 
     widget->flags |= ITU_TOUCHABLE;
 
@@ -1403,6 +1408,8 @@ void ituPageFlowNext(ITUPageFlow* pageflow)
     ITUWidget* widget = (ITUWidget*) pageflow;
     unsigned int oldFlags = widget->flags;
 
+    ITU_ASSERT_THREAD();
+
     widget->flags |= ITU_TOUCHABLE;
 
     if (pageflow->pageFlowFlags & ITU_PAGEFLOW_VERTICAL)
@@ -1417,6 +1424,8 @@ void ituPageFlowNext(ITUPageFlow* pageflow)
 int ituPageFlowRatioFlip2(ITUPageFlow* pageFlow, int ratio)
 {
 	assert(pageFlow);
+
+    ITU_ASSERT_THREAD();
 
 	if (ratio < 0)
 		return pageFlow->ratioflip2;

@@ -12,6 +12,7 @@ static void ituCircleProgressBarExit(ITUWidget* widget)
 {
     ITUCircleProgressBar* bar = (ITUCircleProgressBar*) widget;
     assert(widget);
+    ITU_ASSERT_THREAD();
 }
 
 bool ituCircleProgressBarUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3)
@@ -50,6 +51,9 @@ void ituCircleProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y,
 {
     ITUCircleProgressBar* bar = (ITUCircleProgressBar*) widget;
     ITURectangle prevClip;
+    ITURectangle* rect = &widget->rect;
+    int destx, desty;
+    uint8_t desta;
     uint8_t progressIconVisible;
 
     if (bar->progressIcon)
@@ -66,30 +70,61 @@ void ituCircleProgressBarDraw(ITUWidget* widget, ITUSurface* dest, int x, int y,
 
     ituWidgetSetClipping(widget, dest, x, y, &prevClip);
 
-    x += widget->rect.x;
-    y += widget->rect.y;
-    alpha = alpha * widget->alpha / 255;
+    destx = rect->x + x;
+    desty = rect->y + y;
+    desta = alpha * widget->alpha / 255;
 
-    if (bar->progressIcon && bar->progressIcon->surf && bar->value > 0 && (bar->endAngle != bar->startAngle))
+    if (desta > 0)
     {
-        int i;
-        for (i = 0; i <= bar->value; i++)
+        if (bar->progressIcon && bar->progressIcon->surf && bar->value > 0 && (bar->endAngle != bar->startAngle))
         {
-            float angle;
+            int i;
+            for (i = 0; i <= bar->value; i++)
+            {
+                float angle;
 
-            if (bar->endAngle > bar->startAngle)
-                angle = bar->startAngle + (bar->endAngle - bar->startAngle) * i / (float)bar->maxValue;
-            else if (bar->endAngle < bar->startAngle)
-                angle = bar->startAngle - (bar->startAngle - bar->endAngle) * i / (float)bar->maxValue;
-#if (CFG_CHIP_FAMILY == 9850)
-            ituRotate(dest, x + bar->progressIcon->widget.rect.x, y + bar->progressIcon->widget.rect.y, bar->progressIcon->surf, 0, bar->progressIcon->surf->height, angle, 1.0f, 1.0f);
-#else
-            ituRotate(dest, x + bar->progressIcon->widget.rect.x, y + bar->progressIcon->widget.rect.y + bar->progressIcon->surf->height, bar->progressIcon->surf, 0, bar->progressIcon->surf->height, angle, 1.0f, 1.0f);
-#endif
+                if (bar->endAngle > bar->startAngle)
+                    angle = bar->startAngle + (bar->endAngle - bar->startAngle) * i / (float)bar->maxValue;
+                else if (bar->endAngle < bar->startAngle)
+                    angle = bar->startAngle - (bar->startAngle - bar->endAngle) * i / (float)bar->maxValue;
+
+                if (desta == 255)
+                {
+                #if (CFG_CHIP_FAMILY != 9070)
+                    ituRotate(dest, destx + bar->progressIcon->widget.rect.x, desty + bar->progressIcon->widget.rect.y, bar->progressIcon->surf, 0, bar->progressIcon->surf->height, angle, 1.0f, 1.0f);
+                #else
+                    ituRotate(dest, destx + bar->progressIcon->widget.rect.x, desty + bar->progressIcon->widget.rect.y + bar->progressIcon->surf->height, bar->progressIcon->surf, 0, bar->progressIcon->surf->height, angle, 1.0f, 1.0f);
+                #endif
+                }
+                else
+                {
+                #if (CFG_CHIP_FAMILY == 9070)
+                    ITUSurface* surf = ituCreateSurface(rect->width, rect->height, 0, dest->format, NULL, 0);
+                    if (surf)
+                    {
+                        ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
+                        ituRotate(surf, bar->progressIcon->widget.rect.x, bar->progressIcon->widget.rect.y + bar->progressIcon->surf->height, bar->progressIcon->surf, 0, bar->progressIcon->surf->height, angle, 1.0f, 1.0f);
+                        ituAlphaBlend(dest, destx, desty, rect->width, rect->height, surf, 0, 0, desta);
+                        ituDestroySurface(surf);
+                    }
+                #else
+                    ituTransform(
+                        dest, destx + bar->progressIcon->widget.rect.x, desty + bar->progressIcon->widget.rect.y, rect->width, rect->height,
+                        bar->progressIcon->surf, 0, 0, bar->progressIcon->surf->width, bar->progressIcon->surf->height,
+                        0, bar->progressIcon->surf->height,
+                        1.0f, 
+                        1.0f,
+                        angle,
+                        0,
+                        true,
+                        true,
+                        desta);
+                #endif
+                }
+            }
+            ituWidgetSetDirty(bar->progressIcon, false);
         }
-        ituWidgetSetDirty(bar->progressIcon, false);
     }
-
     ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
     ituDirtyWidget(bar, false);
 }
@@ -113,6 +148,7 @@ void ituCircleProgressBarOnAction(ITUWidget* widget, ITUActionType action, char*
 void ituCircleProgressBarInit(ITUCircleProgressBar* bar)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     memset(bar, 0, sizeof (ITUCircleProgressBar));
 
@@ -147,6 +183,7 @@ void ituCircleProgressBarLoad(ITUCircleProgressBar* bar, uint32_t base)
 void ituCircleProgressBarSetValue(ITUCircleProgressBar* bar, int value)
 {
     assert(bar);
+    ITU_ASSERT_THREAD();
 
     if (value < 0 || value > bar->maxValue)
     {

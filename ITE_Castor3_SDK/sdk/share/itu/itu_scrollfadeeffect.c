@@ -22,6 +22,7 @@ static void ScrollFadeEffectStart(struct ITUEffectTag* effect, struct ITUWidgetT
     ITUScrollFadeEffect* sfe = (ITUScrollFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituScrollEffectStart(effect, widget);
 
@@ -33,6 +34,7 @@ static void ScrollFadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTa
     ITUScrollFadeEffect* sfe = (ITUScrollFadeEffect*) effect;
     assert(effect);
     assert(widget);
+    ITU_ASSERT_THREAD();
 
     ituScrollEffectStop(effect, widget);
 
@@ -42,6 +44,7 @@ static void ScrollFadeEffectStop(struct ITUEffectTag* effect, struct ITUWidgetTa
 void ituScrollFadeEffectInit(ITUScrollFadeEffect* sfe, ITUScrollType type, bool fadeIn)
 {
     assert(sfe);
+    ITU_ASSERT_THREAD();
 
     memset(sfe, 0, sizeof (ITUScrollFadeEffect));
 
