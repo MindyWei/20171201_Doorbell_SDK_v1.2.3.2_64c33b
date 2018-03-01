@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>ITE Doorbell Setting Page</title>
+        <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/>
+        <meta http-equiv="pragma" content="no-cache"/>
+        <meta http-equiv="cache-control" content="no-cache"/>
+        <meta http-equiv="expires" content="0"/>
+        <meta http-equiv="Content-Script-Type" content="text/javascript" />
+        <script type="text/javascript" src="info.js"> </script>
+        <script type="text/javascript" src="jquery.min.js"> </script>
+        <style type="text/css">
+            h3 {
+                text-align: center;
+            }
+            h1 {
+                text-align: center;
+            }
+        </style>
+    </head>
+
+    <body>
+        <iframe id="iframeupload" name="iframeupload" style="display:none" onload="return uploadComplete();"> </iframe>
+
+        <h1>ITE Doorbell Setting Page</h1>
+    <br/>
+    <hr/>
+
+        <h3>System Information</h3>
+        <table border="1" width="100%">
+            <tr>
+                <td>Device type:</td>
+                <td><span id="device_type"></span></td>
+            </tr>
+            <tr>
+                <td>Address:</td>
+                <td><span id="address"></span></td>
+            </tr>
+            <tr>
+                <td>MAC address:</td>
+                <td><span id="macaddr"></span></td>
+            </tr>
+            <tr>
+                <td>Outdoor IP:</td>
+                <td><span id="outdoor_ip"></span></td>
+            </tr>
+			<tr>
+                <td>SIP account:</td>
+                <td><span id="sip_account"></span></td>
+            </tr>
+            <tr>
+                <td>SIP password:</td>
+                <td><span id="sip_password"></span></td>
+            </tr>
+            <tr>
+                <td>SIP register domain:</td>
+                <td><span id="sip_domain"></span></td>
+            </tr>
+            <tr>
+                <td>Outdoor address book version:</td>
+                <td><span id="outdoor_addressbook_ver"></span></td>
+            </tr>
+        </table>
+        <br />
+
+    <h3><span id="timer" /></h3>
+    <h3><span id="firmware" /></h3>
+
+    <form id="fUpgrade" name="fUpgrade" enctype="multipart/form-data" method="post" action="/dev/info.cgi" target="iframeupload">
+        File to Upgrade Firmware:
+        <input type="file" name="filename"/>
+        <input type="submit" name="Submit" id="fUpgrade_Submit" value="Upgrade" onclick="return startUpload();"/>
+    </form>
+    <hr />
+
+    <br />
+    <input type="button" id="rebootBtn" value="Reboot" onclick="return rebootSystem();"/>
+        <br />
+    <hr />
+
+        <input type="hidden" name="action" value="setting"/>
+        <span>Address:</span>
+        <input type="text" id="area" name="area" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>-
+        <input type="text" id="building" name="building" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>-
+        <input type="text" id="unit" name="unit" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>-
+        <input type="text" id="floor" name="floor" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>-
+        <input type="text" id="room" name="room" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>-
+        <input type="text" id="ext" name="ext" size="2" maxlength="2" onkeyup="return checkNumber(this.id, this);"/>
+
+        <br /><br />
+        <input type="button" id="updatebtn" value="Update" onclick="return updateOutdoorSetting();"/>
+        <br />
+    <!--[if lt IE 9]>
+        IE 瀏覽器版本低於 9.
+        <script type="text/javascript">
+            notSupportOldIE();
+        </script>
+    <![endif]-->
+  </body>
+</html>

@@ -1,0 +1,21 @@
+@echo off
+
+for /F "tokens=3" %%S in ('dir /-c input\cardlist ^| findstr /c:"File(s)"') do (
+    if %%S gtr ${CFG_NOR_PARTITION0_SIZE} goto error
+)
+
+
+echo Please Enter Package Version (Maximum 7 digits)
+set /p version= -^>
+
+if not exist output mkdir output
+
+for /f %%a in ('cd') do set currdir=%%a
+pkgtool --version %version% --nor-partiton0-dir %currdir%/input/cardlist --no-partition -o %currdir%/output/CARD.PKG
+pause
+goto :eof
+
+:error
+echo Insufficient Space.
+pause
+goto :eof

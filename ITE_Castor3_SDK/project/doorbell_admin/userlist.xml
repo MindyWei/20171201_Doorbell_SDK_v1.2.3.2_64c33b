@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<UserList ver="00000">
+    <user id="admin" pw="admin"/>
+    <user id="guest1" pw="guest"/>
+    <user id="guest2" pw="guest"/>
+    <user id="guest3" pw="guest"/>
+    <user id="guest4" pw="guest"/>
+    <user id="guest5" pw="guest"/>
+    <user id="guest6" pw="guest"/>
+    <user id="guest7" pw="guest"/>
+    <user id="guest8" pw="guest"/>
+    <user id="guest9" pw="guest"/>
+    <user id="guest10" pw="guest"/>
+</UserList>

@@ -1,0 +1,484 @@
+#
+# For a description of the syntax of this configuration file,
+# see Documentation/kbuild/kconfig-language.txt.
+#
+
+mainmenu "Project Configuration"
+
+config DOORBELL_OUTDOOR
+    bool
+    default y
+    select HAVE_LCD
+    select HAVE_GRAPHICS
+    select HAVE_AUDIO
+    select HAVE_VIDEO
+
+config CMAKE_SOURCE_DIR
+    string
+    option env="CMAKE_SOURCE_DIR"
+
+config DEF_CPU_SM32
+    def_bool y
+
+config DEF_CHIP_PKG_IT9910
+    def_bool y
+
+#config RAM_INIT_SCRIPT
+#    default "IT9919_A1_Initial_DDR2_Mem_notiling_380MHZ.scr"
+
+config WATCHDOG_ENABLE
+    def_bool y
+
+config DCPS_ENABLE
+    def_bool y
+
+config JPEG_HW_ENABLE
+    def_bool y
+
+config AUDIO_ENABLE
+    def_bool y
+    
+config DIALOGUE_PARAMETER_SET
+    def_bool y
+    
+config AEC_ENABLE
+    def_bool y
+
+config SPEAKER_GAIN
+    default "4"
+
+config MIC_GAIN
+    default "0"
+    
+config NOISE_GATE_ENABLE
+    def_bool y
+    
+config NOISE_GATE_THRESHOLD
+    default "0.8"
+    
+config SPK_EQUALIZER_ENABLE
+    def_bool y
+
+###############################################################
+#Sound default setting
+###############################################################
+
+config AUDIO_DAC_MODULE
+    default "itp_dac_wm8960.c"
+
+config EQUALIZER_SPKGAIN_SET
+    default "\"500:2:128 3150:0.2:1024\""
+
+config AEC_DELAY_MS
+    default "80"
+
+###############################################################
+#Sound default setting end
+###############################################################
+
+config AUDIO_CODEC_G711_ULAW
+    def_bool y
+
+config VIDEO_ENABLE
+    def_bool y
+
+config NOR_ENABLE
+    def_bool y
+
+config NOR_CACHE_SIZE
+    default "0x80000"
+
+config NOR_RESERVED_SIZE
+    default "0x600000"
+
+config NOR_PARTITION0
+    def_bool y
+
+config NOR_PARTITION0_SIZE
+    default "0x700000"
+
+config NOR_PARTITION1
+    def_bool y
+
+config NOR_PARTITION1_SIZE
+    default "0xA0000"
+
+config NOR_PARTITION2
+    def_bool y
+
+#config USB0_ENABLE
+#   def_bool y
+
+#config MSC_ENABLE
+#   def_bool y
+
+config FS_FAT
+    def_bool y
+
+config KEYPAD_ENABLE
+    def_bool y
+
+config KEYPAD_MODULE
+    default "itp_keypad_gpio.c"
+
+config KEYPAD_MAPPING_TABLE
+    default "keypad_doorbell_outdoor.inc"
+
+config KEYPAD_PROBE_INTERVAL
+    default "60"
+
+config GPIO_KEYPAD
+    default "23"
+
+config RTC_ENABLE
+    def_bool y
+
+config I2C0_ENABLE
+    def_bool y
+
+config I2S_ENABLE
+    def_bool y
+
+config I2S_OUTPUT_PIN_ENABLE
+    def_bool n
+
+config I2S_SPDIF_ENABLE
+    def_bool n
+
+config UART1_ENABLE
+    def_bool y
+
+config SENSOR_ENABLE
+    def_bool y
+
+config DEF_SENSOR_PIXELPLUS_PO3100
+    def_bool y
+
+config DEF_SENSOR_FLICK_50HZ
+     def_bool y
+
+config DEF_SENSOR_RESOLUTION_W_800
+    def_bool y
+
+config DEF_SENSOR_RESOLUTION_H_600
+    def_bool y
+
+config USB0_ENABLE
+    def_bool y
+
+config MSC_ENABLE
+    def_bool y
+
+config WIEGAND_ENABLE
+    def_bool y
+
+config DEF_WIEGAND0_BIT_34
+    def_bool y
+
+config WIEGAND0_GPIO0
+	default "32"
+
+config WIEGAND0_GPIO1
+	default "33"
+
+config GPIO_SD0_CARD_DETECT
+    default "26"
+
+config GPIO_SD0_POWER_ENABLE
+    default "-1"
+
+config GPIO_SD0_WRITE_PROTECT
+    default "-1"
+
+config GPIO_UART1_TX
+    default "8"
+
+config GPIO_UART1_RX
+    default "-1"
+
+config DEF_IIC0_GPIO_CONFIG_2
+    def_bool y
+
+config GPIO_ETHERNET_LINK
+    default "4"
+
+config GPIO_ETHERNET
+    default "13, 14, 27, 28, 42, 43, 44, 45, 46, 47"
+    
+config SPI0_MOSI_GPIO
+    default "9"
+    
+config SPI0_MISO_GPIO
+    default "10"
+    
+config SPI0_CLOCK_GPIO
+    default "11"
+    
+config SPI0_CHIP_SEL_GPIO
+    default "7"
+    
+config SPI1_MOSI_GPIO
+    default "22"
+    
+config SPI1_MISO_GPIO
+    default "23"
+    
+config SPI1_CLOCK_GPIO
+    default "20"
+    
+config SPI1_CHIP_SEL_GPIO
+    default "21"          
+
+config NET_ENABLE
+    def_bool y
+
+config NET_ETHERNET
+    def_bool y
+
+config NET_ETHERNET_LINK_INTR
+    def_bool y
+
+config NET_ETHERNET_MAC_ADDR_RANDOM
+    def_bool y
+
+config NET_ETHERNET_MAC_ADDR_STORAGE
+    def_bool y
+
+config NET_ETHERNET_MAC_ADDR_POS
+    default "0x70000"
+
+config NET_ETHERNET_MAC_ADDR_UPGRADE
+    def_bool y
+
+config NET_MAC_CLOCK_INVERSE
+    default "1"
+	
+config NET_MAC_CLOCK_DELAY
+    default "0x0F"	
+	
+config NET_HTTP
+    def_bool y
+
+config NET_FTP
+    def_bool y
+
+config TASK_DRIVE_PROBE
+    def_bool y
+
+config DEF_DBG_UART1
+    def_bool y
+
+config DBG_INIT_SCRIPT
+    default "IT9919_A1_Initial_DDR2_Mem_notiling_380MHZ.txt"
+
+config DBG_ICE_SCRIPT
+    default "IT9919_A1_Initial_DDR2_Mem_notiling_380MHZ.csf"
+
+config DEF_BUILD_MINSIZEREL
+    def_bool y
+
+config SYSTEM_NAME
+    default "ITE Doorbell (outdoor)"
+
+config BUILD_INIPARSER
+    def_bool y
+
+config BUILD_LINPHONE
+    def_bool y
+
+config BUILD_MICROHTTPD
+    def_bool y
+
+config BUILD_SDL
+    def_bool y
+
+config BUILD_SNTP
+    def_bool y
+
+config BUILD_UPGRADE
+    def_bool y
+
+config BUILD_XML2
+    def_bool y
+
+######################################################################
+# Start of bootloader setting
+######################################################################
+config BOOTLOADER_ENABLE
+    def_bool n
+
+if BOOTLOADER_ENABLE
+config UPGRADE_BOOTLOADER
+    def_bool y
+
+config UPGRADE_IMAGE
+    def_bool y
+
+config UPGRADE_IMAGE_POS
+    default "0x80000"
+
+config UPGRADE_DATA
+    def_bool y
+
+if UPGRADE_DATA
+config UPGRADE_PUBLIC
+    def_bool y
+
+config UPGRADE_TEMP
+    def_bool y
+endif
+
+config UPGRADE_OPEN_FILE
+    def_bool y
+
+config UPGRADE_PARTITION
+    def_bool y
+
+config UPGRADE_DELETE_PKGFILE_AFTER_FINISH
+    def_bool y
+
+config UPGRADE_NOR_IMAGE
+    def_bool y
+
+config UPGRADE_NOR_IMAGE_SIZE
+    default "0x1000000"
+
+config UPGRADE_FILENAME
+    default "OUTDOOR.PKG"
+
+config UPGRADE_FILENAME_LIST
+    default "OUTDOOR.PKG ADDRESS.PKG CARD.PKG"
+
+config UPGRADE_NOR_IMAGE_FILENAME
+    default "OUTDOOR.ROM"
+
+endif
+######################################################################
+# End of bootloader setting
+######################################################################
+
+source "$CMAKE_SOURCE_DIR/sdk/Kconfig"
+
+menu "DoorbellOutdoor"
+    config WEBSERVER_PORT
+        string "Web server port"
+        default "80"
+        help
+            Web server port
+        help_cht
+            網頁伺服器埠號。
+        help_chs
+            网页服务器埠号。
+
+    config SNTP_PORT
+        string "SNTP port"
+        default "49123"
+        help
+            SNTP port
+        help_cht
+            網路時間協議 (SNTP) 埠號。
+        help_chs
+            网络时间协议 (SNTP) 埠号。
+
+    config SNTP_UPDATE_DELAY
+        string "SNTP update delay"
+        default "300"
+        help
+            How long to sync time with NTP server in seconds. The minimum update time is 15 seconds.
+        help_cht
+            多久時間從 SNTP 伺服器更新時間，最小時間為 15 秒 （單位: 秒）
+        help_chs
+            多久时间从 SNTP 服务器更新时间，最小时间为 15 秒 （单位: 秒）
+
+    config CHECK_FILES_CRC_ON_BOOTING
+        bool "Checking files' CRC on booting time"
+        default y
+        help
+            Checking files' CRC on booting time
+        help_cht
+            開啟開機時檢查檔案 CRC 值的功能。
+        help_chs
+            开启开机时检查档案 CRC 值的功能。
+
+    config UDP_HEARTBEAT
+        bool "UDP heartbeat is enabled or not"
+        default y
+        help
+            UDP heartbeat is enabled or not
+        help_cht
+            開啟心跳包的功能。
+        help_chs
+            开启心跳包的功能。
+
+    config UDP_HEARTBEAT_PORT
+        string "UDP heartbeat port"
+        depends on UDP_HEARTBEAT
+        default "49201"
+        help
+            UDP heartbeat port number
+        help_cht
+            心跳包埠號。
+        help_chs
+            心跳包埠号。
+
+    config CARDLIST_ENABLE
+        bool "Card list is enabled or not"
+        default y
+        help
+            Card list is enabled or not
+        help_cht
+            開啟門禁系統功能。
+        help_chs
+            开启门禁系统功能。
+
+    config LOOP_DIALING
+        bool "Loop dialing is enabled or not"
+        default n
+        help
+            Loop dialing is enabled or not
+        help_cht
+            開啟循環撥號功能。
+        help_chs
+            开启循环拨号功能。
+
+    config REGISTER_SIP_SERVER
+        bool "Register to SIP server or not"
+        default n
+        help
+            Register to SIP server or not
+        help_cht
+            開啟註冊SIP SERVER功能。
+        help_chs
+            开启注册SIP SERVER功能。
+
+    config CALL_SIP_SERVER
+        bool "Calling to SIP server or not"
+        default n
+        help
+            Calling to SIP server or not
+        help_cht
+            開啟呼叫SIP SERVER功能。
+        help_chs
+            开启呼叫SIP SERVER功能。
+
+    config EMERGENCY_DOORCAMERA
+        bool "Emergency doorcamera or not"
+        default n
+        help
+            Emergency doorcamera or not
+        help_cht
+            緊急對講機。
+        help_chs
+            緊急對講機。
+
+    config DUMP_AEC_DATA
+        bool "Dump AEC Voice Data"
+        default n
+        help
+            Dump AEC voice data for observation.
+        help_cht
+            開啟錄製AEC通話聲音功能(實驗使用)。
+        help_chs
+            開啟錄製AEC通話聲音功能(實驗使用)。 
+            
+endmenu

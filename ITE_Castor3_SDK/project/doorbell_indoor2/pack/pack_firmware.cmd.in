@@ -1,0 +1,26 @@
+@echo off
+for /F "tokens=3" %%S in ('dir /-c input\firmware ^| findstr /c:"File(s)"') do (
+    set /a dirsize=%%S
+)
+
+set /a parsize=${CFG_NOR_RESERVED_SIZE}-${CFG_UPGRADE_IMAGE_POS}
+if %dirsize% gtr %parsize% goto error
+
+for /F "tokens=3" %%S in ('dir /-c input\firmware\private ^| findstr /c:"File(s)"') do (
+    if %%S gtr ${CFG_NOR_PARTITION0_SIZE} goto error
+)
+
+echo Please Enter Package Version (Maximum 7 digits)
+set /p version= -^>
+
+if not exist output mkdir output
+
+for /f %%a in ('cd') do set currdir=%%a
+pkgtool --version %version% --nor-unformatted-data0 %currdir%/input/firmware/kproc.sys --nor-unformatted-data0-pos ${CFG_UPGRADE_IMAGE_POS} --nor-partiton0-size 0 --nor-partiton0-dir %currdir%/input/firmware/private -o %currdir%/output/INDOOR.PKG
+pause
+goto :eof
+
+:error
+echo Insufficient Space.
+pause
+goto :eof
