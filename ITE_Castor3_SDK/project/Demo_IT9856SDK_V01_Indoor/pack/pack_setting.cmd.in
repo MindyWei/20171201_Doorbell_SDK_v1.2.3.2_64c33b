@@ -1,0 +1,21 @@
+@echo off
+
+for /F "tokens=3" %%S in ('dir /-c input\setting ^| findstr /c:"File(s)"') do (
+    if %%S gtr ${CFG_NOR_PARTITION1_SIZE} goto error
+)
+
+
+echo Please Enter Package Version (Maximum 7 digits)
+set /p version= -^>
+
+if not exist output\setting mkdir output\setting
+
+for /f %%a in ('cd') do set currdir=%%a
+pkgtool --version %version% --nor-partiton0-size 0 --nor-partiton1-dir %currdir%/input/setting --no-partition -o %currdir%/output/setting/ITEPKG03.UPG
+pause
+goto :eof
+
+:error
+echo Insufficient Space.
+pause
+goto :eof

@@ -1,0 +1,385 @@
+#
+# For a description of the syntax of this configuration file,
+# see Documentation/kbuild/kconfig-language.txt.
+#
+
+mainmenu "Project Configuration"
+
+config DOORBELL_LOBBY
+    bool
+    default y
+    select HAVE_LCD
+    select HAVE_GRAPHICS
+    select HAVE_AUDIO
+    select HAVE_VIDEO
+    select HAVE_TWO_WIEGAND
+
+config CMAKE_SOURCE_DIR
+    string
+    option env="CMAKE_SOURCE_DIR"
+
+config RAM_INIT_SCRIPT
+    default "IT9079A1_Initial_DDR2_Mem_tiling_pitch2048_320MHZ.scr"
+
+config WATCHDOG_ENABLE
+    def_bool y
+
+config WATCHDOG_INTR
+    def_bool y
+    
+config FONT_FILENAME
+    default "wqyMicroHeiProportional.ttf"    
+
+config LCD_ENABLE
+    def_bool y
+
+config LCD_INIT_SCRIPT
+    default "IT9850_LCD_800_480_innolux_7inch_565.txt.in"
+
+config LCD_HEIGHT
+    default "480"
+
+config CMDQ_ENABLE
+    def_bool y
+
+config AUDIO_ENABLE
+    def_bool y
+
+config VIDEO_ENABLE
+    def_bool y
+
+config TS_MODULE_ENABLE
+    def_bool y
+
+config DEF_PURE_TS_STREAM
+    def_bool y
+
+config SD0_ENABLE
+    def_bool y
+
+config SD0_STATIC
+    def_bool y
+
+config FS_FAT
+    def_bool y
+
+config RTC_ENABLE
+    def_bool y
+
+config I2C0_ENABLE
+    default y
+
+config I2S_ENABLE
+    def_bool y
+
+config DEF_I2S_USE_GPIO_MODE_2
+    def_bool n
+
+config I2S_OUTPUT_PIN_ENABLE
+    def_bool n
+
+config I2S_SPDIF_ENABLE
+    def_bool n
+
+config UART1_ENABLE
+    def_bool y
+
+config SENSOR_ENABLE
+    def_bool y
+
+config DEF_SENSOR_PIXELPLUS_PO3100
+    def_bool y
+
+config NET_ENABLE
+    def_bool y
+
+config NET_ETHERNET
+    def_bool y
+
+config NET_HTTP
+    def_bool y
+
+config NET_FTP
+    def_bool y
+
+config DEF_DBG_UART1
+    def_bool y
+
+config DBG_INIT_SCRIPT
+    default "IT9079A1_Initial_DDR2_Mem_tiling_pitch2048_320MHZ.txt"
+
+config DEF_BUILD_DEBUG
+    def_bool y
+
+config SYSTEM_NAME
+    default "ITE Doorbell (lobby)"
+
+config WIN32_SIMULATOR
+    def_bool y
+
+config FFMPEG_ENC
+    def_bool y
+
+config FFMPEG_H264_SW
+    def_bool y
+
+config ITU_FT_CACHE_ENABLE
+    def_bool y
+
+config ITU_FT_CACHE_SIZE
+    default "0xFA000"
+
+config ITU_UCL_ENABLE
+    def_bool y
+
+config BUILD_INIPARSER
+    def_bool y
+
+config BUILD_ITU
+    def_bool y
+
+config BUILD_LINPHONE
+    def_bool y
+
+config BUILD_MICROHTTPD
+    def_bool y
+
+config BUILD_SDL
+    def_bool y
+
+config BUILD_SNTP
+    def_bool y
+
+config BUILD_UPGRADE
+    def_bool y
+
+config BUILD_XML2
+    def_bool y
+
+######################################################################
+# Start of bootloader setting
+######################################################################
+config BOOTLOADER_ENABLE
+    def_bool n
+
+if BOOTLOADER_ENABLE
+
+config LCD_INIT_ON_BOOTING 
+    def_bool y
+
+config LCD_BOOT_BITMAP
+    default "logo.bmp"
+
+config UPGRADE_BOOTLOADER
+    def_bool y
+
+config UPGRADE_IMAGE
+    def_bool y
+
+config UPGRADE_IMAGE_POS
+    default "0x80000"
+
+config UPGRADE_DATA
+    def_bool y
+
+config UPGRADE_PUBLIC
+    def_bool y
+
+config UPGRADE_TEMP
+    def_bool y
+
+config UPGRADE_OPEN_FILE
+    def_bool y
+
+config UPGRADE_PARTITION
+    def_bool y
+
+config UPGRADE_DELETE_PKGFILE_AFTER_FINISH
+    def_bool y
+
+config UPGRADE_NOR_IMAGE
+    def_bool y
+
+config UPGRADE_NOR_IMAGE_SIZE
+    default "0x1000000"
+
+config BL_LCD_CONSOLE
+    def_bool y
+
+config BL_ERR
+    def_bool y
+
+config BL_WARN
+    def_bool y
+
+config BL_INFO
+    def_bool y
+
+config BL_DBG
+    def_bool y
+
+endif
+######################################################################
+# End of bootloader setting
+######################################################################
+
+source "$CMAKE_SOURCE_DIR/sdk/Kconfig"
+
+######################################################################
+# Project Menu
+######################################################################
+menu "DoorbellLobby"
+    config GUARD_ENABLE
+        bool "Guard is enabled or not"
+        default n
+        help
+            Guard is enabled or not
+        help_cht
+            開啟安防報警的功能。
+        help_chs
+            开启安防报警的功能。
+
+    config GPIO_GUARD_SENSORS
+        string "Guard sensor's GPIOs"
+        depends on GUARD_ENABLE
+        default "0"
+        help
+            Guard sensor's GPIOs
+        help_cht
+            安防報警感應器的 GPIO 號碼。
+        help_chs
+            安防报警传感器的 GPIO 号码。
+
+    config WEBSERVER_PORT
+        string "Web server port"
+        default "80"
+        help
+            Web server port
+        help_cht
+            網頁伺服器埠號。
+        help_chs
+            网页服务器埠号。
+
+    config SNTP_PORT
+        string "SNTP port"
+        default "49123"
+        help
+            SNTP port
+        help_cht
+            網路時間協議 (SNTP) 埠號。
+        help_chs
+            网络时间协议 (SNTP) 埠号。
+
+    config SNTP_UPDATE_DELAY
+        string "SNTP update delay"
+        default "300"
+        help
+            How long to sync time with SNTP server in seconds. The minimum update time is 15 seconds.
+        help_cht
+            多久時間從 SNTP 伺服器更新時間，最小時間為 15 秒 （單位: 秒）
+        help_chs
+            多久时间从 SNTP 服务器更新时间，最小时间为 15 秒 （单位: 秒）
+
+    config CHECK_FILES_CRC_ON_BOOTING
+        bool "Checking files' CRC on booting time"
+        default y
+        help
+            Checking files' CRC on booting time
+        help_cht
+            開啟開機時檢查檔案 CRC 值的功能。
+        help_chs
+            开启开机时检查档案 CRC 值的功能。
+
+    config UDP_HEARTBEAT
+        bool "UDP heartbeat is enabled or not"
+        default y
+        help
+            UDP heartbeat is enabled or not
+        help_cht
+            開啟心跳包的功能。
+        help_chs
+            开启心跳包的功能。
+
+    config UDP_HEARTBEAT_PORT
+        string "UDP heartbeat port"
+        depends on UDP_HEARTBEAT
+        default "49201"
+        help
+            UDP heartbeat port number
+        help_cht
+            心跳包埠號。
+        help_chs
+            心跳包埠号。
+
+    config CARDLIST_ENABLE
+        bool "Card list is enabled or not"
+        default y
+        help
+            Card list is enabled or not
+        help_cht
+            開啟門禁系統功能。
+        help_chs
+            开启门禁系统功能。
+
+    config HW_VERSION
+        string "Hardware version"
+        default "V3"
+        help
+            Hardware version
+        help_cht
+            硬體版號。
+        help_chs
+            硬件版号。
+
+    config SCREENSHOT_ENABLE
+        bool "Screenshot is enabled or not"
+        default n
+        help
+            Screenshot is enabled or not
+        help_cht
+            開啟螢幕擷取功能。
+        help_chs
+            开启屏幕撷取功能。
+
+    config LOOP_DIALING
+        bool "Loop dialing is enabled or not"
+        default n
+        help
+            Loop dialing is enabled or not
+        help_cht
+            開啟循環撥號功能。
+        help_chs
+            开启循环拨号功能。
+
+    config LOOP_DIALING_ADDRESS
+        string "Loop dialiing address"
+        depends on LOOP_DIALING
+        default "01-02-01-01-01"
+        help
+            Loop dialiing address
+        help_cht
+            循環撥號房號。
+        help_chs
+            循环拨号房号。
+
+    config REGISTER_SIP_SERVER
+        bool "Register to SIP server or not"
+        default n
+        help
+            Register to SIP server or not
+        help_cht
+            開啟註冊SIP SERVER功能。
+        help_chs
+            开启注册SIP SERVER功能。
+
+    config CALL_SIP_SERVER
+        bool "Calling to SIP server or not"
+        default n
+        help
+            Calling to SIP server or not
+        help_cht
+            開啟呼叫SIP SERVER功能。
+        help_chs
+            开启呼叫SIP SERVER功能。
+
+endmenu
