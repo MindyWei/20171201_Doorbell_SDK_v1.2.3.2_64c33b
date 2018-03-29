@@ -1,0 +1,2 @@
+C:/ITEGCC/bin/arm-none-eabi-ar.exe cq ../../../lib/fa626/libspi.a  CMakeFiles/spi.dir/it9850/spi_hw.c.obj CMakeFiles/spi.dir/it9850/mmp_spi.c.obj CMakeFiles/spi.dir/it9850/armNorWriterUtility.c.obj
+C:/ITEGCC/bin/arm-none-eabi-ranlib.exe ../../../lib/fa626/libspi.a

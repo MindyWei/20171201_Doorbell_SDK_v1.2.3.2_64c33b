@@ -1,0 +1,2 @@
+C:/ITEGCC/bin/arm-none-eabi-ar.exe cq ../../lib/fa626/libmalloc.a  CMakeFiles/malloc.dir/calloc.c.obj CMakeFiles/malloc.dir/malign.c.obj CMakeFiles/malloc.dir/malloc.c.obj CMakeFiles/malloc.dir/mallocr.c.obj CMakeFiles/malloc.dir/msize.c.obj CMakeFiles/malloc.dir/mstats.c.obj CMakeFiles/malloc.dir/mtrim.c.obj CMakeFiles/malloc.dir/realloc.c.obj CMakeFiles/malloc.dir/valloc.c.obj
+C:/ITEGCC/bin/arm-none-eabi-ranlib.exe ../../lib/fa626/libmalloc.a

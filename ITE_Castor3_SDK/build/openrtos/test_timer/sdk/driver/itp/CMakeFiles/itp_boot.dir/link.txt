@@ -1,0 +1,2 @@
+C:/ITEGCC/bin/arm-none-eabi-ar.exe cq ../../../lib/fa626/libitp_boot.a  CMakeFiles/itp_boot.dir/itp_backtrace.c.obj CMakeFiles/itp_boot.dir/itp_base.c.obj CMakeFiles/itp_boot.dir/itp_defer.c.obj CMakeFiles/itp_boot.dir/itp_error.c.obj CMakeFiles/itp_boot.dir/itp_vmem.c.obj CMakeFiles/itp_boot.dir/itp_lcdconsole.c.obj CMakeFiles/itp_boot.dir/itp_screen.c.obj CMakeFiles/itp_boot.dir/itp_backlight.c.obj CMakeFiles/itp_boot.dir/itp_uart.c.obj CMakeFiles/itp_boot.dir/itp_posix_openrtos.c.obj
+C:/ITEGCC/bin/arm-none-eabi-ranlib.exe ../../../lib/fa626/libitp_boot.a

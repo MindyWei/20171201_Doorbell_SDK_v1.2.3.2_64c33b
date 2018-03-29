@@ -1,0 +1,2 @@
+C:/ITEGCC/bin/arm-none-eabi-ar.exe cq ../../lib/fa626/libboot.a  CMakeFiles/boot.dir/init.c.obj CMakeFiles/boot.dir/fa626/sync.c.obj
+C:/ITEGCC/bin/arm-none-eabi-ranlib.exe ../../lib/fa626/libboot.a
