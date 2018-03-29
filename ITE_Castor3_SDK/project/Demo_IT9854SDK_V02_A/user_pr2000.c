@@ -5,7 +5,7 @@
 
 #if defined(TARGET_BOARD_G)
 #define PR2000_IIC_PORT IIC_PORT_0
-#define PR2000_RESET_PIN 15
+#define PR2000_RESET_PIN 69//15
 #elif defined(TARGET_BOARD_S)
 #define PR2000_IIC_PORT IIC_PORT_1
 #define PR2000_RESET_PIN 70

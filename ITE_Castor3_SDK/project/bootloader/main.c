@@ -38,12 +38,12 @@ static bool usbInited = false;
 #if defined(CFG_CAPTURE_MODULE_ENABLE) //add for TARGET_BOARD_G
 #define TARGET_BOARD_G
 
-#define CAM_VOL_PIN  	32
-#define BL_VOL_PIN  	34
-#define BL_GPIO_PIN  	35
+#define CAM_VOL_PIN  	63//32
+#define BL_VOL_PIN  	36//34
+#define BL_GPIO_PIN  	64//35
 
-#define PR2000_MPP3 	73
-#define PR2000_MPP4 	72
+#define PR2000_MPP3 	72//73
+#define PR2000_MPP4 	73//72
 
 static void user_gpio_init()
 {

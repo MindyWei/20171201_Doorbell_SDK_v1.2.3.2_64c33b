@@ -119,7 +119,7 @@ static void cam_switch(int iCamNum)
 }
 
 #elif defined(TARGET_BOARD_G)
-#define CAM_SWITCH_PIN  	63
+#define CAM_SWITCH_PIN  	22//63
 
 static void cam_switch(int iCamNum)
 {
