@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "ite_avienc.h"
 
@@ -8,8 +9,18 @@
 #if (ADD_IN_BUFFER_FIRST)
 #define BUF_FRAMES_COUNT 20
 #define MAX_BUF_FRAMES_SIZE 256*1024*20 //30
-static char *buf_frames;
+static char *buf_frames = NULL;
 static int  buf_frames_size = 0;
+static int  file_write_task_cnt = 0; 
+static pthread_mutex_t  file_write_mutex = PTHREAD_MUTEX_INITIALIZER;
+static long test_t1, test_t2 = 0;
+static int test_flag = 0;
+typedef struct Ite_avi_file
+{
+  FILE* fp;  
+  char* buf_ptr;
+  int   buf_size;
+}Ite_avi_file;
 #endif
 static void write_short(FILE *out, unsigned int num)
 {
@@ -249,6 +260,8 @@ static int write_index(FILE *out, int count, unsigned int *offsets)
       offsets[t]&=0x7fffffff;
     }  
     write_int(out,0x10);
+    if(offsets[t] > 2000000 || offset > 0x10000000)
+        printf("YC: pos = %d, length = %d\n", offset, offsets[t]);
     write_int(out,offset);
     write_int(out,offsets[t]);
     offset = offset + offsets[t] + 8;
@@ -262,6 +275,33 @@ static int write_index(FILE *out, int count, unsigned int *offsets)
   return 0;
 }
 
+#if (ADD_IN_BUFFER_FIRST)
+static void _ite_avi_write_file(void *arg)
+{
+    if(file_write_task_cnt > 2)
+        printf("AVI Q %d buffer!!!\n", file_write_task_cnt);
+    pthread_mutex_lock(&file_write_mutex);
+    Ite_avi_file *avi_file = (Ite_avi_file *) arg;
+	if(avi_file && avi_file->buf_ptr)
+	{
+	    test_t2 = ftell(avi_file->fp);
+        if(test_t1 != test_t2 && test_flag)
+        {
+            test_flag = 0;
+            printf("xxxxxxxx WRONG FILE POSITION xxxxxxxxxxx\n");
+            printf("YC: 0x%x 0x%x 0x%x 0x%x\n", avi_file->buf_ptr[0], avi_file->buf_ptr[1], avi_file->buf_ptr[2], avi_file->buf_ptr[3]);
+        }
+        else
+            test_flag = 0;
+    fwrite(avi_file->buf_ptr, avi_file->buf_size, 1, avi_file->fp);
+		free(avi_file->buf_ptr);
+		free(avi_file);
+	}
+    pthread_mutex_unlock(&file_write_mutex);
+    file_write_task_cnt--;
+    return;
+}
+#endif
 struct ite_avi_t *ite_avi_open(char *filename, int width, int height, char *fourcc, int fps, struct ite_avi_audio_t *audio)
 {
   struct ite_avi_t *avi;
@@ -270,12 +310,12 @@ struct ite_avi_t *ite_avi_open(char *filename, int width, int height, char *four
   out=fopen(filename,"wb");
   if (out==0)
   {
-	printf("ite_avi_open: fopen(%s) error! \r\n", filename);
     return 0;
   }
 
 #if (ADD_IN_BUFFER_FIRST)
   buf_frames = (char *)malloc(MAX_BUF_FRAMES_SIZE);
+  buf_frames_size = 0;
 #endif
   avi=(struct ite_avi_t *)malloc(sizeof(struct ite_avi_t));
   memset(avi,0,sizeof(struct ite_avi_t));
@@ -357,6 +397,8 @@ struct ite_avi_t *ite_avi_open(char *filename, int width, int height, char *four
   avi->marker=ftell(out);
   write_int(out,0);
   fwrite("movi", 4, 1, out);
+  test_t1 = ftell(avi->out);
+  test_flag = 1;
 
   avi->offsets_len=1024;
   avi->offsets=malloc(avi->offsets_len*sizeof(int));
@@ -377,9 +419,21 @@ void ite_avi_add_frame(struct ite_avi_t *avi, unsigned char *buffer, int len)
 
   if(avi->stream_header_v.data_length % BUF_FRAMES_COUNT == 1 && avi->stream_header_v.data_length != 1)
   {
-    //printf(">>>>%d\n", buf_frames_size);
-    fwrite(buf_frames, buf_frames_size, 1, avi->out);
-    memset(buf_frames, 0, MAX_BUF_FRAMES_SIZE);
+  	while(file_write_task_cnt >= 2)
+		usleep(5000);
+    pthread_t task;			//Ïß³ÌID
+	pthread_attr_t attr;
+    Ite_avi_file *avi_file = (Ite_avi_file *) calloc(sizeof(char), sizeof(Ite_avi_file));
+    avi_file->fp = avi->out;
+    avi_file->buf_ptr = buf_frames;
+    avi_file->buf_size = buf_frames_size;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	pthread_create(&task, &attr, _ite_avi_write_file, (void *)avi_file); 
+    file_write_task_cnt++;
+    buf_frames = (char *)malloc(MAX_BUF_FRAMES_SIZE);
+	if(!buf_frames)
+	  printf("#########frame buf malloc error!!!!!!!\n");
     buf_frames_size = 0;
   }
 
@@ -538,11 +592,18 @@ void ite_avi_close(struct ite_avi_t *avi)
   long t;
 
 #if (ADD_IN_BUFFER_FIRST)
+  while(file_write_task_cnt)
+    usleep(5000);	
   if(buf_frames_size)
   {
+  	printf("<<<write final buf>>>\n");
+    pthread_mutex_lock(&file_write_mutex);  
     fwrite(buf_frames, buf_frames_size, 1, avi->out);
+    pthread_mutex_unlock(&file_write_mutex);
     buf_frames_size = 0;
   }
+  if(buf_frames)
+  	free(buf_frames);
 #endif
 
   t=ftell(avi->out);
@@ -569,9 +630,6 @@ void ite_avi_close(struct ite_avi_t *avi)
 
   fclose(avi->out);
   free(avi);
-#if (ADD_IN_BUFFER_FIRST)  
-  free(buf_frames);
-#endif
 }
 
 

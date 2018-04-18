@@ -179,8 +179,8 @@ bool MainOnEnter(ITUWidget* widget, char* param)
 {
     if (!mainCoverFlow)
     {
-		pthread_t task;
-		pthread_create(&task, NULL, PlayKeySound2Task, NULL);
+		//pthread_t task;
+		//pthread_create(&task, NULL, PlayKeySound2Task, NULL);
 		
         mainCoverFlow = ituSceneFindWidget(&theScene, "mainCoverFlow");
         assert(mainCoverFlow);
