@@ -416,6 +416,30 @@ void master_cam_off()
 	ithGpioSet(cam_gpio[DOOR_1][ON]);
 	ithGpioSet(cam_gpio[DOOR_2][ON]);
 }
+
+#if defined(TARGET_BOARD_G)
+#if defined(TARGET_BOARD_G_V03)
+#define CAM_SWITCH_PIN  	22
+#else
+#define CAM_SWITCH_PIN  	63
+#endif
+int currCam = 0;
+
+void cam_switch(int iCamNum)
+{
+	ithGpioSetMode(CAM_SWITCH_PIN, ITH_GPIO_MODE0);
+	ithGpioSetOut(CAM_SWITCH_PIN);
+	ithGpioEnable(CAM_SWITCH_PIN); 
+
+	printf("cam_switch: to %d\r\n", iCamNum);
+	if(iCamNum == 0)
+		ithGpioSet(CAM_SWITCH_PIN);	
+	else if(iCamNum == 1)
+		ithGpioClear(CAM_SWITCH_PIN);	
+}
+
+#else
+
 void cam_switch( uint8_t val)				//摄像头电源切换		
 {
 	char buf_1[6][10] = {"DOOR1","DOOR2","CCTV 1","CCTV 2","CCTV 3","CCTV4"};
@@ -475,6 +499,8 @@ void cam_switch( uint8_t val)				//摄像头电源切换
 			uart_set_mode(UART_CCTV_2);
 	}
 }
+#endif
+
 void call_master_v6502(uint8_t offset)
 {
 	uint8_t addr = 0x00;

@@ -120,6 +120,7 @@ static bool ProcessCommand(void)
 void SceneGotoLayer(char *layerName)
 {
     Command cmd;
+	printf("SceneGotoLayer:%s\r\n", layerName);
 
     if (uiCmdQueue == -1)
         return;
@@ -132,6 +133,7 @@ void SceneGotoLayer(char *layerName)
 void SceneWidgetSetVisible(char *widgetName, bool visible)
 {
     Command cmd;
+	printf("%s:%s\r\n", __FUNCTION__, widgetName);
 
     if (uiCmdQueue == -1)
         return;
@@ -145,6 +147,7 @@ void SceneWidgetSetVisible(char *widgetName, bool visible)
 void SceneWidgetSetEnable(char *widgetName, bool enable)
 {
     Command cmd;
+	printf("%s:%s\r\n", __FUNCTION__, widgetName);
 
     if (uiCmdQueue == -1)
         return;
@@ -158,6 +161,7 @@ void SceneWidgetSetEnable(char *widgetName, bool enable)
 void SceneEventHandler(void)
 {
     Command cmd;
+	printf("%s:\r\n", __FUNCTION__);
 
     if (uiCmdQueue == -1)
         return;

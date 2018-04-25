@@ -873,28 +873,6 @@ void _monitor_sw_cam()
 
 }
 
-#if defined(TARGET_BOARD_G)
-#if defined(TARGET_BOARD_G_V03)
-#define CAM_SWITCH_PIN  	22
-#else
-#define CAM_SWITCH_PIN  	63
-#endif
-static int currCam = 0;
-
-static void cam_switch(int iCamNum)
-{
-	ithGpioSetMode(CAM_SWITCH_PIN, ITH_GPIO_MODE0);
-	ithGpioSetOut(CAM_SWITCH_PIN);
-	ithGpioEnable(CAM_SWITCH_PIN); 
-
-	printf("cam_switch: to %d\r\n", iCamNum);
-	if(iCamNum == 0)
-		ithGpioSet(CAM_SWITCH_PIN);	
-	else if(iCamNum == 1)
-		ithGpioClear(CAM_SWITCH_PIN);	
-}
-#endif
-
 bool monitor_sw_cam(ITUWidget* widget, char* param)
 {
 #if defined(TARGET_BOARD_G)

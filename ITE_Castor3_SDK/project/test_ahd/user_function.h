@@ -350,6 +350,10 @@ typedef struct VideoNode
     bool played;    								//< Is played or not
 } VideoMemoEntry;
 
+#if defined(TARGET_BOARD_G)
+extern int currCam;
+#endif
+
 extern bool pr2000_test;
 
 //

@@ -1401,6 +1401,7 @@ void avi_end()
 
 	}
 }
+
 void SettingISPAnd_FilpLCD(
     void)
 {
@@ -1424,9 +1425,20 @@ void SettingISPAnd_FilpLCD(
             printf("######CVBS(0x%x, 0x%x)cap Y buf blanking error, reset cap!!!\n", 
                 outdata.DisplayAddrY[outdata.OutWidth-15],
                 outdata.DisplayAddrY[outdata.OutWidth*outdata.OutHeight-15]);
-#if 1
-			PR2000K_HW_Reset();
-            return;
+#if defined(TARGET_BOARD_G)
+			currCam = currCam ? 0 : 1;
+			cam_switch(currCam);
+
+			usleep(500000);
+
+			currCam = currCam ? 0 : 1;
+			cam_switch(currCam);	
+			return;
+#else
+			ithGpioSet(cam_gpio[DOOR_1][ON]);   //CAM1断电.
+			usleep(500000);
+			ithGpioClear(cam_gpio[DOOR_1][ON]); //CAM1给电.
+			return;
 #endif
         }
     }
@@ -1438,10 +1450,22 @@ void SettingISPAnd_FilpLCD(
             printf("######AHD(0x%x, 0x%x)cap Y buf blanking error, reset cap!!!\n", 
                 outdata.DisplayAddrY[outdata.OutWidth-15],
                 outdata.DisplayAddrY[outdata.OutWidth*outdata.OutHeight-15]);
-#if 1
-			PR2000K_HW_Reset();
-            return;
-#endif			
+#if defined(TARGET_BOARD_G)
+			currCam = currCam ? 0 : 1;
+			cam_switch(currCam);
+
+			usleep(500000);
+
+			currCam = currCam ? 0 : 1;
+			cam_switch(currCam);	
+			return;
+#else
+			ithGpioSet(cam_gpio[DOOR_1][ON]);   //CAM1断电.
+			usleep(500000);
+			ithGpioClear(cam_gpio[DOOR_1][ON]); //CAM1给电.
+			return;
+#endif
+	
         }
     }
 #if Motion_Detection

@@ -130,7 +130,7 @@ bool standby_time(ITUWidget* widget, char* param)
 			ithGpioClear(cam_gpio[DOOR_2][ON]);
 		}
 	}
-	return true;
+	return false;
 }
 
 bool standby_leave(ITUWidget* widget, char* param)
