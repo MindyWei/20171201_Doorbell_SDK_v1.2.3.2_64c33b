@@ -1094,7 +1094,6 @@ _jpg_enc_fire(
 
             if( pJpgDev->pExifInfo ) 
             {
-                printf("++++++++jpg1=%d\n", totalEncLeng);
                 AsyncSaveAllAddr =malloc(totalEncLeng);    
                 if(AsyncSaveAllAddr ==NULL)        
                 {printf("open AsyncSaveAllAddr fail\n");}
@@ -1108,7 +1107,6 @@ _jpg_enc_fire(
                 free(AsyncSaveAllAddr);
             }else
             {
-                printf("++++++++jpg2=%d\n", totalEncLeng);
                 AsyncSaveAllAddr =malloc(totalEncLeng);
                 if(AsyncSaveAllAddr ==NULL)        
                 {printf("open AsyncSaveAllAddr fail\n");}

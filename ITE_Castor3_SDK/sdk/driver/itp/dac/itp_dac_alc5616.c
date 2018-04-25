@@ -68,10 +68,10 @@ static void I2C_common_write_word(unsigned char RegAddr, unsigned short d)
 	else
     	tmp = (d&0x00FF) << 8 | (d&0xFF00)  >> 8;
     
-    ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: internal HDMI IIC */
+    //ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: internal HDMI IIC */
     for(retry=0; retry<50; retry++)
     {
-        if(0 == (flag = mmpIicSendData(IIC_PORT, IIC_MASTER_MODE, ALC5616_I2CADR, RegAddr, &tmp, 2)))
+        if(0 == (flag = mmpIicSendData(IIC_PORT, IIC_MASTER_MODE, ALC5616_I2CADR, RegAddr, (uint8_t*)&tmp, 2)))
         {
         	success = 1;
 #ifdef ALC5616_DEBUG_I2C_COMMON_WRITE
@@ -84,7 +84,7 @@ static void I2C_common_write_word(unsigned char RegAddr, unsigned short d)
     	printf("ALC5616# IIC Write Fail!\n");
     	while(1) { usleep(500000); }
     }
-    ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: external APB IIC */
+    //ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: external APB IIC */
 }
 
 static unsigned short I2C_common_read_word(unsigned char RegAddr)
@@ -95,10 +95,10 @@ static unsigned short I2C_common_read_word(unsigned char RegAddr)
     int retry = 0;
     unsigned short d, tmp = 0;
     
-    ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: internal HDMI IIC */
+    //ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: internal HDMI IIC */
     for(retry=0; retry<50; retry++)
     {
-        if(0 == (flag = mmpIicReceiveData(IIC_PORT, IIC_MASTER_MODE, ALC5616_I2CADR, &RegAddr, 1, &d, 2)))
+        if(0 == (flag = mmpIicReceiveData(IIC_PORT, IIC_MASTER_MODE, ALC5616_I2CADR, &RegAddr, 1, (uint8_t*)&d, 2)))
         {
             success = 1;
 #ifdef ALC5616_DEBUG_I2C_COMMON_WRITE
@@ -111,7 +111,7 @@ static unsigned short I2C_common_read_word(unsigned char RegAddr)
         printf("ALC5616# IIC Write Fail!\n");
         while(1) { usleep(500000); }
     }
-    ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: external APB IIC */
+    //ithWriteRegMaskA(ITH_GPIO_BASE | 0xD0, (0 << 28), (0x3 << 28)); /* IIC: external APB IIC */
 
 	if (CFG_CHIP_FAMILY == 9910)
 		tmp = d;
@@ -336,16 +336,16 @@ static void deinit_alc5616_common(void)
 	/* just decrease output volume */
 	{
 		unsigned short data16;
-		unsigned short tmp, adj = curr_out1_volume;
-		if(adj != MIN_OUT1_VOLUME) {
-			do
-			{
-				adj--;
+		unsigned short tmp, adj = MIN_OUT1_VOLUME;
+		//if(adj != MIN_OUT1_VOLUME) {
+			//do
+			//{
+			//	adj--;
 				tmp = (adj << 8)|adj;
                 alc5616_write_reg(0x19, tmp);                				
 				i2s_delay_us(1000); /* FIXME: dummy loop */
-			} while(adj != MIN_OUT1_VOLUME);
-		}
+			//} while(adj != MIN_OUT1_VOLUME);
+		//}
 	}
 
 	pthread_mutex_unlock(&ALC5616_MUTEX);
@@ -416,13 +416,17 @@ void itp_codec_playback_deinit(void)
 	DEBUG_PRINT("ALC5616# %s\n", __func__);
 
 	_alc5616_DA_running = 0; /* put before deinit_alc5616_common() */
-    if(_alc5616_spkout){
+    alc5616_write_reg(0x0, 0x0); /*reset alc5616*/
+#if 0
+    if (_alc5616_spkout)
+    {
         alc5616_write_reg(0x53, 0xF000);/* Mute OUTVOLL/R to LOUTMIX */
         alc5616_write_reg(0x66, 0x0000);/* OUTVOLL/R power down */
         alc5616_write_reg(0x4F, 0x0279);/* Disable DAC L/R to Speaker Mixer*/
         alc5616_write_reg(0x52, 0x0279);/* Disable DAC L/R to Speaker Mixer*/ 
     }
 	deinit_alc5616_common();
+#endif
 }
 
 void itp_codec_playback_amp_volume_down(void)

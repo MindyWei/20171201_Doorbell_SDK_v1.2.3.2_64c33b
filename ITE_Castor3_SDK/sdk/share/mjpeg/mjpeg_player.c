@@ -8,7 +8,7 @@
 #include "ite/itv.h"
 #include "jpg/ite_jpg.h"
 #include "i2s/i2s.h"
-#include "mjpeg_player.h"
+#include "mjpeg/mjpeg_player.h"
 
 #define MaxMjpegQueueNumber 100
 #define MaxAudioQueueNumber 50
@@ -44,22 +44,26 @@ typedef struct
 
 typedef void (*pfPktReleaseCb) (void *pkt);
 
-typedef struct JpegInputPkt {
+typedef struct JpegInputPkt
+{
     uint8_t *pInputBuffer;
     uint32_t bufferSize;
 } JpegInputPkt;
 
-typedef struct AudioInputPkt {
+typedef struct AudioInputPkt
+{
     uint8_t *pInputBuffer;
     uint32_t bufferSize;
 } AudioInputPkt;
 
-typedef struct QueuePktList {
+typedef struct QueuePktList
+{
     void* pkt;
     struct QueuePktList *next;
 } QueuePktList;
 
-typedef struct PktQueue {
+typedef struct PktQueue
+{
     QueuePktList *firstPkt, *lastPkt;
     int numPackets;
     int maxPackets;
@@ -195,7 +199,8 @@ _packetQueueFlush(
     if (q->mutex)
     {
         pthread_mutex_lock(&q->mutex);
-        for (pkt = q->firstPkt; pkt != NULL; pkt = pkt1) {
+		for (pkt = q->firstPkt; pkt != NULL; pkt = pkt1)
+		{
             pkt1 = pkt->next;
             if (q->pfPktRelease)
             {
@@ -284,7 +289,8 @@ uint8_t* data,uint32_t size, uint32_t count, void *fp)
 	if(data)
 	{   
 		Result = fread(data, size, count, fp);
-	}else printf("Mem open Fail!\n");
+	}
+	else printf("Mem open Fail!\n");
 
 	return Result;
 }
@@ -374,20 +380,34 @@ AVIFileOpen(
     				AVIH_Size	= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
     				pCur	+= 4;
 
-    				MainAVIH.dwMicroSecPerFrame 	= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwMaxBytesPerSec   	= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwPaddingGranularity   = fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwFlags   				= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwTotalFrames   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwInitialFrames   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwStreams   			= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwSuggestedBufferSize  = fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwWidth   				= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwHeight   			= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;
-    				MainAVIH.dwReserved[0]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;				
-    				MainAVIH.dwReserved[1]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;	
-    				MainAVIH.dwReserved[2]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;	
-    				MainAVIH.dwReserved[3]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3)); pCur	+= 4;	
+			MainAVIH.dwMicroSecPerFrame 	= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwMaxBytesPerSec   	= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwPaddingGranularity   = fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwFlags   				= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwTotalFrames   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwInitialFrames   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwStreams   			= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwSuggestedBufferSize  = fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwWidth   				= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwHeight   			= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwReserved[0]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwReserved[1]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwReserved[2]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
+			MainAVIH.dwReserved[3]   		= fourChar(*pCur,*(pCur+1) ,*(pCur+2),*(pCur+3));
+			pCur	+= 4;
 
     				//printf("dwMicroSecPerFrame=0x%x,dwMaxBytesPerSec=0x%x\n",MainAVIH.dwMicroSecPerFrame,MainAVIH.dwMaxBytesPerSec );
     				//printf("dwPaddingGranularity=0x%x,dwFlags=0x%x\n",MainAVIH.dwPaddingGranularity,MainAVIH.dwFlags );
@@ -498,6 +518,7 @@ AVIFileOpen(
     	}
 
     	end:
+	printf("open_over..........................................\n");
     	if(f)
     	{
     		fclose(f);
@@ -506,7 +527,8 @@ AVIFileOpen(
                 send_event(MJPEG_PLAYER_EVENT_EOF, NULL);
             }    
     	}
-    	int_count =0 ; dec_count=0;
+	int_count =0 ;
+	dec_count=0;
     	//usleep(3*1000);
     //}
     pthread_exit(NULL);
@@ -738,7 +760,8 @@ _mjpeg_decode_frame(
                 outStreamInfo.jstream.mem[2].pAddr  = gptJPG_DECODER->DisplayAddrV;
                 outStreamInfo.jstream.mem[2].pitch  = gptJPG_DECODER->framePitchUV;
                 outStreamInfo.jstream.mem[1].length = gptJPG_DECODER->framePitchUV * 128 * real_height_ForTile;
-            }else
+			}
+			else
             {
                 outStreamInfo.jstream.mem[0].pAddr  = gptJPG_DECODER->DisplayAddrY; // get output buf;
                 outStreamInfo.jstream.mem[0].pitch  = gptJPG_DECODER->framePitchY;
@@ -845,7 +868,8 @@ _mjpeg_decode_frame(
             itv_update_dbuf_anchor(&dbufprop);
         }
         dec_count++;  
-    } while (0);
+	}
+	while (0);
 
     if (result < 0)
     {
@@ -922,7 +946,8 @@ static void* _DeMjpegThread(void *arg)
 static STRC_I2S_SPEC spec_daI = {0};
 uint8_t *dac_buf;
 
-static void initDA(void){
+static void initDA(void)
+{
 	/* init DAC */
     dac_buf = (uint8_t*)malloc(DAC_BUFFER_SIZE);
 	memset((uint8_t*) dac_buf, 0, DAC_BUFFER_SIZE);
@@ -968,7 +993,8 @@ static void playAudioWave(uint8_t *data, uint32_t len)
 
     if(DA_free >= len)
 	{
-        if((DA_w + len) >= DAC_BUFFER_SIZE){
+		if((DA_w + len) >= DAC_BUFFER_SIZE)
+		{
 
             int szbuf = DAC_BUFFER_SIZE-DA_w;
             if(szbuf>0)
@@ -986,7 +1012,10 @@ static void playAudioWave(uint8_t *data, uint32_t len)
             ithFlushDCacheRange(dac_buf+DA_w, len);
             DA_w += len;
         }
-        if(DA_w == DAC_BUFFER_SIZE) {DA_w = 0;}   
+		if(DA_w == DAC_BUFFER_SIZE)
+		{
+			DA_w = 0;
+		}
         I2S_DA32_SET_WP(DA_w);     
 	}
 }
@@ -1036,6 +1065,7 @@ void ITE_PlayMJpeg(int x, int y, int width, int height, int volume, char *filepa
     _packetQueueInit(&gAudioInputQueue, _audioInputPktRelease, MaxAudioQueueNumber);
 
 	pthread_create(&tidAVIOpen, NULL, AVIFileOpen, (void *)filepath);
+	usleep(1000*100);
 	pthread_create(&tidDeMjpeg, NULL, _DeMjpegThread,  NULL);
     pthread_create(&tidDeAudio, NULL, _DeAudioThread,  (void *)volume);
 

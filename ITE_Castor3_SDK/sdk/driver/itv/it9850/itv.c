@@ -268,7 +268,7 @@ static void flip_lcd(
         lcd_index        = next_lcd_index();
         out_buffer       = (uint32_t)itv_rcs.dbuf[lcd_index];
         out_info.addrRGB = out_buffer;
-        g_lcd_index      = lcd_index;
+        //g_lcd_index      = lcd_index;
     }
 
 #if (CFG_CHIP_FAMILY != 9850)
@@ -314,7 +314,7 @@ static void flip_lcd(
 	    mmpIspPlayImageProcess(gIspDev, &isp_share);
 	}
     SHORT_WAIT_UNTIL(mmpIspIsEngineIdle());
-
+    g_lcd_index      = lcd_index;
 #if (CFG_CHIP_FAMILY != 9850)
     if (IS_ROTATE_DISPLAY())
     {
@@ -700,7 +700,6 @@ void itv_flush_dbuf(void)
     itv_rcs.pcmd_flush_dbuf = 1;
 
     WAIT_UNTIL(itv_rcs.pcmd_flush_dbuf == 0);
-    itv_rcs.vid_surf_cur_idx         = -1;
 }
 
 /* video surface */

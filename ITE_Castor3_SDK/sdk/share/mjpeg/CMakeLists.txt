@@ -4,6 +4,5 @@ include_directories(
     )
     
 add_library(mjpeg STATIC
-    mjpeg_player.h
     mjpeg_player.c
     )

@@ -1048,7 +1048,7 @@ static int FatCreatePartition(ITPPartition* par)
         {
     #ifdef CFG_SD0_STATIC
         case ITP_DISK_SD0:
-            sdDrvParams[0].reserved = (unsigned long)par->start[0];
+            sdDrvParams[0].reserved = (unsigned long long)par->start[0];
             break;
     #endif // CFG_SD0_STATIC
 
@@ -1147,6 +1147,48 @@ static int FatFormat(int volume)
     return 0;
 }
 
+int remove_dir(const char *dir)
+{
+	char cur_dir[] = ".";
+	char up_dir[] = "..";
+	char dir_name[128];
+	DIR *dirp;
+	struct dirent *dp;
+	struct stat dir_stat;
+	if ( 0 != access(dir, F_OK) )
+	{
+	    return 0;
+	}
+	if ( 0 > stat(dir, &dir_stat) ) 
+	{
+	    perror("get directory stat error");
+	    return -1;
+	}
+	if ( S_ISREG(dir_stat.st_mode) ) 
+	{  
+	    remove(dir);
+	}
+	else if ( S_ISDIR(dir_stat.st_mode) )
+	{ 
+        	dirp = opendir(dir);
+        	while ( (dp=readdir(dirp)) != NULL ) 
+		{
+			if ( (0 == strcmp(cur_dir, dp->d_name)) || (0 == strcmp(up_dir, dp->d_name)) )
+			{
+				 continue;
+			}
+            		sprintf(dir_name, "%s/%s", dir, dp->d_name);
+           		remove_dir(dir_name);  
+        	}
+       		closedir(dirp);
+        	rmdir(dir);    
+	}
+	else 
+	{
+	    perror("unknow file type!");    
+	}
+ 	return 0;
+}
 static int FatIoctl(int file, unsigned long request, void* ptr, void* info)
 {
     int ret;

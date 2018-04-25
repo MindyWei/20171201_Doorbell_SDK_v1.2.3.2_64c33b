@@ -105,7 +105,8 @@ static SMTK_AUDIO_FILE_INFO gtFileInfo;
 static SMTK_AUDIO_LRC_INFO* gpLrcInfo;
 
 static pthread_t  gAudioMgrthreadID;
-static pthread_t  gAudioReadthreadID;      
+static pthread_t  gAudioReadthreadID;
+
 static MMP_ULONG                    fileSize = 0;
 #ifdef HAVE_WAV
 static unsigned char                  ptWaveHeader[48];
@@ -1711,7 +1712,6 @@ smtkAudioMgrInitialize(
     audioMgr.mode       = SMTK_AUDIO_NORMAL;
     audioMgr.stop       = MMP_TRUE;
     audioMgr.Nfilequeque= 0;
-    audioMgr.bQuickPlay = MMP_FALSE;
 //    thread = PalCreateThread(PAL_THREAD_MP3, ThreadFunc, MMP_NULL, 4096,PAL_THREAD_PRIORITY_NORMAL);
 //    if (thread == MMP_NULL)
 //    {
@@ -3811,81 +3811,6 @@ static int audio_special_case_check_state(int ch,int sampleRate,int length)
 
 }
 
-void smtkSetQuickPlayFlag(void){
-   audioMgr.bQuickPlay = MMP_TRUE;
-}
-
-static int audio_special_case_quick_play(){
-    unsigned char* I2SBuf;
-    int nBufferLength = 128*1024;
-    int i2sNewWP;
-    int nOffset = 0;
-    I2SBuf = gOutBuffer;
-    audioMgr.playing == MMP_TRUE;
-	printf("#####audio_special_case_quick_play: enter\r\n");
-    i2s_pause_DAC(0);
-	printf("#####audio_special_case_quick_play: after i2s_pause_DAC(0)\r\n");
-
-    if (i2s_get_DA_running && audioMgr.ptNetwork.nSpecialCase ==1){
-        unsigned char *dstBuffer = NULL;
-        int copySize = 0;
-        
-        I2S_DA32_SET_WP(I2S_DA32_GET_RP());
-        gOutReadPointer = I2S_DA32_GET_RP();
-        gOutWritePointer = I2S_DA32_GET_WP();
-        dstBuffer = gOutBuffer + gOutReadPointer;
-        i2sNewWP = gOutWritePointer;
-        
-        if(gOutWritePointer + audioMgr.ptNetwork.nLocalFileSize > nBufferLength)
-            memset(I2SBuf,0,nBufferLength);//clear I2S buffer data
-
-        I2S_DA32_SET_WP(i2sNewWP);
-        DEBUG_PRINT("[Audio mgr] audio_special_case_play da %d ,read pointer %d write pointer %d nLocalFileSize=%d\n",128*1024,gOutReadPointer,gOutWritePointer,audioMgr.ptNetwork.nLocalFileSize);
-  
-        if (i2sNewWP+audioMgr.ptNetwork.nLocalFileSize<= nBufferLength) {
-            dstBuffer = gOutBuffer + i2sNewWP;
-            copySize = audioMgr.ptNetwork.nLocalFileSize;
-            i2sNewWP = i2sNewWP+audioMgr.ptNetwork.nLocalFileSize-SMTK_AUDIO_WAV_HEADER;
-        } else if (i2sNewWP+audioMgr.ptNetwork.nLocalFileSize > nBufferLength) {
-            dstBuffer = gOutBuffer + i2sNewWP;
-            copySize = nBufferLength - i2sNewWP ;
-            memcpy(dstBuffer, audioMgr.sampleBuf+SMTK_AUDIO_WAV_HEADER, copySize);
-
-            nOffset = copySize;
-            
-            dstBuffer = gOutBuffer;
-            
-            copySize = audioMgr.ptNetwork.nLocalFileSize-(nBufferLength - i2sNewWP);
-            i2sNewWP = copySize;
-
-        } else {
-            DEBUG_PRINT("[Audio mgr] special case error %d \n",__LINE__);
-        }
-
-        if (copySize>44)
-        {
-            memcpy(dstBuffer, audioMgr.sampleBuf+SMTK_AUDIO_WAV_HEADER+nOffset, copySize-SMTK_AUDIO_WAV_HEADER);
-#if CFG_CPU_WB
-            ithFlushDCacheRange(dstBuffer, copySize);
-            ithFlushMemBuffer();
-#endif
-            I2S_DA32_SET_WP(i2sNewWP);
-        }
-
-    }
-
-/*
-    if(audioMgr.bQuickPlay==MMP_FALSE){
-        I2S_DA32_WAIT_RP_EQUAL_WP();
-        i2s_pause_DAC(1);
-        audioMgr.playing = MMP_FALSE;
-    }
-*/
-	//printf("#####audio_special_case_quick_play: end\r\n");
-    return 0;
-
-}
-
 static int audio_special_case_play(){
 #if defined(__OPENRTOS__)
     unsigned char* I2SBuf;
@@ -3900,7 +3825,7 @@ static int audio_special_case_play(){
     int nOffset = 0;
     // 128k reference from mediastream2.c castor3snd_init()
     //gOutBuffer = memalign(64,128*1024);
-    audioMgr.playing = MMP_TRUE;
+
     I2SBuf = gOutBuffer;
     nChannels = gtWaveInfo.nChans;
     nSampeRate = gtWaveInfo.sampRate;
@@ -3964,18 +3889,17 @@ static int audio_special_case_play(){
     if (i2s_get_DA_running && audioMgr.ptNetwork.nSpecialCase ==1){
         unsigned char *dstBuffer = NULL;
         int copySize = 0;
-        //int dummysize = 256;
+        int dummysize = 256;
         
         I2S_DA32_SET_WP(I2S_DA32_GET_RP());
         gOutReadPointer = I2S_DA32_GET_RP();
         gOutWritePointer = I2S_DA32_GET_WP();
         dstBuffer = gOutBuffer + gOutReadPointer;
-        i2sNewWP = gOutReadPointer;
         
-        if(gOutWritePointer /*+ dummysize */+ audioMgr.ptNetwork.nLocalFileSize > nBufferLength)
+        if(gOutWritePointer + dummysize + audioMgr.ptNetwork.nLocalFileSize > nBufferLength)
             memset(I2SBuf,0,nBufferLength);//clear I2S buffer data
         
-        /*if(gOutWritePointer+dummysize <= nBufferLength){
+        if(gOutWritePointer+dummysize <= nBufferLength){
             memset(dstBuffer,0,dummysize);
             dstBuffer+=dummysize;
             i2sNewWP = gOutWritePointer + dummysize;
@@ -3990,8 +3914,7 @@ static int audio_special_case_play(){
             dstBuffer = gOutBuffer + scez2;
             i2sNewWP = scez2;
         }//add some scilent at start ,buff time .
-        */
-        
+
         I2S_DA32_SET_WP(i2sNewWP);
         DEBUG_PRINT("[Audio mgr] audio_special_case_play da %d ,read pointer %d write pointer %d nLocalFileSize=%d\n",128*1024,gOutReadPointer,gOutWritePointer,audioMgr.ptNetwork.nLocalFileSize);
   
@@ -4504,12 +4427,6 @@ static void *audio_read_thread_func(void *arg) {
             audioMgr.nReading = 1;
             audio_buffer_read_data();
             audioMgr.nReading = 0;            
-        }
-        if(audioMgr.bQuickPlay == MMP_TRUE){//special case:quick play small continual sound;
-            //audioMgr.bQuickPlay= MMP_FALSE;
-            //usleep(40000);//40000
-            audio_special_case_quick_play();
-            audioMgr.bQuickPlay = MMP_FALSE;
         }
     }
 

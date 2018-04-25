@@ -119,11 +119,14 @@ static void cam_switch(int iCamNum)
 }
 
 #elif defined(TARGET_BOARD_G)
-#define CAM_SWITCH_PIN  	22//63
+#if defined(TARGET_BOARD_G_V03)
+#define CAM_SWITCH_PIN  	22
+#else
+#define CAM_SWITCH_PIN  	63
+#endif
 
 static void cam_switch(int iCamNum)
 {
-#if defined(TARGET_BOARD_G)
 	ithGpioSetMode(CAM_SWITCH_PIN, ITH_GPIO_MODE0);
 	ithGpioSetOut(CAM_SWITCH_PIN);
 	ithGpioEnable(CAM_SWITCH_PIN); 
@@ -133,23 +136,6 @@ static void cam_switch(int iCamNum)
 		ithGpioSet(CAM_SWITCH_PIN);	
 	else if(iCamNum == 1)
 		ithGpioClear(CAM_SWITCH_PIN);	
-#elif defined(TARGET_BOARD_S)
-	uint8_t addr = 0x00;
-	uint8_t val = 0x01;
-	if(iCamNum == 0)
-	{
-		ithGpioClear(30);	
-		ithGpioSet(31);
-		mmpIicSendData(IIC_PORT_1, IIC_MASTER_MODE, 0x06>>1, addr, &val, 2);
-	}
-	else if(iCamNum == 1)
-	{
-		val = val<<1;
-		ithGpioClear(31);	
-		ithGpioSet(30);
-		mmpIicSendData(IIC_PORT_1, IIC_MASTER_MODE, 0x06>>1, addr, &val, 2);
-	}
-#endif	
 }
 #endif
 

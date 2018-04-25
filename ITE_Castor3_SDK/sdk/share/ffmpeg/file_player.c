@@ -213,7 +213,7 @@ enum {
 AVPacket               flush_pkt;
 pthread_mutex_t        player_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t        video_speed_mutex = PTHREAD_MUTEX_INITIALIZER;
-sem_t                  sem_pause;
+//sem_t                  sem_pause;
 /*static*/ int64_t     duration             = AV_NOPTS_VALUE;
 /*static*/ PlayerProps *global_player_prop  = NULL;
 int64_t                global_video_pkt_pts = AV_NOPTS_VALUE;
@@ -1169,6 +1169,7 @@ static void stream_seek(PlayerInstance *is, int64_t pos, int64_t rel, int seek_b
 
 static int video_thread(void *arg)
 {
+    int frame_count = 0;
     int            ret;
     PlayerInstance *is = (PlayerInstance *) arg;
     //AVPacket pkt1, *pkt = &pkt1;
@@ -1221,10 +1222,13 @@ static int video_thread(void *arg)
 
             if (got_picture)
             {
+                frame_count++;
                 //pts = synchronize_video(is, frame, pts);
                 //printf("YC: pts = %f\n", pts);
                 video_refresh_timer(is, pts);
                 render_frame(is->videoctx, frame);
+		  if(frame_count == 1)
+                    send_event(PLAYER_EVENT_GET_FIRST_FRAME, NULL);
             }
 
             //free(frame->opaque);
@@ -1779,9 +1783,11 @@ void *read_thread_for_videoloop(void *arg)
         if (is->paused)
         {
 #ifdef CFG_BUILD_ITV
-            fc_sync_pause(&is->stc);
+            //fc_sync_pause(&is->stc);
 #endif
-            sem_wait(&sem_pause);
+            //sem_wait(&sem_pause);
+            usleep(1000);
+	     continue;
         }
 
         if (is->videoq.size + is->audioq.size > MAX_QUEUE_SIZE
@@ -2061,9 +2067,11 @@ void *read_thread(void *arg)
         if (is->paused)
         {
 #ifdef CFG_BUILD_ITV
-            fc_sync_pause(&is->stc);
+            //fc_sync_pause(&is->stc);
 #endif
-            sem_wait(&sem_pause);
+            //sem_wait(&sem_pause);
+            usleep(1000);
+	     continue;
         }
 
         if (is->videoq.size + is->audioq.size > MAX_QUEUE_SIZE
@@ -2164,9 +2172,10 @@ seekto:
         {
             if (ret == AVERROR_EOF || url_feof(ic->pb))
             {
-                while (is->videoq.nb_packets > 0 || is->audioq.nb_packets > 0)
+                while (is->videoq.nb_packets > 0)
                 {
                     if (is->seek_req) goto seekto;
+                    if (is->abort_request) goto fail;
                     usleep(1000);
                 }    
                 send_event(PLAYER_EVENT_EOF, NULL);
@@ -2416,7 +2425,6 @@ static int audio_thread_for_rtsp_client(void *arg)
                 audio_pts       = (double)pkt.timestamp;
                 diff            = audio_pts - ref_clock;
                 audio_threshold = cal_audio_threshold(is);
-                printf("YC: %s, %d, diff = %f\n", __FUNCTION__, __LINE__, diff);
                 if (diff < 0)
                 {
                     if (audio_pts > audio_threshold)
@@ -2785,7 +2793,7 @@ int ithMediaPlayer_init(cb_handler_t callback)
     pprop->start_time    = AV_NOPTS_VALUE;
 
     global_player_prop   = pprop;
-    sem_init(&sem_pause, 0, 0);
+    //sem_init(&sem_pause, 0, 0);
     return 0;
 }
 
@@ -2883,7 +2891,7 @@ static int ithMediaPlayer_play(void)
         if (is->paused)
         {
             is->paused = false;
-            sem_post(&sem_pause);
+            //sem_post(&sem_pause);
 #ifdef CFG_BUILD_ITV
             fc_sync_pause(&is->stc);
 #endif
@@ -2924,7 +2932,7 @@ static int ithMediaPlayer_pause(void)
     if (is->paused)
     {
         is->paused       = false;
-        sem_post(&sem_pause);
+        //sem_post(&sem_pause);
 #ifdef CFG_BUILD_ITV
         fc_sync_pause(&is->stc);
 #endif
@@ -2936,6 +2944,9 @@ static int ithMediaPlayer_pause(void)
     {
 #ifdef CFG_AUDIO_ENABLE
         iteAudioPause(1);
+#endif
+#ifdef CFG_BUILD_ITV
+        fc_sync_pause(&is->stc);
 #endif
         is->paused = true;
     }
@@ -2962,7 +2973,7 @@ static int ithMediaPlayer_stop(void)
     if (is && is->paused) //press stop when video is paused
     {
         is->paused = false;
-        sem_post(&sem_pause);
+        //sem_post(&sem_pause);
 #ifdef CFG_BUILD_ITV
         fc_sync_pause(&is->stc);
 #endif
@@ -3033,7 +3044,7 @@ static int ithMediaPlayer_play_videoloop(void)
         if (is->paused)
         {
             is->paused = false;
-            sem_post(&sem_pause);
+            //sem_post(&sem_pause);
 #ifdef CFG_BUILD_ITV
             fc_sync_pause(&is->stc);
 #endif
@@ -3136,7 +3147,7 @@ static int ithMediaPlayer_deinit()
     }
     //pthread_mutex_destroy(&player_mutex);
 
-    sem_destroy(&sem_pause);
+    //sem_destroy(&sem_pause);
     global_player_prop = NULL;
 
     /* De-init network */
@@ -3391,7 +3402,7 @@ static bool ithMediaPlayer_check_fileplayer_playing()
     PlayerProps    *pprop = global_player_prop;
     if (!pprop)
     {
-        //av_log(NULL, AV_LOG_ERROR, "Player not exist\n");
+        av_log(NULL, AV_LOG_ERROR, "Player not exist\n");
         return false;
     }
     return pprop->isFilePlayer_thread_created;

@@ -36,6 +36,9 @@
 
 //#define CDV_704MA
 //#define SAT_9856
+#if defined(CDV_704MA)
+//#define CDV_704MA_VER_01
+#endif
 
 #if defined(CDV_704MA) || defined(SAT_9856)
 
@@ -1139,7 +1142,7 @@ static void _tpConvertRawPoint(struct ts_sample *samp, int nr)
 */ 
 	
             int tmp_s = s->x;
-#if defined(CDV_704MA)
+#if defined(CDV_704MA) && defined(CDV_704MA_VER_01)
             s->x = 1024 -((s->x - 224)*1024/800);
             s->y = 600 - ((s->y -120)*600/480);
 #else

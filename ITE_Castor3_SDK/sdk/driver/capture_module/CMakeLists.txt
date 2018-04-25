@@ -7,11 +7,11 @@ include_directories(
 
 add_library(capture_module STATIC
         adv7180.c
+		pr2000.c
         gc0308.c
         gc0328.c
         gt5110e1.c
         hm1375.c
-	pr2000.c
         TVP5155.c
         ${CFG_CAPTURE_MODULE}
         ${CFG_SECOND_CAPTURE_MODULE}

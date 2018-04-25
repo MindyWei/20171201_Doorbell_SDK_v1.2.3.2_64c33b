@@ -166,9 +166,14 @@ static void DriveMountCard(ITPCardStatus* cardStatus)
     {
 #if defined(CFG_MMC_ENABLE)
         SD_CARD_INFO card_info = { 0 };
+        int retry = 5, rc;
 
-        if (iteSdcInitialize(SD_0, &card_info))
+        do {
+            rc = iteSdcInitialize(SD_0, &card_info);
+            if (rc && (retry == 0))
             return;
+            memset((void*)&card_info, 0x0, sizeof(SD_CARD_INFO));
+        } while (retry--);
 
         #if defined(CFG_SDIO_ENABLE)
         if (card_info.type >= SD_TYPE_SDIO)

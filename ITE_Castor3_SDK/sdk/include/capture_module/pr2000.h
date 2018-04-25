@@ -30,8 +30,9 @@ typedef enum _PR2000_INPUT_MODE
 {
     PR2000_INPUT_CVBS_PAL   = 0,
     PR2000_INPUT_CVBS_NTSC   = 1,
-    PR2000_INPUT_YPBPR  = 2,
-    PR2000_INPUT_TOTAL = 3,
+    PR2000_INPUT_YPBPR_PAL  = 2,
+    PR2000_INPUT_YPBPR_NTSC  = 3,
+    PR2000_INPUT_TOTAL = 4,
 } PR2000_INPUT_MODE;
 
 typedef enum _PR2000_INPUT_STANDARD
@@ -69,6 +70,7 @@ typedef enum CAP_FRAMERATE_TAG
 uint16_t PR2000_InWidth;
 uint16_t PR2000_InHeight;
 uint16_t PR2000_InFrameRate;
+extern PR2000_INPUT_MODE input_mode;
 
 void Set_PR2000_Tri_State_Enable();
 

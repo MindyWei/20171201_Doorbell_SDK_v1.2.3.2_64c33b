@@ -1037,7 +1037,7 @@ void i2s_pause_DAC(int pause)
 {
 	u16 data16;
 
-	//printf("I2S# %s(%d)\n", __func__, pause);
+	printf("I2S# %s(%d)\n", __func__, pause);
 
 	if(pause)
 	{
@@ -1118,6 +1118,7 @@ void i2s_deinit_DAC(void)
 	static struct timeval tv_pollE;
 #endif
 
+    _i2s_disable_fading();
 	pthread_mutex_lock(&I2S_MUTEX);
 
 	if(!_i2s_DA_running) {

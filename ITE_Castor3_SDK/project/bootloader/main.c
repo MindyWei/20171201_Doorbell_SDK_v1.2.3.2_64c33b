@@ -37,13 +37,24 @@ static bool usbInited = false;
 
 #if defined(CFG_CAPTURE_MODULE_ENABLE) //add for TARGET_BOARD_G
 #define TARGET_BOARD_G
+#define TARGET_BOARD_G_V03
 
+#if defined(TARGET_BOARD_G_V03)
 #define CAM_VOL_PIN  	63//32
 #define BL_VOL_PIN  	36//34
 #define BL_GPIO_PIN  	64//35
 
 #define PR2000_MPP3 	72//73
 #define PR2000_MPP4 	73//72
+#else
+#define CAM_VOL_PIN  	32
+#define BL_VOL_PIN  	34
+#define BL_GPIO_PIN  	35
+
+#define PR2000_MPP3 	73
+#define PR2000_MPP4 	72
+#endif
+
 
 static void user_gpio_init()
 {
@@ -61,7 +72,7 @@ static void user_gpio_init()
 	ithGpioSetOut(CAM_VOL_PIN);
 	ithGpioEnable(CAM_VOL_PIN); 
 	ithGpioSet(CAM_VOL_PIN);	
-
+#if 0
 	ithGpioSetMode(PR2000_MPP3, ITH_GPIO_MODE0);
 	ithGpioSetOut(PR2000_MPP3);
 	ithGpioEnable(PR2000_MPP3); 
@@ -71,7 +82,7 @@ static void user_gpio_init()
 	ithGpioSetOut(PR2000_MPP4);
 	ithGpioEnable(PR2000_MPP4); 
 	ithGpioClear(PR2000_MPP4);
-
+#endif
 }
 #endif
 

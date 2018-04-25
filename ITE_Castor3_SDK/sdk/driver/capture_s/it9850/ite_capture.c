@@ -346,8 +346,8 @@ mmpCapGetDeviceInfo()
     Capctxt->ininfo.VSyncPol    = CapGetProperty.VPolarity;
     Capctxt->ininfo.TopFieldPol = CapGetProperty.GetTopFieldPolarity; // fingerprint will set it false.
 
-    Capctxt->ininfo.PitchY      = CAP_MEM_BUF_PITCH;
-    Capctxt->ininfo.PitchUV     = CAP_MEM_BUF_PITCH >> 1;
+    Capctxt->ininfo.PitchY      = CapGetProperty.GetWidth;
+    Capctxt->ininfo.PitchUV     = CapGetProperty.GetWidth >> 1;
 
     // Set Interlace or Prograssive
     Capctxt->Interleave         = CapGetProperty.GetModuleIsInterlace;
@@ -403,7 +403,10 @@ mmpCap_Memory_Initialize()
     }
 
     gvideo_vram_addr = itpVmemAlignedAlloc(64, size); //64 bit aligen
+    printf("----------------------->1\n");
+    ithSetVram(gvideo_vram_addr, 0x0, size);
 	gvideo_sys_addr = (uint8_t*) ithMapVram(gvideo_vram_addr, size, /*ITH_VRAM_READ |*/ ITH_VRAM_WRITE);
+    printf("----------------------->2\n");
 
     if (gvideo_vram_addr == MMP_NULL)
     {
@@ -782,11 +785,11 @@ int ithCaptureGetNewFrame(
     MMP_UINT16      timeOut           = 0;
     MMP_UINT16      FirstBufferIdx    = 1;
 
-    //if (!GetFirstBufferIdx)
-    //{
-    //    OldBufferIdx      = CaptureControllerHardwareGetBufferIndex();
-    //    GetFirstBufferIdx = MMP_TRUE;
-    //}
+    if (!GetFirstBufferIdx)
+    {
+        OldBufferIdx      = CaptureControllerHardwareGetBufferIndex();
+        GetFirstBufferIdx = MMP_TRUE;
+    }
 
     while (NewBufferIdx == OldBufferIdx)
     {
@@ -927,13 +930,16 @@ ithCapInitialize()
     //it can add ithCapResetEngine() here. //Benson
     ithCapResetEngine();
     ithCapEnableClock();
-
+	printf("111111111111111111");
     result = mmpCap_Memory_Initialize();
+	printf("2222222222222222222");
 
     //1st Capture Init, switch IO direction
 	result = mmpCap_Initialize();
+	printf("333333333333333333");
 	
     Cap_EnableClock(); //Add for fingerprint recognition 
+	printf("44444444444444444");
 
     if (result != MMP_SUCCESS)
     {

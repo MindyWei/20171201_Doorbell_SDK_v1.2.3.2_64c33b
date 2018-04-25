@@ -37,7 +37,7 @@ extern "C" {
 #endif
 #define isp_EnginClockOn()                      ithIspEnableClock()
 #define isp_EnginClockOff()                     ithIspDisableClock()
-#define isp_EnginReset()                        {ithIspResetEngine();ithIspResetReg();}
+#define isp_EnginReset()                        {ithIspResetEngine();}
 
 #define isp_GetVramBaseAddr()                   0
 

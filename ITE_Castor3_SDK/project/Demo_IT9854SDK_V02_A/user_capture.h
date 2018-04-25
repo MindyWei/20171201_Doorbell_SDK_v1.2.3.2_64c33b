@@ -3,6 +3,7 @@
 
 //#define TARGET_BOARD_S
 #define TARGET_BOARD_G
+//#define TARGET_BOARD_G_V03
 
 typedef enum SEND_STATE_TAG
 {

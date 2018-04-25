@@ -67,7 +67,7 @@ static inline uint32_t sdc_set_delay(unsigned int clock, int read)
     else if (clock <= 25000000)
         timing = 0x0;
     else
-        timing = 0x00000020;
+        timing = 0x0;
 
     ithWriteRegMaskA((SD_BASE + 0x008C), timing, 0x010000FF);
 
@@ -178,7 +178,7 @@ static int sdc_init(struct sdc_host *host)
         return ERR_SD_NO_CARD;
 
     /* move to top because power down will io unselect */
-    sdc_power_reset(host->index, 30);
+    sdc_power_reset(host->index, 1000);
     //sdc_io_select(host->idx);
 
     /* reset */

@@ -626,7 +626,6 @@ typedef struct SMTK_AUDIO_MGR_TAG
     MMP_INT                  nReading;
     int                      nEnableSxaDmx;
     int                      Nfilequeque;
-    MMP_BOOL                 bQuickPlay;
 } SMTK_AUDIO_MGR;
 
 #ifdef SMTK_AUDIO_PARSING_M4A_DATA
