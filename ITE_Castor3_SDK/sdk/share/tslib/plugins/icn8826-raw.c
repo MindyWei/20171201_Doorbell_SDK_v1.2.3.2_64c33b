@@ -1707,9 +1707,9 @@ static int _tpGetRawPoint(struct ts_sample *samp, int nr)
 	
 	while(real_nr++<nr) 
 	{
-		if(_tpReadPointBuffer_vendor(buf, gTpSpec.tpReadChipRegCnt)<0)	return -1;
+		if(_tpReadPointBuffer_vendor(buf, gTpSpec.tpReadChipRegCnt)<0)	break;
 		
-		if(_tpParseRawPxy_vendor(s, buf)<0)	return -1;
+		if(_tpParseRawPxy_vendor(s, buf)<0)	break;
 		
 		if(gTpSpec.tpHasTouchKey)	_tpParseKey_vendor(s, buf);
 
