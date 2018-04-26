@@ -48,6 +48,9 @@ void AudioStop(void);
 
 int AudioPlayMusic(char* filename, AudioPlayCallback func);
 
+void AudioPlaySound(char* filename);
+
+
 /**
  * Plays keypad sound.
  */

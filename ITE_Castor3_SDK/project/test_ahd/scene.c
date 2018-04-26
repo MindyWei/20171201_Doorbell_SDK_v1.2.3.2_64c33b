@@ -430,21 +430,7 @@ int SceneRun(void)
 #if TEST_CAM
 					break;
 #endif
-					if((cur_page == page_setting) || (cur_page == page_inter) || (cur_page == page_date) ||(cur_page == page_media))
-						no_touch_start();
-					if(cur_page == page_home && theConfig.lcdout)
-						standby_mode_start();
-					else if(cur_page == page_home && !theConfig.lcdout)
-						no_touch_start();
-					/*
-					if(cur_page == page_monitor || cur_page == page_cctv)
-					{
-						if(cur_mon_state == MON_STATE || cur_mon_state == M_TALK_STATE ||cur_mon_state == CCTV_STATE)
-						{
-							monitor_start();
-						}
-					}
-					*/
+
 					if(standby_state)
 					{
 						event_go_home = true;

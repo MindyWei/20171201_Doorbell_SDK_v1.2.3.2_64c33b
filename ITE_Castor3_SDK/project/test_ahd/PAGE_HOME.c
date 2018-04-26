@@ -14,9 +14,7 @@ char home_icon_m_s_str[10][16] = {"HOME_ICON_M_S_0","HOME_ICON_M_S_1","HOME_ICON
                                   "HOME_ICON_M_S_3","HOME_ICON_M_S_4","HOME_ICON_M_S_5",
                                   "HOME_ICON_M_S_6","HOME_ICON_M_S_7","HOME_ICON_M_S_8","HOME_ICON_M_S_9"};
 
-				      //星期 日   一   二    三    四  五  六   
 char home_week_str[7][5] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-					//               1月         2月      3月    4月 5月   6月   7月   8月        9月        10月       11月         12月			  
 char home_month_str[12][10] = {"January","February","March","April","May","June","July","August","September","October","November","December"};
 
 static ITUIcon* HOME_ICON_H_T[3];
@@ -168,13 +166,6 @@ bool home_init(ITUWidget* widget, char* param)
 #endif
 	update_home_time();
 	home_time_tick = SDL_GetTicks();
-	if(theConfig.lcdout)
-	{
-		standby_mode_start();
-		no_touch_reinit();
-	}
-	else
-		no_touch_start();
 	backlight_on();
 	return false;
 }
@@ -224,38 +215,6 @@ bool home_timer(ITUWidget* widget, char* param)
 			new_file_icon = true;
 		}
 	}
-#if 0
-	if(standby_state && !montion_end_event)
-	{
-		if(!uart_is_busy())
-		{
-			if(theConfig.md && master_vdp)
-			{
-				if(theConfig.mdtime)
-				{
-					if(time_enable_montion())
-					{
-						cur_page  = page_motion;
-						event_home_go = page_motion;
-						set_montion_pass_once();
-						set_motion_satrt();
-						montion_start_again();
-						montion_enable = true;
-					}
-				}		
-				else
-				{
-					cur_page  = page_motion;
-					event_home_go = page_motion;
-					set_montion_pass_once();
-					set_motion_satrt();
-					montion_start_again();
-					montion_enable = true;
-				}
-			}
-		}
-	}
-#endif
 	return false;
 }
 
@@ -334,25 +293,21 @@ bool home_go(ITUWidget* widget, char* param)
 			return true;
 		cur_page  = page_inter;
 		event_home_go = page_inter;
-		no_touch_start();
 		break;
 	case '4':
 		if(sd_card_check)
 			return true;
 		cur_page  = page_media;
 		event_home_go = page_media;
-		no_touch_start();
 		break;
 	case '5':
 		cur_page  = page_date;
 		event_home_go = page_date;
-		no_touch_start();
 		break;
 	case '6':
 		printf("[my.wei1] goto page setting\r\n");
 		cur_page  = page_setting;
 		event_home_go = page_setting;
-		no_touch_start();
 		break;
 	}
 	return true;

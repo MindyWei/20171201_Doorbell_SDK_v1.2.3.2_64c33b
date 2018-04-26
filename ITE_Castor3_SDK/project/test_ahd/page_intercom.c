@@ -88,7 +88,6 @@ bool intercom_init(ITUWidget* widget, char* param)
 		assert(INTERCOM_TEXT_4);
 	}
 	intercom_itu_init();
-	no_touch_start();
     return true;
 }
 

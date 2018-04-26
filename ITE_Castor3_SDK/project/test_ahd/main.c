@@ -7,51 +7,6 @@
 #include "user_function.h"
 #include "openrtos/FreeRTOS.h"
 #include "openrtos/queue.h"
-#define TEST_PORT ITP_DEVICE_UART0
-static sem_t UartSem;
-static void UartCallback(void* arg1, uint32_t arg2)
-{
-	sem_post(&UartSem);
-}
-
-void* TestFunc_t(void* arg)
-{
-	int i;
-	char getstr[256];
-	char sendtr[256] = "hello SAT!\n";
-	char sendtr_1[256] = "hello SAT!\n";
-	int len = 0;
-	int count =0;
-
-	printf("Start uart test!\n");
-	/*
-		sem_init(&UartSem, 0, 0);
-
-		itpRegisterDevice(TEST_PORT, &itpDeviceUart0);
-		ioctl(TEST_PORT, ITP_IOCTL_INIT, NULL);
-	#ifdef CFG_UART0_ENABLE
-		ioctl(TEST_PORT, ITP_IOCTL_RESET, CFG_UART0_BAUDRATE);
-	#endif
-		ioctl(TEST_PORT, ITP_IOCTL_REG_UART_CB, (void*)UartCallback);
-	*/
-	memset(getstr, 0, 256);
-	char aaa = 0x55;
-	char bbb = 0;
-	char ccc = 0;
-	while(1)
-	{
-		while(1)
-		{
-			bbb = 0;
-			//read(ITP_DEVICE_UART0, &bbb, 1);
-			write(ITP_DEVICE_UART0, &aaa, 1);
-			printf("-------------write\n");
-			usleep(1000*1000);
-			if(bbb)
-				printf("------------->0x%2x\n",bbb);
-		}
-	}
-}
 
 int SDL_main(int argc, char *argv[])
 {
@@ -92,7 +47,7 @@ retry_backup:
 	AudioInit();
 	SceneLoad();
 	
-	flash_file_init();
+	//flash_file_init(); //my.wei remove from test_ahd
 	PhotoInit();
 	StorageInit();
 	image_memo_init();
@@ -116,7 +71,6 @@ retry_backup:
 		else
 			usleep(1000);
 	}
-	//TestFunc_t(NULL);
 	
 	ituSceneUpdate(&theScene, ITU_EVENT_LANGUAGE, theConfig.language, 0, 0);
 	ituSceneUpdate(&theScene, ITU_EVENT_LAYOUT, 0, 0, 0);

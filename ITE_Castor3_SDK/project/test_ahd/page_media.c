@@ -303,7 +303,6 @@ static void EventHandler(MJPEG_PLAYER_EVENT nEventID, void *arg)
 		ituWidgetSetVisible(VIDEO_BG_NO_FULL_, true);
 		ituWidgetSetVisible(VIDEO_BG_NO_FULL, false);
 		clear_avi_playing();
-		no_touch_start();
 #endif
 		break;
 	case PLAYER_EVENT_OPEN_FILE_FAIL:
@@ -844,7 +843,6 @@ bool play_video(ITUWidget* widget, char* param)
 bool stop_video(ITUWidget* widget, char* param)
 {
 	clear_avi_playing();
-	no_touch_start();
 	mtal_pb_pause();
 	videoPlayerIsPause = true;
 	videoPlayerIsPlaying = false;
@@ -969,7 +967,6 @@ bool video_delete_pop(ITUWidget* widget, char* param)
 	if(videoPlayerIsPlaying)
 	{
 		clear_avi_playing();
-		no_touch_start();
 		mtal_pb_pause();
 		videoPlayerIsPause = true;
 		videoPlayerIsPlaying = false;
@@ -1256,6 +1253,5 @@ void media_event_handler_ui(void)
 	clear_avi_playing();
 	mtal_pb_pause();
 	//videoPlayerIsPause = true;    
-	no_touch_start();
 }
 #endif

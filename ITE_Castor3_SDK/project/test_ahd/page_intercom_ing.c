@@ -290,7 +290,7 @@ bool intercom_ing_init(ITUWidget* widget, char* param)
 	interphone_time = 30;
 	
 	led_blink_1s_start();
-	standby_mode_reinit();
+	//standby_mode_reinit();
 	return true;
 }
 

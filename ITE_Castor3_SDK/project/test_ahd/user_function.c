@@ -593,7 +593,7 @@ void call_quit()
 			ithGpioSet(cam_gpio[DOOR_2][ON]);
 			uart_set_mode(UART_CALL_OVER);
 			uart_clear_busy();
-			door_call_reinit();
+			//door_call_reinit();
 		}
 	}
 	else
@@ -604,7 +604,7 @@ void call_quit()
 void c_talk_quit()
 {
 	printf("c_talk_quit...........................................\n");
-	door_talk_reinit();			
+	//door_talk_reinit();			
 	if(master_vdp)
 	{
 		ithGpioSet(cam_gpio[DOOR_1][ON]);
@@ -629,7 +629,7 @@ void mon_quit()
 		ithGpioSet(cam_gpio[DOOR_2][ON]);
 	}
 	cur_talk_ing = 0;
-	monitor_reinit();
+	//monitor_reinit();
 	uart_clear_busy();
 	uart_set_mode(UART_RELEASE);
 }
@@ -656,7 +656,7 @@ void m_talk_quit()
 		ithGpioSet(cam_gpio[DOOR_2][ON]);
 	}
 	cur_talk_ing = 0;
-	monitor_reinit();
+	//monitor_reinit();
 	uart_clear_busy();
 	uart_set_mode(UART_RELEASE);
 	user_amp_off();
@@ -834,32 +834,13 @@ static int play_open_back(int state)
 	return 0;
 }
 
+static int gpioDoor[] = {DOOR_1_OPEN, DOOR_2_OPEN};
+
 void user_open_door(int num)					//开锁
 {
-	if(num == 1)
-	{
-		if(master_vdp)
-			ithGpioClear(DOOR_1_OPEN);
-		else
-			uart_set_mode(UART_DOOR_1_OPEN);
-	}
-	else
-	{
-		if(master_vdp)
-			ithGpioClear(DOOR_2_OPEN);
-		else
-			uart_set_mode(UART_DOOR_2_OPEN);
-	}
+	if(num < 2)
+		ithGpioClear(gpioDoor[num]);
 	cur_open = true;
-	door_open_start();
-	if(!rec_start_time && !get_mon_rec_ing() && theConfig.ringvol)
-	{
-		AudioStop();
-		AudioSetVolume(ALC5616_VOL);		//声音初始化
-		ring_volume_set(theConfig.ringvol);
-		user_amp_on();
-		AudioPlay("A:/sounds/open.mp3", play_open_back);
-	}
 }
 
 
@@ -936,7 +917,7 @@ static void event_call_process(void)		//call 机事件处理
 		event_call_s = 0;
 		return;
 	}
-	door_delay_start();
+	//door_delay_start();
 	
 	event_call =  event_call_s;
 	event_call_s = 0;
@@ -1180,7 +1161,7 @@ static void event_uart_process(void)		//uart 事件处理
 			door_call_num = 0;
 			master_cam_off();
 			uart_set_mode(UART_CALL_OVER);
-			door_call_reinit();
+			//door_call_reinit();
 			uart_clear_busy();
 		}
 	}
@@ -1225,9 +1206,6 @@ static void event_uart_process(void)		//uart 事件处理
 		{
 			standby_state= false;
 			cur_inter_call = true;
-			standby_mode_reinit();
-			no_touch_reinit();
-			monitor_reinit();
 			uart_set_busy();
 			ithGpioSet(CONV_CONT);
 			ithGpioClear(MIC_NUTE);
@@ -1243,7 +1221,6 @@ static void event_uart_process(void)		//uart 事件处理
 	else if(event_uart == CMD_INTER_JOIN)
 	{	
 		interphone_mast = true;
-		no_touch_reinit();
 		ithGpioSet(CONV_CONT);
 		ithGpioClear(MIC_NUTE);
 		//ithGpioSet(AUDIO_IN);	
@@ -1291,13 +1268,13 @@ static void event_uart_process(void)		//uart 事件处理
 	{	
 		printf("door_1_open..................\n");
 		ithGpioClear(DOOR_1_OPEN);
-		door_open_start();
+		door_open_timer_start();
 	}
 	else if(event_uart == CMD_DOOR_2_OPEN)
 	{	
 		printf("door_2_open..................\n");
 		ithGpioClear(DOOR_2_OPEN);
-		door_open_start();
+		door_open_timer_start();
 	}
 	else if(event_uart == CMD_SIGNAL_NOT_BUSY)
 	{	
@@ -1470,9 +1447,6 @@ static void montion_end_event_process()
 	{
 			standby_state= false;
 			cur_inter_call = true;
-			standby_mode_reinit();
-			no_touch_reinit();
-			monitor_reinit();
 			uart_set_busy();
 			uart_set_mode(UART_INTER_JOIN);
 			if(cur_page  != page_inter_ing)
@@ -1704,13 +1678,11 @@ void user_delete_photo_dir()
 	printf("user_delete_photo_dir..............\n");
 	if(StorageGetCurrType() == STORAGE_SD)
 	{
-		no_touch_reinit();
 		remove_dir(IMAGEMEMO_PATH);
 		f_mkdir(IMAGEMEMO_PATH);
 	}
 	else
 	{
-		no_touch_reinit();
 		remove_dir(IMAGEMEMO_PATH_F);
 		f_mkdir(IMAGEMEMO_PATH_F);
 	}
@@ -1721,7 +1693,6 @@ void user_delete_video_dir()
 	printf("user_delete_video_dir..............\n");
 	if(StorageGetCurrType() == STORAGE_SD)
 	{
-		no_touch_reinit();
 		video_delete_all();
 		//remove_dir(VIDEOMEMO_PATH);
 		f_mkdir(VIDEOMEMO_PATH);
@@ -1743,7 +1714,6 @@ void user_delete_file()
 		user_delete_photo_dir();
 	if(DEL_CHBOX_2->checked)
 		user_delete_video_dir();
-	no_touch_start();
 	image_memo_init();
 	video_memo_init();
 	delete_ing = false;

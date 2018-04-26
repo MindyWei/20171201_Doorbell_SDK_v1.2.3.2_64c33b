@@ -505,8 +505,6 @@ bool monitor_init(ITUWidget* widget, char* param)
 		ituWidgetHide(MON_HEAD,0,0);
 #endif
 	backlight_on();
-	standby_mode_reinit();			//待机超时初始化
-	no_touch_reinit();				//无操作超时初始化
 	monitor_start_time = SDL_GetTicks();
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(MON_TEXT_REC_TIME,true);
@@ -801,6 +799,8 @@ bool monitor_rec_start(ITUWidget* widget, char* param)
 bool monitor_open(ITUWidget* widget, char* param)
 {
 	user_open_door(cur_signal);
+	door_open_timer_start();
+	AudioPlaySound(CFG_PRIVATE_DRIVE ":/sounds/open.mp3");	
 	return true;
 }
 

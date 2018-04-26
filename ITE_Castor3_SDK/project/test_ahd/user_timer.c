@@ -134,7 +134,7 @@ void clear_avi_playing()
 }
 
 
-void door_open_start()
+void door_open_timer_start()
 {
     struct itimerspec value;
 	
@@ -142,20 +142,18 @@ void door_open_start()
     value.it_value.tv_nsec  = 0;
     value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
     timer_settime(door_open_TimerId, 0, &value, NULL);
-    printf("---------->door_open_end<------>%ld<--------\n",value.it_value.tv_sec);
+    printf("---------->door_open_timer_end<------>%ld<--------\n",value.it_value.tv_sec);
 }
 
-void door_open_end(timer_t timerid, int arg)
+void door_open_timer_end(timer_t timerid, int arg)
 {
-	printf("---------->door_open_end<--------------\n");
+	printf("---------->door_open_timer_end<--------------\n");
 	ithGpioSet(DOOR_1_OPEN);	
 	ithGpioSet(DOOR_2_OPEN);	
 	cur_open = false;
-	//if(!cur_talk_ing)
-	//	user_amp_off();
 }
 
-void black_wind_start()
+void black_wind_timer_start()
 {
     struct itimerspec value;
 	
@@ -163,11 +161,11 @@ void black_wind_start()
     value.it_value.tv_nsec  = 1300*1000*1000;//1000*1000*1000;
     value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
     timer_settime(black_wind_TimerId, 0, &value, NULL);
-	//printf("---------->black_wind_start\n");
+	//printf("---------->black_wind_timer_start\n");
 }
-void black_wind_end(timer_t timerid, int arg)
+void black_wind_timer_end(timer_t timerid, int arg)
 {
-	printf("---------->black_wind_end<--------------\n");
+	printf("---------->black_wind_timer_end<--------------\n");
 	//2018.3.28 my.wei add for UI command queue
 #if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
 	SceneWidgetSetVisible("MON_BG_WIN", false);
@@ -179,136 +177,6 @@ void black_wind_end(timer_t timerid, int arg)
 	cur_wind = true;
 }
 
-void monitor_start()
-{
-	struct itimerspec value;
-	
-	value.it_value.tv_sec   = 60;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(monitor_TimerId, 0, &value, NULL);
-	standby_mode_reinit();
-	no_touch_reinit();
-}
-
-void monitor_end(timer_t timerid, int arg)
-{
-	printf("---------->monitor_end<--------------\n");
-	//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-	SceneGotoLayer("PAGE_HOME");
-#else
-	ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-	assert(PAGE_HOME);
-	ituLayerGoto(PAGE_HOME);
-#endif
-}
-
-void monitor_reinit()
-{
-	timer_delete(monitor_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &monitor_TimerId);
-	timer_connect(monitor_TimerId, monitor_end, 0);
-}
-void door_delay_start()
-{
-	struct itimerspec value;
-	
-	door_is_calling = true;
-	
-	value.it_value.tv_sec   = 2;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(door_delay_TimerId, 0, &value, NULL);
-}
-
-void door_delay_end(timer_t timerid, int arg)
-{
-	printf("---------->door_delay_end<--------------\n");
-	door_is_calling = false;
-}
-
-void door_call_start()
-{
-	struct itimerspec value;
-	value.it_value.tv_sec   = 30;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(door_call_TimerId, 0, &value, NULL);
-	if(!other_talk_ing)
-	{
-		backlight_on();
-		standby_mode_reinit();
-		no_touch_reinit();
-		monitor_reinit();
-		need_back_home = true;
-	}
-}
-
-void door_call_end(timer_t timerid, int arg)
-{
-	printf("---------->door_call_end<--------------\n");
-	door_call_num = 0;
-	cur_talk_ing = 0;
-	other_talk_ing = 0;
-	other_talk_id = 0;
-	uart_clear_busy();
-	if(master_vdp)
-	{
-		ithGpioSet(cam_gpio[DOOR_1][ON]);
-		ithGpioSet(cam_gpio[DOOR_2][ON]);
-	}
-	
-	if(need_back_home)
-	{
-		need_back_home = false;
-		//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-		SceneGotoLayer("PAGE_HOME");
-#else
-		ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-		assert(PAGE_HOME);
-		ituLayerGoto(PAGE_HOME);
-#endif
-	}
-}
-
-void door_call_reinit()
-{
-	timer_delete(door_call_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &door_call_TimerId);
-	timer_connect(door_call_TimerId, door_call_end, 0);
-}
-
-void door_talk_start()
-{
-	struct itimerspec value;
-	
-	value.it_value.tv_sec   = 60;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(door_talk_TimerId, 0, &value, NULL);
-}
-
-void door_talk_end(timer_t timerid, int arg)
-{
-	printf("---------->door_talk_end<--------------\n");
-	//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-	SceneGotoLayer("PAGE_HOME");
-#else
-	ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-	assert(PAGE_HOME);
-	ituLayerGoto(PAGE_HOME);
-#endif
-}
-
-void door_talk_reinit()
-{
-	timer_delete(door_talk_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &door_talk_TimerId);
-	timer_connect(door_talk_TimerId, door_talk_end, 0);
-}
 void photo_icon_start()
 {
 	struct itimerspec value;
@@ -324,87 +192,6 @@ void photo_icon_end(timer_t timerid, int arg)
 	printf("---------->photo_icon_end<--------------\n");
 	show_snap_rec_icon = icon_clear;
 	ImageMemoRecEnd();
-}
-
-void standby_mode_start()
-{
-	struct itimerspec value;
-
-	if(theConfig.lcdout)
-	{
-	#if 1
-		value.it_value.tv_sec   = 60*(theConfig.lcdouttime+1);
-	#else
-		value.it_value.tv_sec   = 5;
-	#endif
-		value.it_value.tv_nsec  = 0;
-		value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-		timer_settime(standby_mode_TimerId, 0, &value, NULL);
-	}
-}
-
-void standby_mode_end(timer_t timerid, int arg)
-{
-	if(theConfig.lcdout && cur_page == page_home)
-	{
-		printf("---------->standby_mode_end<--------------\n");
-		//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-		SceneGotoLayer("PAGE_STANDBY");
-#else
-		ITULayer* PAGE_STANDBY = ituSceneFindWidget(&theScene, "PAGE_STANDBY");
-		assert(PAGE_STANDBY);
-		ituLayerGoto(PAGE_STANDBY);
-#endif
-	}
-}
-
-void standby_mode_reinit()
-{
-	timer_delete(standby_mode_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &standby_mode_TimerId);
-	timer_connect(standby_mode_TimerId, standby_mode_end, 0);
-}
-
-
-void no_touch_start()
-{
-	printf("---------->no_touch_start<--------------\n");
-	struct itimerspec value;
-	
-	value.it_value.tv_sec   = no_touch_Time;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(no_touch_TimerId, 0, &value, NULL);
-	standby_mode_reinit();
-}
-
-void no_touch_end(timer_t timerid, int arg)
-{
-	printf("---------->no_touch_end<--------------\n");
-	if(!avi_is_playing)
-	{
-		if(theConfig.lcdout)
-			event_go_home = true;
-		else 
-		{
-			//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-			SceneGotoLayer("PAGE_STANDBY");
-#else
-			ITULayer* PAGE_STANDBY = ituSceneFindWidget(&theScene, "PAGE_STANDBY");
-			assert(PAGE_STANDBY);
-			ituLayerGoto(PAGE_STANDBY);
-#endif
-		}
-	}
-}
-
-void no_touch_reinit()
-{
-	timer_delete(no_touch_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &no_touch_TimerId);
-	timer_connect(no_touch_TimerId, no_touch_end, 0);
 }
 
 void montion_begin_start()
@@ -776,31 +563,15 @@ void md_start_delay_end(timer_t timerid, int arg)
 void user_timer_init()
 {
     timer_create(CLOCK_REALTIME, NULL, &door_open_TimerId);
-    timer_connect(door_open_TimerId, door_open_end, 0);
+    timer_connect(door_open_TimerId, door_open_timer_end, 0);
 	
     timer_create(CLOCK_REALTIME, NULL, &black_wind_TimerId);
-    timer_connect(black_wind_TimerId, black_wind_end, 0);
-//monitor
-    timer_create(CLOCK_REALTIME, NULL, &monitor_TimerId);
-    timer_connect(monitor_TimerId, monitor_end, 0);
-//door delay	
-    timer_create(CLOCK_REALTIME, NULL, &door_delay_TimerId);
-    timer_connect(door_delay_TimerId, door_delay_end, 0);
-//door call
-    timer_create(CLOCK_REALTIME, NULL, &door_call_TimerId);
-    timer_connect(door_call_TimerId, door_call_end, 0);
-//door talk
-    timer_create(CLOCK_REALTIME, NULL, &door_talk_TimerId);
-    timer_connect(door_talk_TimerId, door_talk_end, 0);
+    timer_connect(black_wind_TimerId, black_wind_timer_end, 0);
+
 //photo icon
     timer_create(CLOCK_REALTIME, NULL, &photo_icon_TimerId);
     timer_connect(photo_icon_TimerId, photo_icon_end, 0);
-//standby mode
-    timer_create(CLOCK_REALTIME, NULL, &standby_mode_TimerId);
-    timer_connect(standby_mode_TimerId, standby_mode_end, 0);
-//no touch
-    timer_create(CLOCK_REALTIME, NULL, &no_touch_TimerId);
-    timer_connect(no_touch_TimerId, no_touch_end, 0);
+
 //md_begin_time
     timer_create(CLOCK_REALTIME, NULL, &md_begin_TimerId);
     timer_connect(md_begin_TimerId, montion_begin_end, 0);

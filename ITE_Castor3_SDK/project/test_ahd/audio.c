@@ -162,37 +162,33 @@ int AudioPlayMusic(char* filename, AudioPlayCallback func)
 	AudioPlay(filename, func);
 }
 
+void AudioPlaySound(char* filename)
+{
+	char filepath[PATH_MAX];
+	if (smtkAudioMgrGetState() != SMTK_AUDIO_PLAY)
+	{
+		bool muted = AudioIsMuted();
+		//smtkAudioMgrSetVolume(99);
+		strcpy(filepath, filename);
+		
+		if (muted)
+			AudioUnMute();
+		
+		AudioPlay(filepath, NULL);
+		
+		if (muted)
+			AudioMute();
+	}
+}
+
+
 void AudioPlayKeySound(void)
 {
 	char filepath[PATH_MAX];
-	if(get_mon_rec_ing()||audioKeySoundPaused == true)
-		return;
-	if(2 == get_once_key_ring())
-	{
-		clear_once_key_ring();
-		return;
-	}
-	else if(1 == get_once_key_ring())
-	{
-		user_amp_on();
-		ring_volume_set(3);
-		key_sound_start();
-		clear_once_key_ring();
-		smtkAudioMgrSetVolume(99);
-		strcpy(filepath, CFG_PRIVATE_DRIVE ":/sounds/key1.wav");
-		AudioPlay(filepath, NULL);
-		return;
-	}
-	if(theConfig.keyvol == 0)
-		return;
-	//  if (theConfig.keylevel > 0 && smtkAudioMgrGetState() != SMTK_AUDIO_PLAY && audioKeySoundPaused == false)
 	if (smtkAudioMgrGetState() != SMTK_AUDIO_PLAY && audioKeySoundPaused == false )
 	{
 		bool muted = AudioIsMuted();
 		smtkAudioMgrSetVolume(99);
-		user_amp_on();
-		ring_volume_set(3);
-		key_sound_start();
 		strcpy(filepath, CFG_PRIVATE_DRIVE ":/sounds/key1.wav");
 		
 		if (muted)

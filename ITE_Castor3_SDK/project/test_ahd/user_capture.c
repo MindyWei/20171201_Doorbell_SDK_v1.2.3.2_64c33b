@@ -1714,7 +1714,7 @@ void *signal_control(void *arg)
 
 				printf("ith9850CaptureRun\n");
 				ithCapFire();
-				black_wind_start();
+				black_wind_timer_start();
 				gState = SEND_START;
 				break;
 

@@ -1506,7 +1506,6 @@ bool set_timer(ITUWidget* widget, char* param)
 		ituWidgetSetVisible(SET_MAIN_3_FORMAT, false);
 		ituWidgetEnable(SET_BG);
 		set_save_init();
-		no_touch_start();
 	}
 
 	if(delete_over)
@@ -1652,7 +1651,6 @@ bool set_pop_up_confirm(ITUWidget* widget, char* param)
 			printf("format_confirm..............1...............\n");
 			user_format_init();
 			usleep(100*1000);
-			no_touch_reinit();
 			ituWidgetSetVisible(FORMAT_TEXT_NO, false);
 			ituWidgetSetVisible(FORMAT_TEXT_YES, false);
 			ituWidgetSetVisible(FORMAT_TEXT_TITEL, false);
