@@ -1459,7 +1459,7 @@ static void montion_end_event_process()
 	}
 	else if(montion_end_event == MD_EVENT_KEY)
 	{
-		backlight_on();
+		ScreenOn();
 	}
 	montion_end_event = 0;
 	montion_event_cmd = 0;
@@ -1612,17 +1612,74 @@ void talk_volume_set(uint8_t val)
 	}
 }
 
-void backlight_on()
+static float screenSaverCountDown;
+static uint32_t screenSaverLastTick;
+static bool screenOff = false;
+
+void backlight_init(void)
 {
-	//ithGpioSet(AVDD_COUNT);	
-	//usleep(100*1000);
-	ithGpioSet(BL_EN_PWM);	
+    screenSaverLastTick = SDL_GetTicks();
+    screenSaverCountDown = theConfig.screensaver_time * 60.0f;
+    screenOff = false;
 }
 
-void backlight_off()
+void ScreenOn()
+{
+	ithGpioSet(BL_EN_PWM);
+	screenOff = false;
+}
+
+void ScreenOff()
 {
 	ithGpioClear(BL_EN_PWM);
-	//ithGpioClear(AVDD_COUNT);	
+	screenOff = true;
+}
+
+bool ScreenIsOff()
+{
+	return screenOff;
+}
+
+void ScreenSaverRefresh(void)
+{	
+    screenSaverLastTick = SDL_GetTicks();
+    screenSaverCountDown = theConfig.screensaver_time * 60.0f;
+
+    if (screenOff && theConfig.screensaver_type == SCREENSAVER_BLANK)
+    {
+        ScreenOn();
+    }
+}
+
+int ScreenSaverCheck(void)
+{
+    uint32_t diff, tick = SDL_GetTicks();
+
+    if (tick >= screenSaverLastTick)
+    {
+        diff = tick - screenSaverLastTick;
+    }
+    else
+    {
+        diff = 0xFFFFFFFF - screenSaverLastTick + tick;
+    }
+
+    //printf("ScreenSaverCheck: tick: %d diff: %d countdown: %d\n", tick, diff, (int)screenSaverCountDown);
+
+    if (diff >= 1000)
+    {
+        screenSaverCountDown -= (float)diff / 1000.0f;
+        screenSaverLastTick = tick;
+
+        if (screenSaverCountDown <= 0.0f)
+            return -1;
+    }
+    return 0;
+}
+
+bool ScreenSaverIsScreenSaving(void)
+{
+    return screenOff || (screenSaverCountDown <= 0.0f);
 }
 
 void enter_stanby()

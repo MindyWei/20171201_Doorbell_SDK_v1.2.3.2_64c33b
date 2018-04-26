@@ -49,6 +49,8 @@ void Config_Reinit(void)
 	theConfig.door2 = 0;
 
 	//[display]
+	theConfig.screensaver_time = 1;
+	theConfig.screensaver_type = 2;
 	theConfig.brightness = 50;
 	theConfig.contrast = 50;
 	theConfig.hue = 50;
@@ -116,6 +118,8 @@ void ConfigInit(void)
 	theConfig.door2 = iniparser_getint(cfgIni, "volume:door2", 0);
 
 	//[display]
+    theConfig.screensaver_time = iniparser_getint(cfgIni, "display:screensaver_time", 2);
+    theConfig.screensaver_type = iniparser_getint(cfgIni, "display:screensaver_type", SCREENSAVER_BLANK);
 	theConfig.brightness = iniparser_getint(cfgIni, "display:brightness", 50);
 	theConfig.contrast = iniparser_getint(cfgIni, "display:contrast", 50);
 	theConfig.hue = iniparser_getint(cfgIni, "display:hue", 50);
@@ -186,6 +190,8 @@ static void ConfigSavePublic(void)
 	user_iniparser_set_int(cfgIni, "volume:door2", theConfig.door2);
 
 	//[display]
+    user_iniparser_set_int(cfgIni, "display:screensaver_time", theConfig.screensaver_time);
+    user_iniparser_set_int(cfgIni, "display:screensaver_type", theConfig.screensaver_type);
 	user_iniparser_set_int(cfgIni, "display:brightness", theConfig.brightness);
 	user_iniparser_set_int(cfgIni, "display:contrast", theConfig.contrast);
 	user_iniparser_set_int(cfgIni, "display:hue", theConfig.hue);

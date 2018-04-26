@@ -346,6 +346,7 @@ int SceneRun(void)
 			switch (ev.type)
 			{
 			case SDL_KEYDOWN:
+				ScreenSaverRefresh();
 				result = ituSceneUpdate(&theScene, ITU_EVENT_KEYDOWN, ev.key.keysym.sym, 0, 0);
 #ifndef _WIN32
 				if (result)
@@ -358,10 +359,12 @@ int SceneRun(void)
 				break;
 
 			case SDL_MOUSEMOTION:
+				ScreenSaverRefresh();
 				result = ituSceneUpdate(&theScene, ITU_EVENT_MOUSEMOVE, ev.button.button, ev.button.x, ev.button.y);
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
+				ScreenSaverRefresh();
 			{
 				uint32_t t = SDL_GetTicks();
 				if (t - dblclk <= 300)
@@ -424,19 +427,20 @@ int SceneRun(void)
 				break;
 
 			case SDL_FINGERDOWN:
+				ScreenSaverRefresh();
 				printf("touch: down %d, %d\n", ev.tfinger.x, ev.tfinger.y);
 				{
 					
 #if TEST_CAM
 					break;
 #endif
-
+#if 0 //my.wei mask for test ahd
 					if(standby_state)
 					{
 						event_go_home = true;
 						break;
 					}
-						
+#endif						
 					uint32_t t = SDL_GetTicks();
 #ifdef DOUBLE_KEY_ENABLE
 					if (t - dblclk <= 300)
@@ -460,6 +464,7 @@ int SceneRun(void)
 				break;
 
 			case SDL_FINGERMOTION:
+				ScreenSaverRefresh();
 				printf("touch: move %d, %d\n", ev.tfinger.x, ev.tfinger.y);
 				result = ituSceneUpdate(&theScene, ITU_EVENT_MOUSEMOVE, 1, ev.tfinger.x, ev.tfinger.y);
 				break;
@@ -535,13 +540,34 @@ int SceneRun(void)
 			lastev = ev;
 		}
 
-		result |= ituSceneUpdate(&theScene, ITU_EVENT_TIMER, 0, 0, 0);
-#ifndef _WIN32
-		if (result)
-#endif
+		if (!ScreenIsOff())
 		{
-			ituSceneDraw(&theScene, screenSurf);
-			ituFlip(screenSurf);
+			result |= ituSceneUpdate(&theScene, ITU_EVENT_TIMER, 0, 0, 0);
+			//printf("%d\n", result);
+			if (result)
+			{
+				ituSceneDraw(&theScene, screenSurf);
+				ituFlip(screenSurf);
+			}
+
+			if (theConfig.screensaver_type != SCREENSAVER_NONE &&
+				ScreenSaverCheck())
+			{
+				ituSceneSendEvent(&theScene, EVENT_CUSTOM_SCREENSAVER, "0");
+#if 0
+				if (theConfig.screensaver_type == SCREENSAVER_BLANK)
+				{
+					// have a change to flush action commands
+					ituSceneUpdate(&theScene, ITU_EVENT_TIMER, 0, 0, 0);
+
+					// draw black screen
+					ituSceneDraw(&theScene, screenSurf);
+					ituFlip(screenSurf);
+
+					ScreenOff();
+				}
+#endif				
+			}
 		}
 
 		delay = periodPerFrame - (SDL_GetTicks() - tick);

@@ -261,7 +261,7 @@ bool intercom_ing_init(ITUWidget* widget, char* param)
 		ituWidgetSetVisible(INTER_ING_TEXT_CALL_IN, true);
 		inter_id_init_s();
 		play_inter_ring();
-		backlight_on();
+		ScreenOn();
 		interphone_2 =  true;
 	}
 	else

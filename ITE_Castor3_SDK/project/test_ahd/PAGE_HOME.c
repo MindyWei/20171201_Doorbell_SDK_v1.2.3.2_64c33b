@@ -166,7 +166,7 @@ bool home_init(ITUWidget* widget, char* param)
 #endif
 	update_home_time();
 	home_time_tick = SDL_GetTicks();
-	backlight_on();
+	ScreenOn();
 	return false;
 }
 

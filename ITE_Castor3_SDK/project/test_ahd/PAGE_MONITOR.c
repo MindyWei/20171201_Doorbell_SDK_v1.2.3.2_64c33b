@@ -504,7 +504,7 @@ bool monitor_init(ITUWidget* widget, char* param)
 		ituWidgetHide(MON_BG_HIDE,0,0);
 		ituWidgetHide(MON_HEAD,0,0);
 #endif
-	backlight_on();
+	ScreenOn();
 	monitor_start_time = SDL_GetTicks();
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(MON_TEXT_REC_TIME,true);

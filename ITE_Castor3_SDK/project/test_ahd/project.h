@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include "ite/itu.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +90,34 @@ int AudioGetVolume(void);
 
 /** @} */ // end of template_audio
 
+typedef enum
+{
+	EVENT_CUSTOM_SCREENSAVER = ITU_EVENT_CUSTOM,    ///< Ready to enter screensaver mode. Custom0 event on GUI Designer.
+    EVENT_CUSTOM_SD_INSERTED,                       ///< #1: SD card inserted.
+    EVENT_CUSTOM_SD_REMOVED,                        ///< #2: SD card removed.
+	EVENT_CUSTOM_USB_INSERTED,                      ///< #3: USB drive inserted.
+    EVENT_CUSTOM_USB_REMOVED,                       ///< #4: USB drive removed.
+    EVENT_CUSTOM_KEY0,                              ///< #5: Key #0 pressed.
+    EVENT_CUSTOM_KEY1,                              ///< #6: Key #1 pressed.
+	EVENT_CUSTOM_KEY2,                              ///< #7: Key #2 pressed.
+    EVENT_CUSTOM_KEY3,                              ///< #8: Key #3 pressed.
+    EVENT_CUSTOM_UART                               ///< #9: UART message.
+
+} CustomEvent;
+
+/**
+ * Screensaver type definition.
+ */
+typedef enum
+{
+    SCREENSAVER_NONE,   ///< No screensaver
+    SCREENSAVER_CLOCK,  ///< Clock sreensaver
+    SCREENSAVER_BLANK,  ///< Black screen screensaver
+    SCREENSAVER_PHOTO   ///< Photo screensaver
+} ScreensaverType;
+
+
+
 /** @defgroup template_config Configuration
  *  @{
  */
@@ -126,6 +155,8 @@ typedef struct
 	int door2;
 
 	//[display]
+    int screensaver_time;                                               ///< Time to enter screen saver mode, unit is minute
+    int screensaver_type;                                               ///< Screen saver type @see ScreensaverType
 	int brightness;
 	int contrast;
 	int hue;

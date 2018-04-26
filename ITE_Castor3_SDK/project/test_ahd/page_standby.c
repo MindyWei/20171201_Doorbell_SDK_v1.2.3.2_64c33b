@@ -53,7 +53,7 @@ bool standby_init(ITUWidget* widget, char* param)
 	gState = SEND_BEGIN;			//œ‘ æÕºœÒ±Í÷æ
 #else
 	standby_state = true;
-	backlight_off();
+	ScreenOff();
 	md_start_delay_start();
 #endif
 	//ithGpioClear(AUDIO_OUT);	
