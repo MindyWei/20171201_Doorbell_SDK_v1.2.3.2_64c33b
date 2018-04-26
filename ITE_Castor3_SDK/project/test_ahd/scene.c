@@ -540,9 +540,9 @@ int SceneRun(void)
 			lastev = ev;
 		}
 
+		result |= ituSceneUpdate(&theScene, ITU_EVENT_TIMER, 0, 0, 0);
 		if (!ScreenIsOff())
 		{
-			result |= ituSceneUpdate(&theScene, ITU_EVENT_TIMER, 0, 0, 0);
 			//printf("%d\n", result);
 			if (result)
 			{

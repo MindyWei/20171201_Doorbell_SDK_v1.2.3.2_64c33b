@@ -92,7 +92,7 @@ void update_home_time()
 
 bool home_init(ITUWidget* widget, char* param)
 {
-	
+	printf("page home enter\r\n");
 #if TEST_CAM
 	event_call_s = 1;
 	return true;

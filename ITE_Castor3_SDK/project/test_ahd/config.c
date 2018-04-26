@@ -130,6 +130,8 @@ void ConfigInit(void)
 	theConfig.lcdouttime = iniparser_getint(cfgIni, "display:lcdouttime", 0);
 	theConfig.infoframe = iniparser_getint(cfgIni, "display:infoframe", 0);
 
+	printf("theConfig.screensaver_time:%d,theConfig.screensaver_type:%d\r\n", theConfig.screensaver_time, theConfig.screensaver_type);
+
 	//[other]
 	theConfig.language = iniparser_getint(cfgIni, "other:language", 0);
 	theConfig.id = iniparser_getint(cfgIni, "other:id", 0);

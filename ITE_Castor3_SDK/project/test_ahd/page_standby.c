@@ -7,6 +7,7 @@ static uint32_t md_start_time_t;
 static bool cam_reboot = false;
 
 static bool md_delay_over = false;
+static uint32_t standbyLastTick;
 
 void set_md_delay_over()
 {
@@ -34,6 +35,8 @@ static void VideoPlayerViewBackgroundDraw(ITUWidget* widget, ITUSurface* dest, i
 
 bool standby_init(ITUWidget* widget, char* param)
 {
+	printf("standby page enter\r\n");
+	standbyLastTick = SDL_GetTicks();
 	cur_page  = page_standby;
 	if (!ST_BG_MD_WIN)
 	{
@@ -76,10 +79,29 @@ void _md_start()
 	set_montion_pass_once();
 	montion_start_again();
 }
+
 bool standby_time(ITUWidget* widget, char* param)
 {
+	uint32_t diff, tick = SDL_GetTicks();
+	
+	if (tick >= standbyLastTick)
+	{
+		diff = tick - standbyLastTick;
+	}
+	else
+	{
+		diff = 0xFFFFFFFF - standbyLastTick + tick;
+	}
+	
+	if (diff >= 1000)
+	{
+		standbyLastTick = tick;
+		//printf("montion_enable, md_delay_over, busy_over_3s(%d,%d,%d)\r\n", montion_enable, md_delay_over, busy_over_3s);
+	}
+
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
+		//printf("%s: line #%d\r\n", __FUNCTION__, __LINE__);
 		if(!uart_is_busy())
 		{
 			if(theConfig.md && master_vdp)
@@ -96,6 +118,7 @@ bool standby_time(ITUWidget* widget, char* param)
 	}
 	if(montion_enable)
 	{
+		//printf("%s: line #%d\r\n", __FUNCTION__, __LINE__);
 		if(theConfig.mdtime)
 		{
 			if(!time_enable_montion())
