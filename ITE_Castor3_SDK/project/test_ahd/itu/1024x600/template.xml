@@ -961,7 +961,7 @@
         <Property name="FontIndex">0</Property>
         <Property name="BoldSize">1</Property>
         <Property name="Action01">Function,Press,home_go,4</Property>
-        <Property name="Action02">None,Press,,</Property>
+        <Property name="Action02">Goto,Press,PAGE_MEDIA,</Property>
         <Property name="Action03">None,Press,,</Property>
         <Property name="Action04">None,Press,,</Property>
         <Property name="Action05">None,Press,,</Property>
@@ -1183,7 +1183,7 @@
         <Property name="FontIndex">0</Property>
         <Property name="BoldSize">1</Property>
         <Property name="Action01">Function,Press,home_go,1</Property>
-        <Property name="Action02">None,Press,,</Property>
+        <Property name="Action02">Goto,Press,PAGE_MONITOR,</Property>
         <Property name="Action03">None,Press,,</Property>
         <Property name="Action04">None,Press,,</Property>
         <Property name="Action05">None,Press,,</Property>
@@ -1257,7 +1257,7 @@
         <Property name="FontIndex">0</Property>
         <Property name="BoldSize">1</Property>
         <Property name="Action01">Function,Press,home_go,6</Property>
-        <Property name="Action02">None,Press,,</Property>
+        <Property name="Action02">Goto,Press,PAGE_SETING,</Property>
         <Property name="Action03">None,Press,,</Property>
         <Property name="Action04">None,Press,,</Property>
         <Property name="Action05">None,Press,,</Property>
