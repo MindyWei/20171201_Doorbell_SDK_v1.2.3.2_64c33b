@@ -89,7 +89,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 	user_capture.c
 	user_pr2000.c
 	user_call.c
-	user_uart.c
+	#user_uart.c
 	user_rtc.c
 	user_image_memo.c
 	user_video_memo.c

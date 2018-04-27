@@ -111,8 +111,6 @@ bool inter_call(ITUWidget* widget, char* param)
 	if(INTERCOM_CHBOX_ID3->checked)
 		interphone_number |= 0x1 << id_call[theConfig.id][2];
 	
-	if(interphone_number)
-		uart_set_mode(UART_INTER_CALL);
 	return true;
 }
 

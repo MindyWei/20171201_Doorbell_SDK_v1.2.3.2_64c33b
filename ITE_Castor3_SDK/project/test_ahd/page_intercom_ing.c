@@ -72,7 +72,7 @@ void inter_time_update(int val)
 
 void inter_id_init_s()
 {
-	int id = uart_get_inter_id();
+	int id = 1;//uart_get_inter_id();
 	ITUText* INTER_ING_TEXT_ID[4];
 	
 	INTER_ING_TEXT_ID[0] = INTER_ING_TEXT_ID1;
@@ -250,7 +250,7 @@ bool intercom_ing_init(ITUWidget* widget, char* param)
 	 
 	ituWidgetSetVisible(INTER_ING_BG_TALK_ING,false);
 
-	if(uart_get_inter_id())
+	if(0)//uart_get_inter_id())
 	{
 		printf("enter by call......................................\n");
 		ituWidgetSetVisible(INTER_ING_BTN_CALL,true);
@@ -296,18 +296,13 @@ bool intercom_ing_init(ITUWidget* widget, char* param)
 
 bool intercom_quit(ITUWidget* widget, char* param)
 {
-	uart_set_mode(UART_INTER_QUIT);
 	return true;
 }
 
 bool intercom_hang(ITUWidget* widget, char* param)
 {
-	uart_set_mode(UART_INTER_OVER);
 	cur_inter_call = false;
 	cur_inter_ing = false; 
-	uart_clear_busy();
-	uart_clear_inter_id();
-	uart_clear_inter_link();
 	return true;
 }
 
@@ -357,7 +352,7 @@ bool intercom_ing_timer(ITUWidget* widget, char* param)
 bool intercom_ing_leave(ITUWidget* widget, char* param)
 {
 	led_blink_1s_end();
-	uart_clear_inter_id();
+	//uart_clear_inter_id();
 	AudioStop();
 	interphone_mast = false;
 	interphone_2 =  false;
@@ -533,6 +528,7 @@ void intercom_get_answer()
 
 void inter_id_change_color()
 {
+#if 0
 	int id;
 	id = uart_get_inter_id();
 	if(id == 1)
@@ -543,13 +539,13 @@ void inter_id_change_color()
 		ituWidgetSetColor(INTER_ING_TEXT_ID3, 255, 94, 255, 215);
 	else if(id == 4)
 		ituWidgetSetColor(INTER_ING_TEXT_ID4, 255, 94, 255, 215);
+#endif
 }
 
 bool intercom_answer(ITUWidget* widget, char* param)
 {
 	led_blink_1s_end();
 	AudioStop();
-	uart_set_mode(UART_INTER_ANSWER);
 	inter_id_change_color();
 	ituWidgetSetVisible(INTER_ING_BG_TALK_ING,true);
 	ituWidgetSetVisible(INTER_ING_TEXT_CALL_IN, false);

@@ -452,7 +452,7 @@ bool monitor_init(ITUWidget* widget, char* param)
 		MON_ICON_TALK_VOL_4 = ituSceneFindWidget(&theScene, "MON_ICON_TALK_VOL_4");
 		assert(MON_ICON_TALK_VOL_4);
 	}
-	//printf("enter page monitor........................\n");
+	printf("enter page monitor........................\n");
 	//printf("monitor_1------------------------->%d\n",SDL_GetTicks()-test_tick);
 	//ITU 初始化
 	user_itu_init();
@@ -461,19 +461,8 @@ bool monitor_init(ITUWidget* widget, char* param)
 	SceneEnterVideoState();		//切换帧率
 	//printf("monitor_------------------------->%d\n",SDL_GetTicks()-test_tick);
 
-	if(event_call > 0)				//CALL 机进入处理
-	{
-		printf("call----------------------->%d\n",event_call);
-		cur_page = page_monitor;
-		cur_signal = event_call;
-		event_call = 0;
-		call_signal(cur_signal);
-		play_call_ring_once = true;
-		if(theConfig.zidong != 2)
-			AudioPauseKeySound();		//关闭按键音
-		monitor_time = 30;	
-	}
-	else	if(cur_page == page_monitor)						//按键进入处理
+#if 1	//my.wei add for test ahd
+	if(1)
 	{
 		printf("page_monitor.....................................................\n");
 		if(master_vdp)
@@ -486,7 +475,34 @@ bool monitor_init(ITUWidget* widget, char* param)
 		monitor_signal(cur_signal);
 		monitor_time = 30;	
 	}
-	else	if(cur_page == page_cctv)
+
+#else
+	if(event_call > 0)				//CALL 机进入处理
+	{
+		printf("call----------------------->%d\n",event_call);
+		cur_page = page_monitor;
+		cur_signal = event_call;
+		event_call = 0;
+		call_signal(cur_signal);
+		play_call_ring_once = true;
+		if(theConfig.zidong != 2)
+			AudioPauseKeySound();		//关闭按键音
+		monitor_time = 30;	
+	}
+	else if(cur_page == page_monitor)						//按键进入处理
+	{
+		printf("page_monitor.....................................................\n");
+		if(master_vdp)
+		{
+			if(signal_insert[DOOR_1])
+				cur_signal = signal_door_1;
+			else if(signal_insert[DOOR_2])
+				cur_signal = signal_door_2;
+		}
+		monitor_signal(cur_signal);
+		monitor_time = 30;	
+	}
+	else if(cur_page == page_cctv)
 	{
 		printf("page_cctv.....................................................\n");
 		if(master_vdp)
@@ -499,16 +515,18 @@ bool monitor_init(ITUWidget* widget, char* param)
 		cctv_signal(cur_signal);
 		monitor_time = 60;	
 	}
+#endif	
 	//led_blink_1s_start();
 #if TEST_CAM
-		ituWidgetHide(MON_BG_HIDE,0,0);
-		ituWidgetHide(MON_HEAD,0,0);
+	ituWidgetHide(MON_BG_HIDE,0,0);
+	ituWidgetHide(MON_HEAD,0,0);
 #endif
 	ScreenOn();
 	monitor_start_time = SDL_GetTicks();
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(MON_TEXT_REC_TIME,true);
-	ithGpioClear(AUDIO_IN);	
+	ithGpioClear(AUDIO_IN);
+	printf("cur_page, cur_signal= (%d, %d)........\r\n", cur_page, cur_signal);
 	signal_itu_init(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
@@ -574,7 +592,6 @@ bool monitor_timer(ITUWidget* widget, char* param)
 			monitor_time = 30;	
 			monitor_start_time = SDL_GetTicks();
 			monitor_time_update(monitor_time);
-			uart_set_mode(UART_SIGNAL_BUSY_30);
 		}
 		/*
 		if(cur_talk_ing)					//通话时 其他户外机call
@@ -657,6 +674,7 @@ bool monitor_timer(ITUWidget* widget, char* param)
 			ituWidgetSetVisible(MON_ICON_STATE_MUTE,false);
 	}
 
+#if 0 //my.wei mask for test ahd
 	if(cur_page == page_motion)			//移动侦测状态下  时间检测
 	{
 		if(theConfig.mdtime)
@@ -678,6 +696,7 @@ bool monitor_timer(ITUWidget* widget, char* param)
 			}
 		}
 	}
+#endif
 	return true;
 }
 
@@ -818,7 +837,6 @@ bool monitor_talk(ITUWidget* widget, char* param)
 		AudioStop();							//停止铃声
 	}
 	busy_30_reinit();
-	uart_set_mode(UART_CALL_ANSWER);
 	if(auto_rec_once)
 	{
 		if(theConfig.zidong == 1 && (storageCurrType == STORAGE_SD))
@@ -870,7 +888,6 @@ void _monitor_sw_cam()
 	PR2000_set_start();
 	usleep(50*1000);
 	gState = SEND_BEGIN;
-
 }
 
 bool monitor_sw_cam(ITUWidget* widget, char* param)
@@ -914,25 +931,6 @@ bool monitor_sw_cam(ITUWidget* widget, char* param)
 			cctv_signal(cur_signal);
 		}
 		_monitor_sw_cam();
-	}
-	else
-	{
-		if(cur_signal == signal_door_1)
-		{
-			uart_set_mode(UART_SWITCH_2);
-		}
-		else if(cur_signal == signal_door_2)
-		{
-			uart_set_mode(UART_SWITCH_1);
-		}
-		else if(cur_signal == signal_cctv_1)
-		{
-			uart_set_mode(UART_SWITCH_4);
-		}
-		else if(cur_signal == signal_cctv_2)
-		{
-			uart_set_mode(UART_SWITCH_3);
-		}
 	}
 	return true;
 }

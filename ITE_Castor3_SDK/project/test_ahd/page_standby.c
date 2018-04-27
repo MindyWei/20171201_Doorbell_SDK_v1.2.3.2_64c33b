@@ -102,7 +102,7 @@ bool standby_time(ITUWidget* widget, char* param)
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
 		//printf("%s: line #%d\r\n", __FUNCTION__, __LINE__);
-		if(!uart_is_busy())
+		if(1)//!uart_is_busy())
 		{
 			if(theConfig.md && master_vdp)
 			{

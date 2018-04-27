@@ -57,7 +57,7 @@ retry_backup:
 	user_pr2000_init();
 	user_signal_control_init();
 	user_call_init();
-	user_uart_init();
+	//user_uart_init();
 	//_user_rtc_init();
 	user_cam_detect();
 	user_time_init();

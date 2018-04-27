@@ -357,7 +357,6 @@ void cur_cam_off()						//关闭当前摄像头电源
 {
 	ithGpioSet(cam_gpio[DOOR_1][ON]);
 	ithGpioSet(cam_gpio[DOOR_2][ON]);
-	uart_set_mode(UART_RELEASE);
 }
 
 void cam_power_off()						//关闭当前摄像头电源
@@ -371,18 +370,8 @@ void cam_power_off()						//关闭当前摄像头电源
 		//	door_talk_out = false;
 			cur_talk_ing = 0;
 			offer_signal_channel = 0;
-			uart_clear_busy();
 			ithGpioSet(cam_gpio[DOOR_1][ON]);
 			ithGpioSet(cam_gpio[DOOR_2][ON]);
-			uart_set_mode(UART_CALL_OVER);
-		}
-		else if(uart_call_no_one())
-		{
-			offer_signal_channel = 0;
-			ithGpioSet(cam_gpio[DOOR_1][ON]);
-			ithGpioSet(cam_gpio[DOOR_2][ON]);
-			uart_set_mode(UART_CALL_OVER);
-			uart_clear_busy();
 		}
 	}
 	else if(cur_signal_call)
@@ -390,17 +379,12 @@ void cam_power_off()						//关闭当前摄像头电源
 		if(cur_talk_ing)
 		{
 			cur_talk_ing = 0;
-			uart_clear_busy();
-			uart_set_mode(UART_CALL_OVER);
 		}
-		else
-			uart_set_mode(UART_CALL_QUIT);
 	}
 	else
 	{
 		ithGpioSet(cam_gpio[DOOR_1][ON]);
 		ithGpioSet(cam_gpio[DOOR_2][ON]);
-		uart_set_mode(UART_RELEASE);
 	}
 }
 
@@ -408,7 +392,6 @@ void offer_cam_off()						//关闭当前摄像头电源
 {
 	ithGpioSet(cam_gpio[DOOR_1][ON]);
 	ithGpioSet(cam_gpio[DOOR_2][ON]);
-	uart_clear_busy();
 }
 
 void master_cam_off()
@@ -469,34 +452,20 @@ void cam_switch( uint8_t val)				//摄像头电源切换
 		{
 			ithGpioClear(cam_gpio[DOOR_1][ON]);
 		}
-		else
-		{
-			if(!cur_signal_call)
-				uart_set_mode(UART_DOOR_1);
-		}
 	}
 	else if(2 == val)
 	{
 		ituWidgetSetVisible(MON_BTN_CAM_SW_2,true);
 		if(signal_insert[DOOR_2])
 			ithGpioClear(cam_gpio[DOOR_2][ON]);
-		else
-		{
-			if(!cur_signal_call)
-				uart_set_mode(UART_DOOR_2);
-		}
 	}
 	else if(3 == val)
 	{
 		ituWidgetSetVisible(MON_BTN_CAM_SW_3,true);
-		if(!(signal_insert[CCTV_1]))
-			uart_set_mode(UART_CCTV_1);
 	}
 	else if(4 == val)
 	{
 		ituWidgetSetVisible(MON_BTN_CAM_SW_4,true);
-		if(!(signal_insert[CCTV_2]))
-			uart_set_mode(UART_CCTV_2);
 	}
 }
 #endif
@@ -586,18 +555,14 @@ void call_quit()
 	printf("call_quit...........................................\n");
 	if(master_vdp)
 	{
-		if(uart_call_no_one()||!get_monitor_time())
+		if(!get_monitor_time())
 		{
 			door_call_num = 0;
 			ithGpioSet(cam_gpio[DOOR_1][ON]);
 			ithGpioSet(cam_gpio[DOOR_2][ON]);
-			uart_set_mode(UART_CALL_OVER);
-			uart_clear_busy();
 			//door_call_reinit();
 		}
 	}
-	else
-		uart_set_mode(UART_CALL_QUIT);
 	led_blink_1s_end();
 }
 
@@ -612,8 +577,6 @@ void c_talk_quit()
 	}
 	cur_talk_ing = 0;
 	door_call_num = 0;
-	uart_set_mode(UART_CALL_OVER);
-	uart_clear_busy();
 	user_amp_off();
 	ithGpioClear(CONV_CONT);
 	ithGpioSet(MIC_NUTE);
@@ -630,8 +593,6 @@ void mon_quit()
 	}
 	cur_talk_ing = 0;
 	//monitor_reinit();
-	uart_clear_busy();
-	uart_set_mode(UART_RELEASE);
 }
 
 
@@ -657,8 +618,6 @@ void m_talk_quit()
 	}
 	cur_talk_ing = 0;
 	//monitor_reinit();
-	uart_clear_busy();
-	uart_set_mode(UART_RELEASE);
 	user_amp_off();
 	ithGpioClear(CONV_CONT);
 	ithGpioSet(MIC_NUTE);
@@ -675,13 +634,6 @@ void monitor_signal(int val)				//CALL 机显示图像切换
 	}
 	else
 		call_slave_v6502(val);
-	/*
-	if(val == 1)
-		uart_set_mode(UART_DOOR_1);
-	else if(val == 2)
-		uart_set_mode(UART_DOOR_2);
-	uart_set_busy();
-	*/
 }
 
 void cctv_signal(int val)				//CALL 机显示图像切换
@@ -690,13 +642,6 @@ void cctv_signal(int val)				//CALL 机显示图像切换
 		call_master_v6502(val);
 	else
 		call_slave_v6502(val);
-	/*
-	if(val == 3)
-		uart_set_mode(UART_CCTV_1);
-	else if(val == 4)
-		uart_set_mode(UART_CCTV_2);
-	uart_set_busy();
-	*/
 }
 
 void master_offer_v6502(uint8_t offset)			
@@ -923,10 +868,6 @@ static void event_call_process(void)		//call 机事件处理
 	event_call_s = 0;
 	if(other_talk_ing || format_ing ||delete_ing)
 	{
-		if(event_call == 0x1)
-			uart_set_mode(UART_CALL_1);
-		else if(event_call == 0x2)
-			uart_set_mode(UART_CALL_2);
 		master_offer_ctalk_signal(event_call);
 		if(format_ing ||delete_ing)
 			door_call_num = event_call;
@@ -935,10 +876,6 @@ static void event_call_process(void)		//call 机事件处理
 	else if(door_call_num == event_call)
 	{
 		printf("the same door call...............................\n");
-		if(event_call == 0x1)
-			uart_set_mode(UART_CALL_1);
-		else if(event_call == 0x2)
-			uart_set_mode(UART_CALL_2);
 		event_call = 0;
 		if(!call_ring_playing)
 			set_play_call_ring_once();
@@ -971,12 +908,10 @@ static void event_call_process(void)		//call 机事件处理
 		if(event_call == 0x1)
 		{
 			signal_insert[DOOR_1] = true;
-			uart_set_mode(UART_CALL_1);
 		}
 		else if(event_call == 0x2)
 		{
 			signal_insert[DOOR_2] = true;
-			uart_set_mode(UART_CALL_2);
 		}
 		if(theConfig.zidong != 2)
 		{
@@ -1126,9 +1061,6 @@ static void event_uart_process(void)		//uart 事件处理
 			}
 			door_call_num  = event_call;
 			//door_is_call = true;
-			uart_clear_inter_link();
-			uart_set_busy();
-			uart_set_mode(UART_CALL_JOIN);
 			if(theConfig.zidong != 2)
 			{
 				set_auto_rec_once();
@@ -1160,9 +1092,6 @@ static void event_uart_process(void)		//uart 事件处理
 		{
 			door_call_num = 0;
 			master_cam_off();
-			uart_set_mode(UART_CALL_OVER);
-			//door_call_reinit();
-			uart_clear_busy();
 		}
 	}
 	else if(event_uart == CMD_CALL_OVER)
@@ -1233,10 +1162,6 @@ static void event_uart_process(void)		//uart 事件处理
 	{	
 		cur_inter_call = false;
 		cur_inter_ing = false; 
-		uart_clear_inter_link();
-		uart_clear_inter_id();
-		uart_clear_busy();
-		uart_set_mode(UART_INTER_OVER);
 		ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
 		assert(PAGE_HOME);
 		ituLayerGoto(PAGE_HOME);
@@ -1422,13 +1347,7 @@ static void montion_end_event_process()
 			led_blink_1s_start();
 		}
 		set_back_home_flag();
-		uart_set_busy();
-		uart_clear_id_link();
 		
-		if(event_call == 0x1)
-			uart_set_mode(UART_CALL_1);
-		else if(event_call == 0x2)
-			uart_set_mode(UART_CALL_2);
 		if(cur_page  != page_monitor)
 		{ 
 			if(cur_page == page_motion || cur_page == page_cctv)
@@ -1447,8 +1366,6 @@ static void montion_end_event_process()
 	{
 			standby_state= false;
 			cur_inter_call = true;
-			uart_set_busy();
-			uart_set_mode(UART_INTER_JOIN);
 			if(cur_page  != page_inter_ing)
 			{
 				cur_page  = page_inter_ing;
@@ -1959,7 +1876,6 @@ void user_video_time_check()
 
 void user_vdp_power_on()
 {
-	uart_set_mode(UART_SIGNAL_NOT_BUSY);	
 }
 
 bool sd_card_check = false;

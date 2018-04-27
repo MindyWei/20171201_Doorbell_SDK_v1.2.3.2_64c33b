@@ -136,7 +136,7 @@ bool home_init(ITUWidget* widget, char* param)
 		HOME_DCLOCK = ituSceneFindWidget(&theScene, "HOME_DCLOCK");
 		assert(HOME_DCLOCK);
 	}
-	home_busy_icon = uart_is_busy();
+	//home_busy_icon = uart_is_busy();
 	if(home_busy_icon)
 	{
 		ituWidgetSetVisible(HOME_ICON_BUSY_1, true);
@@ -180,7 +180,7 @@ bool home_timer(ITUWidget* widget, char* param)
 		update_home_time();
 		return true;
 	}
-	if(home_busy_icon != uart_is_busy())
+	if(0)//home_busy_icon != uart_is_busy())
 	{
 		if(home_busy_icon)
 		{
@@ -243,73 +243,6 @@ bool home_change_mute(ITUWidget* widget, char* param)
 
 bool home_go(ITUWidget* widget, char* param)
 {
-	
-	switch(param[0])
-	{
-	case '1':
-		usleep(theConfig.id*100*1000);
-		if(uart_is_busy())
-			return true;
-		if(master_vdp || theConfig.id == 0)
-		{
-			if(signal_insert[DOOR_1] || signal_insert[DOOR_2])
-			{
-				//uart_set_mode(UART_SIGNAL_BUSY);
-				uart_set_mode(UART_SIGNAL_BUSY_30);
-				cur_page  = page_monitor;
-				event_home_go = page_monitor;
-				cur_mon_state = MON_STATE;
-				//monitor_start();
-			}
-		}
-		else
-		{
-			uart_set_mode(UART_MONITOR);
-		}
-		break;
-	case '2':
-		usleep(theConfig.id*100*1000);
-		if(uart_is_busy())
-			return true;
-		if(master_vdp || theConfig.id == 0)
-		{
-			if(signal_insert[CCTV_1] || signal_insert[CCTV_2])
-			{
-				//uart_set_mode(UART_SIGNAL_BUSY);
-				uart_set_mode(UART_SIGNAL_BUSY_60);
-				cur_page  = page_cctv;
-				event_home_go = page_monitor;
-				cur_mon_state = CCTV_STATE;
-				//monitor_start();
-			}
-		}
-		else
-		{
-			uart_set_mode(UART_CCTV);
-		}
-		break;
-	case '3':
-		if(uart_is_busy())
-			return true;
-		cur_page  = page_inter;
-		event_home_go = page_inter;
-		break;
-	case '4':
-		if(sd_card_check)
-			return true;
-		cur_page  = page_media;
-		event_home_go = page_media;
-		break;
-	case '5':
-		cur_page  = page_date;
-		event_home_go = page_date;
-		break;
-	case '6':
-		printf("[my.wei1] goto page setting\r\n");
-		cur_page  = page_setting;
-		event_home_go = page_setting;
-		break;
-	}
-	return true;
+	return true; //my.wei add for test ahd, need return true for next action.
 }
 

@@ -267,7 +267,6 @@ void call_delay_start(long time)
 void call_delay_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_delay_end<--------------\n");
-	uart_set_mode(UART_CALL_JOIN_D);
 }
 
 void power_delay_start(long time)
@@ -283,7 +282,6 @@ void power_delay_start(long time)
 void power_delay_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_delay_end<--------------\n");
-	uart_set_mode(UART_POWER_ON_D);
 }
 
 void power_ack_time_start()
@@ -299,7 +297,6 @@ void power_ack_time_start()
 void power_ack_time_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_delay_end<--------------\n");
-	uart_set_mode(UART_SIGNAL_NOT_BUSY);
 }
 void power_ack_time_reinit()
 {
@@ -322,7 +319,6 @@ void inter_delay_start(long time)
 void inter_delay_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_delay_end<--------------\n");
-	uart_set_mode(UART_INTER_JOIN_D);
 }
 
 void inter_delay_reinit()
@@ -346,8 +342,6 @@ void inter_call_start()
 void inter_call_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_call_end<--------------\n");
-	uart_clear_inter_id();
-	uart_clear_busy();
 }
 
 void inter_call_reinit()
@@ -372,8 +366,6 @@ void inter_talk_start()
 void inter_talk_end(timer_t timerid, int arg)
 {
 	printf("---------->inter_call_end<--------------\n");
-	uart_clear_inter_id();
-	uart_clear_busy();
 }
 
 void inter_talk_reinit()
@@ -396,7 +388,6 @@ void busy_30_start()
 void busy_30_end(timer_t timerid, int arg)
 {
 	printf("---------->busy_30_end<--------------\n");
-	uart_clear_busy();
 	busy_over_3s_start();
 }
 void busy_30_reinit()
@@ -422,7 +413,6 @@ void busy_60_end(timer_t timerid, int arg)
 	printf("---------->busy_60_end<--------------\n");
 	if(!theConfig.lcdout)
 		md_start_delay_start();
-	uart_clear_busy();
 }
 void busy_60_reinit()
 {

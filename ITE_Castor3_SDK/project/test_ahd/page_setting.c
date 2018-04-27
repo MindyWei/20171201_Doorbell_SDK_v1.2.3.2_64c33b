@@ -1528,8 +1528,6 @@ bool set_leave(ITUWidget* widget, char* param)
 			ithGpioSet(cam_gpio[DOOR_1][ON]);
 			ithGpioSet(cam_gpio[DOOR_2][ON]);
 		}
-		uart_clear_busy();
-		uart_set_mode(UART_RELEASE);
 		cur_signal = 0;					//当前信号标志初始化
 		SceneLeaveVideoState();			//切换帧率
 		usleep(100*1000);
@@ -1855,17 +1853,12 @@ void _set_enter_display()
 bool set_enter_display(ITUWidget* widget, char* param)
 {
 	usleep(theConfig.id*100*1000);
-	if(uart_is_busy())
-	{
-		ituWidgetEnable(SET_BG);
-		return true;
-	}
+
 	if(master_vdp || theConfig.id == 0)
 	{
 		if(signal_insert[DOOR_1] || signal_insert[DOOR_2])
 		{
 			set_display_signal = true;
-			uart_set_mode(UART_SIGNAL_BUSY);
 			if(signal_insert[DOOR_1])
 				cur_signal = signal_door_1;
 			else
@@ -1876,7 +1869,6 @@ bool set_enter_display(ITUWidget* widget, char* param)
 	else
 	{
 		set_display_signal = true;
-		uart_set_mode(UART_MONITOR);
 	}
 	return true;
 }
