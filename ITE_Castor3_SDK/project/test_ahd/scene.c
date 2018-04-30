@@ -12,7 +12,7 @@
 
 #define FPS_ENABLE
 #define GESTURE_THRESHOLD 40
-//#define DOUBLE_KEY_ENABLE
+#define DOUBLE_KEY_ENABLE
 
 extern ITUActionFunction actionFunctions[];
 
@@ -367,12 +367,14 @@ int SceneRun(void)
 				ScreenSaverRefresh();
 			{
 				uint32_t t = SDL_GetTicks();
+#ifdef DOUBLE_KEY_ENABLE
 				if (t - dblclk <= 300)
 				{
 					result = ituSceneUpdate(&theScene, ITU_EVENT_MOUSEDOUBLECLICK, ev.button.button, ev.button.x, ev.button.y);
 					dblclk = 0;
 				}
 				else
+#endif // DOUBLE_KEY_ENABLE
 				{
 					printf("mouse: down %d, %d\n", ev.button.x, ev.button.y);
 					result = ituSceneUpdate(&theScene, ITU_EVENT_MOUSEDOWN, ev.button.button, ev.button.x, ev.button.y);
