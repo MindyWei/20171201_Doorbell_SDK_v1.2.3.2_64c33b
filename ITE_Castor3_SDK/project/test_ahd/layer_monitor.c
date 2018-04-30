@@ -81,6 +81,8 @@ static uint32_t monitor_start_time;
 
 static uint8_t monitor_sd_icon = 0;
 
+static int x, y, width, height = 0;
+
 void set_monitor_sd_icon(int val)
 {
 	monitor_sd_icon = val;
@@ -461,6 +463,14 @@ bool monitor_init(ITUWidget* widget, char* param)
 	SceneEnterVideoState();		//ÇÐ»»Ö¡ÂÊ
 	//printf("monitor_------------------------->%d\n",SDL_GetTicks()-test_tick);
 
+	ituWidgetGetGlobalPosition(MON_ICON_WIN, &x, &y);
+	width = ituWidgetGetWidth(MON_ICON_WIN);
+	height = ituWidgetGetHeight(MON_ICON_WIN);
+#ifdef CFG_VIDEO_ENABLE        
+	itv_set_video_window(x, y, width, height);
+#endif        
+
+
 #if 1	//my.wei add for test ahd
 	if(1)
 	{
@@ -521,7 +531,8 @@ bool monitor_init(ITUWidget* widget, char* param)
 	ituWidgetHide(MON_BG_HIDE,0,0);
 	ituWidgetHide(MON_HEAD,0,0);
 #endif
-	ScreenOn();
+	if(ScreenIsOff())
+		ScreenOn();
 	monitor_start_time = SDL_GetTicks();
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(MON_TEXT_REC_TIME,true);
