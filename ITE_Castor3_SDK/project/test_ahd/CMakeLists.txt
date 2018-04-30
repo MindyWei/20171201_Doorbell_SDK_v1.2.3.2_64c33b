@@ -69,17 +69,20 @@ add_executable(${CMAKE_PROJECT_NAME}
 	storage.c
     )
 	
-add_executable(${CMAKE_PROJECT_NAME}
-    PAGE_HOME.c
-    PAGE_MONITOR.c
-	page_media.c
-	page_intercom.c
-	page_intercom_ing.c
-	page_setting.c
-	page_date.c
-	page_standby.c
-	page_logo.c
-)
+# layers
+include(layer.cmake)
+	
+#add_executable(${CMAKE_PROJECT_NAME}
+#    PAGE_HOME.c
+#    PAGE_MONITOR.c
+#	page_media.c
+#	page_intercom.c
+#	page_intercom_ing.c
+#	page_setting.c
+#	page_date.c
+#	page_standby.c
+#	page_logo.c
+#)
 	
 add_executable(${CMAKE_PROJECT_NAME}
 	#user_mjpeg.c

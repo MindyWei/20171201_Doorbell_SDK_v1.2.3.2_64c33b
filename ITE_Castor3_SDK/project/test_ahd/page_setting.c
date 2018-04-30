@@ -1494,9 +1494,9 @@ bool set_timer(ITUWidget* widget, char* param)
 		}
 		if(wash_time == 0)
 		{
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 

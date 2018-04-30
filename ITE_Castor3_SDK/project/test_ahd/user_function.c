@@ -923,9 +923,9 @@ static void event_call_process(void)		//call 机事件处理
 			if(cur_page == page_cctv)
 				pre_page = 1;
 			cur_page  = page_monitor;
-			ITULayer* PAGE_MONITOR = ituSceneFindWidget(&theScene, "PAGE_MONITOR");
-			assert(PAGE_MONITOR);
-			ituLayerGoto(PAGE_MONITOR);
+			ITULayer* monitorLayer = ituSceneFindWidget(&theScene, "monitorLayer");
+			assert(monitorLayer);
+			ituLayerGoto(monitorLayer);
 		}
 	}
 	else
@@ -1019,9 +1019,9 @@ static void event_uart_process(void)		//uart 事件处理
 		other_talk_ing = false;
 		if(cur_page  == page_monitor || cur_page  == page_cctv)		//同时进入监控/CCTV  一个退出全退出
 		{
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 	else if((event_uart == CMD_CALL_1) ||(event_uart == CMD_CALL_2) )
@@ -1071,9 +1071,9 @@ static void event_uart_process(void)		//uart 事件处理
 				if(cur_page == page_cctv)
 					pre_page = 1;
 				cur_page  = page_monitor;
-				ITULayer* PAGE_MONITOR = ituSceneFindWidget(&theScene, "PAGE_MONITOR");
-				assert(PAGE_MONITOR);
-				ituLayerGoto(PAGE_MONITOR);
+				ITULayer* monitorLayer = ituSceneFindWidget(&theScene, "monitorLayer");
+				assert(monitorLayer);
+				ituLayerGoto(monitorLayer);
 			}
 			//cur_signal_call = true;
 		}
@@ -1114,9 +1114,9 @@ static void event_uart_process(void)		//uart 事件处理
 		busy_60_start();
 		if(cur_page  == page_monitor)
 		{
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 	else if(event_uart == CMD_SIGNAL_BUSY)
@@ -1162,9 +1162,9 @@ static void event_uart_process(void)		//uart 事件处理
 	{	
 		cur_inter_call = false;
 		cur_inter_ing = false; 
-		ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-		assert(PAGE_HOME);
-		ituLayerGoto(PAGE_HOME);
+		ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+		assert(mainMenuLayer);
+		ituLayerGoto(mainMenuLayer);
 	}
 	else if(event_uart == CMD_INTER_OVER)
 	{	
@@ -1176,9 +1176,9 @@ static void event_uart_process(void)		//uart 事件处理
 		inter_call_reinit();
 		if(cur_page  == page_inter_ing)
 		{
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 	else if(event_uart == CMD_INTER_ANSWER)
@@ -1222,9 +1222,9 @@ static void event_uart_process(void)		//uart 事件处理
 		assert(SET_MAIN_5_DIS_S);
 		if(cur_page  == page_monitor|| cur_page  == page_cctv|| cur_page  == page_inter_ing || ituWidgetIsVisible(SET_MAIN_5_DIS_S))		//同时进入监控/CCTV  一个退出全退出
 		{
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 		
@@ -1294,9 +1294,9 @@ static void event_home_go_process(void)		//主界面切换事件处理
 {
 	if(event_home_go == page_monitor || event_home_go == page_cctv || event_home_go == page_motion )
 	{
-		ITULayer* PAGE_MONITOR = ituSceneFindWidget(&theScene, "PAGE_MONITOR");
-		assert(PAGE_MONITOR);
-		ituLayerGoto(PAGE_MONITOR);
+		ITULayer* monitorLayer = ituSceneFindWidget(&theScene, "monitorLayer");
+		assert(monitorLayer);
+		ituLayerGoto(monitorLayer);
 	}
 	else if(event_home_go == page_inter)
 	{
@@ -1328,9 +1328,9 @@ static void event_home_go_process(void)		//主界面切换事件处理
 
 static void event_go_home_process(void)		//主界面切换事件处理
 {
-	ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-	assert(PAGE_HOME);
-	ituLayerGoto(PAGE_HOME);
+	ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+	assert(mainMenuLayer);
+	ituLayerGoto(mainMenuLayer);
 	event_go_home = false;
 }
 
@@ -1353,9 +1353,9 @@ static void montion_end_event_process()
 			if(cur_page == page_motion || cur_page == page_cctv)
 				pre_page = 1;
 			cur_page  = page_monitor;
-			ITULayer* PAGE_MONITOR = ituSceneFindWidget(&theScene, "PAGE_MONITOR");
-			assert(PAGE_MONITOR);
-			ituLayerGoto(PAGE_MONITOR);
+			ITULayer* monitorLayer = ituSceneFindWidget(&theScene, "monitorLayer");
+			assert(monitorLayer);
+			ituLayerGoto(monitorLayer);
 		}
 	}
 	else if(montion_end_event == MD_EVENT_OFFER)
@@ -1732,7 +1732,7 @@ void _user_auto_init()
 		usleep(20*1000);
 		if(auto_rec_start)
 		{
-			if(theConfig.zidong == 1 && (storageCurrType == STORAGE_SD))
+			if(theConfig.zidong == 1 && (StorageGetCurrType() == STORAGE_SD))
 			{
 				auto_snap_filename = true;
 				set_mon_rec_ing();

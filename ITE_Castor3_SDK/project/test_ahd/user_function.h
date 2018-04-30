@@ -82,8 +82,8 @@
 
 #else
 
-#define DOOR_1_ON			0//98		//户外机1 供电GPIO
-#define DOOR_2_ON			0//99		//户外机2 供电GPIO
+#define DOOR_1_ON			98		//户外机1 供电GPIO
+#define DOOR_2_ON			99		//户外机2 供电GPIO
 #define DOOR_3_ON			0		//户外机3 供电GPIO
 #define DOOR_4_ON			0		//户外机4 供电GPIO
 
@@ -217,23 +217,6 @@ typedef enum SEND_STATE_TAG
     SEND_TERMINATE,
     SEND_IDLE,
 } SEND_STATE;
-
-typedef enum
-{
-    STORAGE_NONE = -1,
-    STORAGE_USB,
-    STORAGE_SD,
-    STORAGE_MAX_COUNT
-} StorageType;
-
-typedef enum
-{
-    STORAGE_UNKNOWN,
-    STORAGE_SD_INSERTED,
-    STORAGE_SD_REMOVED,
-    STORAGE_USB_INSERTED,
-    STORAGE_USB_REMOVED
-} StorageAction;
 
 typedef enum 
 {
@@ -447,12 +430,8 @@ extern bool set_to_time_set_flag;
 extern bool auto_snap_filename;	
 extern bool sd_card_check;
 
-extern int uart_mode;
-extern StorageType storageCurrType;
+//extern StorageType storageCurrType;
 extern uint32_t test_tick;
-
-extern int uart_mode ;
-extern bool uart_busy ;
 
 extern bool auto_rec_start;
 

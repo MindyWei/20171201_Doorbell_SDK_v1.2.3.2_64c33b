@@ -47,6 +47,7 @@ void Config_Reinit(void)
 	theConfig.interphone = 0;
 	theConfig.door1 = 0;
 	theConfig.door2 = 0;
+	theConfig.audiolevel = 80;
 
 	//[display]
 	theConfig.screensaver_time = 1;
@@ -116,6 +117,7 @@ void ConfigInit(void)
 	theConfig.interphone = iniparser_getint(cfgIni, "volume:interphone", 0);
 	theConfig.door1 = iniparser_getint(cfgIni, "volume:door1", 0);
 	theConfig.door2 = iniparser_getint(cfgIni, "volume:door2", 0);
+	theConfig.audiolevel = iniparser_getint(cfgIni, "volume:audiolevel", 80); 
 
 	//[display]
     theConfig.screensaver_time = iniparser_getint(cfgIni, "display:screensaver_time", 2);
@@ -190,6 +192,7 @@ static void ConfigSavePublic(void)
 	user_iniparser_set_int(cfgIni, "volume:interphone", theConfig.interphone);
 	user_iniparser_set_int(cfgIni, "volume:door1", theConfig.door1);
 	user_iniparser_set_int(cfgIni, "volume:door2", theConfig.door2);
+	user_iniparser_set_int(cfgIni, "volume:audiolevel", theConfig.audiolevel);
 
 	//[display]
     user_iniparser_set_int(cfgIni, "display:screensaver_time", theConfig.screensaver_time);

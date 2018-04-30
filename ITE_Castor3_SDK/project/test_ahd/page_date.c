@@ -173,9 +173,9 @@ bool date_set_back(ITUWidget* widget, char* param)
 	}
 	else
 	{
-		ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-		assert(PAGE_HOME);
-		ituLayerGoto(PAGE_HOME);
+		ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+		assert(mainMenuLayer);
+		ituLayerGoto(mainMenuLayer);
 	}
         struct timeval tv;
         struct tm *tm, mytime;

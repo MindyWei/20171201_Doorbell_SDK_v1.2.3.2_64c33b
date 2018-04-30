@@ -329,9 +329,9 @@ bool intercom_ing_timer(ITUWidget* widget, char* param)
 					intercom_quit(widget,param);
 				else
 					intercom_hang(widget,param);
-				ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-				assert(PAGE_HOME);
-				ituLayerGoto(PAGE_HOME);
+				ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+				assert(mainMenuLayer);
+				ituLayerGoto(mainMenuLayer);
 			}
 			inter_time_update(interphone_time);
 		}

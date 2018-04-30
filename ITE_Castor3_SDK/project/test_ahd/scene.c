@@ -100,7 +100,7 @@ static bool ProcessCommand(void)
             break;
 
         case CMD_EVENT_HANDLER:
-            media_event_handler_ui();//my.wei mask for test ahd
+            //media_event_handler_ui();//my.wei mask for test ahd
             break;
 
         case CMD_CHANGE_LANG:

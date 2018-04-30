@@ -12,16 +12,37 @@
 #define BACKUP_PATH  "E:/backup"
 
 static ITPDriveStatus* storageTable[STORAGE_MAX_COUNT];
-StorageType storageCurrType;
+static StorageType storageCurrType;
 
+#ifdef	CFG_SPI_NAND_BOOT
+static int BOOT_STORAGE_TYPE =	ITP_DISK_NAND;
+#else
+static int BOOT_STORAGE_TYPE =	ITP_DISK_NOR;
+#endif
 void StorageInit(void)
 {
+    ITPDriveStatus* driveStatusTable;
     int i;
 
     for (i = 0; i < STORAGE_MAX_COUNT; i++)
         storageTable[i] = NULL;
 
     storageCurrType = STORAGE_NONE;
+    ioctl(ITP_DEVICE_DRIVE, ITP_IOCTL_GET_TABLE, &driveStatusTable);
+    for (i = 0; i < ITP_MAX_DRIVE; i++)
+    {
+        ITPDriveStatus* driveStatus = &driveStatusTable[i];
+        if (driveStatus->disk == BOOT_STORAGE_TYPE && strncmp(driveStatus->name, CFG_PUBLIC_DRIVE, 1) == 0)
+        {
+            if (driveStatus->avail)
+            {
+                printf("Internal storage: %s\n", driveStatus->name);
+                storageTable[STORAGE_INTERNAL] = driveStatus;
+                storageCurrType = STORAGE_INTERNAL;
+                break;
+            }
+        }
+    }
 }
 
 StorageAction StorageCheck(void)
@@ -44,7 +65,7 @@ StorageAction StorageCheck(void)
 
                 storageTable[STORAGE_SD] = driveStatus;
 
-                if (storageCurrType == STORAGE_NONE)
+                if (storageCurrType == STORAGE_NONE || storageCurrType == STORAGE_INTERNAL)
                     storageCurrType = STORAGE_SD;
 		if(opendir(IMAGEMEMO_PATH) == NULL)
 			mkdir(IMAGEMEMO_PATH, S_IRWXU);
@@ -73,7 +94,7 @@ StorageAction StorageCheck(void)
                     if (storageTable[STORAGE_USB])
                         storageCurrType = STORAGE_USB;
                     else
-                        storageCurrType = STORAGE_NONE;
+                            storageCurrType = STORAGE_INTERNAL;
                 }
 		if(cur_page == page_date || cur_page == page_monitor || cur_page == page_cctv)
 		{
@@ -92,7 +113,7 @@ StorageAction StorageCheck(void)
 
                 storageTable[STORAGE_USB] = driveStatus;
 
-                if (storageCurrType == STORAGE_NONE)
+                    if (storageCurrType == STORAGE_NONE || storageCurrType == STORAGE_INTERNAL)
                     storageCurrType = STORAGE_USB;
 
                 return STORAGE_USB_INSERTED;
@@ -108,7 +129,7 @@ StorageAction StorageCheck(void)
                     if (storageTable[STORAGE_SD])
                         storageCurrType = STORAGE_SD;
                     else
-                        storageCurrType = STORAGE_NONE;
+                            storageCurrType = STORAGE_INTERNAL;
                 }
                 return STORAGE_USB_REMOVED;
             }
@@ -137,7 +158,10 @@ char* StorageGetDrivePath(StorageType type)
     driveStatus = storageTable[type];
 
     if (driveStatus)
+	{
+		printf("driveStatus->name:%s\r\n", driveStatus->name);
         return driveStatus->name;
+	}
 
     return NULL;
 }

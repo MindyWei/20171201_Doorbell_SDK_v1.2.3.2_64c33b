@@ -438,51 +438,6 @@ void busy_over_3s_end(timer_t timerid, int arg)
 	busy_over_3s = false;
 }
 
-void video_first_start()
-{
-	struct itimerspec value;
-	printf("---------->video_first_start<--------------\n");
-	video_first = true;
-	value.it_value.tv_sec   = 0;
-	value.it_value.tv_nsec  = 1000*1000*1000;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(video_first_TimerId, 0, &value, NULL);
-}
-void video_first_end(timer_t timerid, int arg)
-{
-	printf("---------->video_first_end<--------------\n");
-	stop_video(NULL,NULL);//my.wei mask for test ahd
-	usleep(100*1000);
-	//2018.3.28 my.wei add for UI command queue
-#if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-	SceneWidgetSetVisible("VIDEO_BTN_PREV", true);
-	SceneWidgetSetVisible("VIDEO_BTN_NEXT", true);
-	SceneWidgetSetVisible("VIDEO_BTN_PLAY", true);
-	SceneWidgetSetVisible("MEDIA_BG_VIDEO_BLACK", false);
-	SceneWidgetSetEnable("VIDEO_BTN_BACK", true);
-#else	
-	ITUBackground*MEDIA_BG_VIDEO_BLACK = ituSceneFindWidget(&theScene, "MEDIA_BG_VIDEO_BLACK");
-	assert(MEDIA_BG_VIDEO_BLACK);
-	ITUButton*VIDEO_BTN_BACK = ituSceneFindWidget(&theScene, "VIDEO_BTN_BACK");
-	assert(VIDEO_BTN_BACK);
-	ITUButton*VIDEO_BTN_PREV = ituSceneFindWidget(&theScene, "VIDEO_BTN_PREV");
-	assert(VIDEO_BTN_PREV);
-	ITUButton*VIDEO_BTN_NEXT = ituSceneFindWidget(&theScene, "VIDEO_BTN_NEXT");
-	assert(VIDEO_BTN_NEXT);
-	ITUButton*VIDEO_BTN_PLAY = ituSceneFindWidget(&theScene, "VIDEO_BTN_PLAY");
-	assert(VIDEO_BTN_PLAY);
-	
-	ituWidgetSetVisible(VIDEO_BTN_PREV, true);
-	ituWidgetSetVisible(VIDEO_BTN_NEXT, true);
-	ituWidgetSetVisible(VIDEO_BTN_PLAY, true);
-	ituWidgetSetVisible(MEDIA_BG_VIDEO_BLACK, false);
-	ituWidgetEnable(VIDEO_BTN_BACK);
-#endif	
-	video_first = false;
-	//ituWidgetEnable(VIDEO_BTN_PREV);
-	//ituWidgetEnable(VIDEO_BTN_NEXT);
-}
-
 void key_sound_start()
 {
 	struct itimerspec value;
@@ -497,8 +452,8 @@ void key_sound_end(timer_t timerid, int arg)
 {
 	printf("---------->key_sound_end<--------------\n");
 	//my.wei mask for test ahd
-	if(!cur_talk_ing && !get_interphone_talk_start() && !user_get_videoPlayerIsPlaying() && !call_ring_playing)
-		user_amp_off();
+	//if(!cur_talk_ing && !get_interphone_talk_start() && !user_get_videoPlayerIsPlaying() && !call_ring_playing)
+	//	user_amp_off();
 }
 
 void key_sound_reinit()
@@ -538,7 +493,7 @@ void md_start_delay_start()
 	struct itimerspec value;
 	printf("---------->md_start_delay_start<--------------\n");
 	clear_md_delay_over();//my.wei mask for test ahd
-	value.it_value.tv_sec   = 3;
+	value.it_value.tv_sec   = 30;
 	value.it_value.tv_nsec  = 0;
 	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
 	timer_settime(md_start_delay_TimerId, 0, &value, NULL);
@@ -596,9 +551,6 @@ void user_timer_init()
 //busy_over_3s
     timer_create(CLOCK_REALTIME, NULL, &busy_over_3s_TimerId);
     timer_connect(busy_over_3s_TimerId, busy_over_3s_end, 0);
-//video_first
-    timer_create(CLOCK_REALTIME, NULL, &video_first_TimerId);
-    timer_connect(video_first_TimerId, video_first_end, 0);
 //key_sound
     timer_create(CLOCK_REALTIME, NULL, &key_sound_TimerId);
     timer_connect(key_sound_TimerId, key_sound_end, 0);

@@ -528,9 +528,9 @@ bool media_timer(ITUWidget* widget, char* param)
 	if (sd_state_change)
 	{
 		sd_state_change = false;
-		ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-		assert(PAGE_HOME);
-		ituLayerGoto(PAGE_HOME);
+		ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+		assert(mainMenuLayer);
+		ituLayerGoto(mainMenuLayer);
 	}
 
 	return true;
@@ -689,9 +689,9 @@ bool delete_photo(ITUWidget* widget, char* param)
 		{
 			ituWidgetSetVisible(PHOTO_L_BG,true);
 			ituWidgetSetVisible(PHOTO_BG,false);
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 	return true;
@@ -1071,9 +1071,9 @@ bool delete_video(ITUWidget* widget, char* param)
 			ituWidgetSetVisible(VIDEO_L_BG,true);
 			ituWidgetSetVisible(VIDEO_BG,false);
 			video_back_list(widget,param);
-			ITULayer* PAGE_HOME = ituSceneFindWidget(&theScene, "PAGE_HOME");
-			assert(PAGE_HOME);
-			ituLayerGoto(PAGE_HOME);
+			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
+			assert(mainMenuLayer);
+			ituLayerGoto(mainMenuLayer);
 		}
 	}
 	return true;

@@ -250,6 +250,14 @@ void AudioSetVolume(int level)
 	smtkAudioMgrSetVolume(level);
 }
 
+void AudioSetLevel(int level)
+{
+    if (level < 0 || level > 100)
+        return;
+
+    theConfig.audiolevel = level; 
+}
+
 int AudioGetVolume(void)
 {
 	return 0;//theConfig.audiolevel;

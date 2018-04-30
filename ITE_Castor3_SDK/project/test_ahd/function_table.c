@@ -1,22 +1,8 @@
 #include "ite/itu.h"
 
-extern bool home_init(ITUWidget* widget, char* param);
-extern bool home_timer(ITUWidget* widget, char* param);
-extern bool home_leave(ITUWidget* widget, char* param);
-extern bool home_go(ITUWidget* widget, char* param);
-extern bool home_change_mute(ITUWidget* widget, char* param);
-#if 1 //my.wei mask for test ahd
-extern bool standby_init(ITUWidget* widget, char* param);
-extern bool standby_time(ITUWidget* widget, char* param);
-extern bool standby_leave(ITUWidget* widget, char* param);
-extern bool date_init(ITUWidget* widget, char* param);
-extern bool date_timer(ITUWidget* widget, char* param);
-extern bool date_leave(ITUWidget* widget, char* param);
-extern bool date_set_change(ITUWidget* widget, char* param);
-extern bool date_set_back(ITUWidget* widget, char* param);
-extern bool date_to_time_set(ITUWidget* widget, char* param);
-extern bool update_date_text(ITUWidget* widget, char* param);
-#endif
+extern bool MainMenuOnEnter(ITUWidget* widget, char* param);
+extern bool MainMenuOnTimer(ITUWidget* widget, char* param);
+extern bool MainMenuOnLeave(ITUWidget* widget, char* param);
 extern bool monitor_init(ITUWidget* widget, char* param);
 extern bool monitor_timer(ITUWidget* widget, char* param);
 extern bool monitor_leave(ITUWidget* widget, char* param);
@@ -36,7 +22,7 @@ extern bool monitor_open(ITUWidget* widget, char* param);
 extern bool monitor_talk(ITUWidget* widget, char* param);
 extern bool monitor_sw_cam(ITUWidget* widget, char* param);
 extern bool monitor_vol_set(ITUWidget* widget, char* param);
-#if 1 //my.wei mask for test ahd
+#if 0 //my.wei mask for test ahd
 extern bool media_init(ITUWidget* widget, char* param);
 extern bool media_timer(ITUWidget* widget, char* param);
 extern bool media_leave(ITUWidget* widget, char* param);
@@ -112,25 +98,86 @@ extern bool set_format(ITUWidget* widget, char* param);
 extern bool set_main_bg_1_hide(ITUWidget* widget, char* param);
 #endif
 
+extern bool AudioPlayerOnEnter(ITUWidget* widget, char* param);
+extern bool AudioPlayerOnLeave(ITUWidget* widget, char* param);
+extern bool AudioPlayerSDInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool AudioPlayerSDRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool AudioPlayerUsbInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool AudioPlayerUsbRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool AudioPlayerOnTimer(ITUWidget* widget, char* param);
+extern bool AudioPlayerStorageTypeCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerStorageRadioBoxOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerRepeatButtonOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerVolTrackBarOnChanged(ITUWidget* widget, char* param);
+extern bool AudioPlayerPlayCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerNextButtonOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerLastButtonOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerRandomCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool AudioPlayerScrollMediaFileListBoxOnSelection(ITUWidget* widget, char* param);
+extern bool VideoPlayerOnEnter(ITUWidget* widget, char* param);
+extern bool VideoPlayerOnLeave(ITUWidget* widget, char* param);
+extern bool VideoPlayerSDInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoPlayerSDRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoPlayerUsbInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoPlayerUsbRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoPlayerOnTimer(ITUWidget* widget, char* param);
+extern bool VideoPlayerStorageRadioBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerVolTrackBarOnChanged(ITUWidget* widget, char* param);
+extern bool VideoPlayerPlayCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerNextButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerLastButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerRandomCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerRepeatButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoPlayerScrollMediaFileListBoxOnSelection(ITUWidget* widget, char* param);
+extern bool VideoPlayerStorageTypeCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewOnTimer(ITUWidget* widget, char* param);
+extern bool VideoViewOnEnter(ITUWidget* widget, char* param);
+extern bool VideoViewOnLeave(ITUWidget* widget, char* param);
+extern bool VideoViewSDRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoViewUsbRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool VideoViewPlayCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewRepeatButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewVolTrackBarOnChanged(ITUWidget* widget, char* param);
+extern bool VideoViewNextButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewLastButtonOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewRandomCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool VideoViewViewButtonOnPress(ITUWidget* widget, char* param);
+extern bool ImagePlayerOnEnter(ITUWidget* widget, char* param);
+extern bool ImagePlayerOnLeave(ITUWidget* widget, char* param);
+extern bool ImagePlayerSDInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool ImagePlayerSDRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool ImagePlayerUsbInsertedOnCustom(ITUWidget* widget, char* param);
+extern bool ImagePlayerUsbRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool ImagePlayerOnTimer(ITUWidget* widget, char* param);
+extern bool ImagePlayerStorageRadioBoxOnPress(ITUWidget* widget, char* param);
+extern bool ImagePlayerNextButtonOnPress(ITUWidget* widget, char* param);
+extern bool ImagePlayerLastButtonOnPress(ITUWidget* widget, char* param);
+extern bool ImagePlayerScrollMediaFileListBoxOnSelection(ITUWidget* widget, char* param);
+extern bool ImagePlayerStorageTypeCheckBoxOnPress(ITUWidget* widget, char* param);
+extern bool ImageViewOnTimer(ITUWidget* widget, char* param);
+extern bool ImageViewOnEnter(ITUWidget* widget, char* param);
+extern bool ImageViewOnLeave(ITUWidget* widget, char* param);
+extern bool ImageViewSDRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool ImageViewUsbRemovedOnCustom(ITUWidget* widget, char* param);
+extern bool ImageViewViewButtonOnPress(ITUWidget* widget, char* param);
+extern bool ImageViewNextButtonOnPress(ITUWidget* widget, char* param);
+extern bool ImageViewLastButtonOnPress(ITUWidget* widget, char* param);
+extern bool CalendarOnEnter(ITUWidget* widget, char* param);
+extern bool CalendarWheelOnChanged(ITUWidget* widget, char* param);
+extern bool CalendarConfirmButtonOnPress(ITUWidget* widget, char* param);
+extern bool CalendarCoverFlowOnChanged(ITUWidget* widget, char* param);
+extern bool CalendarBackButtonOnPress(ITUWidget* widget, char* param);
+extern bool ClockOnEnter(ITUWidget* widget, char* param);
+extern bool ClockOnTimer(ITUWidget* widget, char* param);
+extern bool ClockConfirmButtonOnPress(ITUWidget* widget, char* param);
+
+
 ITUActionFunction actionFunctions[] =
 {
-    "home_init", home_init,
-    "home_timer", home_timer,
-    "home_leave", home_leave,
-    "home_go", home_go,
-    "home_change_mute", home_change_mute,
-#if 1 //my.wei mask for test ahd
-    "standby_init", standby_init,
-    "standby_time", standby_time,
-    "standby_leave", standby_leave,
-    "date_init", date_init,
-    "date_timer", date_timer,
-    "date_leave", date_leave,
-    "date_set_change", date_set_change,
-    "date_set_back", date_set_back,
-    "date_to_time_set", date_to_time_set,
-    "update_date_text", update_date_text,
-#endif    
+    "MainMenuOnEnter", MainMenuOnEnter,
+    "MainMenuOnTimer", MainMenuOnTimer,
+    "MainMenuOnLeave", MainMenuOnLeave,
+
     "monitor_init", monitor_init,
     "monitor_timer", monitor_timer,
     "monitor_leave", monitor_leave,
@@ -150,80 +197,85 @@ ITUActionFunction actionFunctions[] =
     "monitor_talk", monitor_talk,
     "monitor_sw_cam", monitor_sw_cam,
     "monitor_vol_set", monitor_vol_set,
-#if 1 //my.wei mask for test ahd    
-    "media_init", media_init,
-    "media_timer", media_timer,
-    "media_leave", media_leave,
-    "delete_video", delete_video,
-    "video_bar_jump", video_bar_jump,
-    "video_btn_jump_full", video_btn_jump_full,
-    "video_btn_jump", video_btn_jump,
-    "stop_video", stop_video,
-    "play_video", play_video,
-    "next_video", next_video,
-    "prev_video", prev_video,
-    "video_delete_pop", video_delete_pop,
-    "video_back_list", video_back_list,
-    "media_close_full", media_close_full,
-    "media_full", media_full,
-    "video_l_slistbox_3_load", video_l_slistbox_3_load,
-    "view_video", view_video,
-    "video_l_slistbox_2_load", video_l_slistbox_2_load,
-    "video_l_slistbox_1_load", video_l_slistbox_1_load,
-    "video_l_slistbox_0_load", video_l_slistbox_0_load,
-    "media_change", media_change,
-    "delete_photo", delete_photo,
-    "next_photo", next_photo,
-    "prev_photo", prev_photo,
-    "photo_back_list", photo_back_list,
-    "photo_l_slistbox_3_load", photo_l_slistbox_3_load,
-    "view_photo", view_photo,
-    "photo_l_slistbox_2_load", photo_l_slistbox_2_load,
-    "photo_l_slistbox_1_load", photo_l_slistbox_1_load,
-    "photo_l_slistbox_0_load", photo_l_slistbox_0_load,
-    "intercom_init", intercom_init,
-    "intercom_timer", intercom_timer,
-    "intercom_leave", intercom_leave,
-    "inter_call", inter_call,
-    "intercom_ing_init", intercom_ing_init,
-    "intercom_ing_timer", intercom_ing_timer,
-    "intercom_ing_leave", intercom_ing_leave,
-    "intercom_ing_adjust", intercom_ing_adjust,
-    "intercom_answer", intercom_answer,
-    "intercom_quit", intercom_quit,
-    "intercom_hang", intercom_hang,
-    "intercom_ing_vol_set", intercom_ing_vol_set,
-    "set_main_bg_1_show", set_main_bg_1_show,
-    "set_init", set_init,
-    "set_timer", set_timer,
-    "set_leave", set_leave,
-    "set_pop_up_confirm", set_pop_up_confirm,
-    "set_pop_up_cancel", set_pop_up_cancel,
-    "set_modify", set_modify,
-    "lang_slistbox_0_load", lang_slistbox_0_load,
-    "set_change_lang", set_change_lang,
-    "lang_slistbox_1_load", lang_slistbox_1_load,
-    "set_dis_reset", set_dis_reset,
-    "set_dis_ch_hue", set_dis_ch_hue,
-    "set_dis_dajust", set_dis_dajust,
-    "set_dis_ch_con", set_dis_ch_con,
-    "set_dis_ch_bri", set_dis_ch_bri,
-    "set_dis_back", set_dis_back,
-    "set_time_back", set_time_back,
-    "volume_set", volume_set,
-    "set_vol_adjust", set_vol_adjust,
-    "set_vol_back", set_vol_back,
-    "set_md_time_change", set_md_time_change,
-    "set_md_time_back", set_md_time_back,
-    "set_md_video_check", set_md_video_check,
-    "set_md_time", set_md_time,
-    "set_auto_video_check", set_auto_video_check,
-    "set_enter_lang", set_enter_lang,
-    "set_enter_clear_mode", set_enter_clear_mode,
-    "set_enter_display", set_enter_display,
-    "set_to_time_set", set_to_time_set,
-    "set_format", set_format,
-    "set_main_bg_1_hide", set_main_bg_1_hide,
-#endif    
+
+    "AudioPlayerOnEnter", AudioPlayerOnEnter,
+    "AudioPlayerOnLeave", AudioPlayerOnLeave,
+    "AudioPlayerSDInsertedOnCustom", AudioPlayerSDInsertedOnCustom,
+    "AudioPlayerSDRemovedOnCustom", AudioPlayerSDRemovedOnCustom,
+    "AudioPlayerUsbInsertedOnCustom", AudioPlayerUsbInsertedOnCustom,
+    "AudioPlayerUsbRemovedOnCustom", AudioPlayerUsbRemovedOnCustom,
+    "AudioPlayerOnTimer", AudioPlayerOnTimer,
+    "AudioPlayerStorageTypeCheckBoxOnPress", AudioPlayerStorageTypeCheckBoxOnPress,
+    "AudioPlayerStorageRadioBoxOnPress", AudioPlayerStorageRadioBoxOnPress,
+    "AudioPlayerRepeatButtonOnPress", AudioPlayerRepeatButtonOnPress,
+    "AudioPlayerVolTrackBarOnChanged", AudioPlayerVolTrackBarOnChanged,
+    "AudioPlayerPlayCheckBoxOnPress", AudioPlayerPlayCheckBoxOnPress,
+    "AudioPlayerNextButtonOnPress", AudioPlayerNextButtonOnPress,
+    "AudioPlayerLastButtonOnPress", AudioPlayerLastButtonOnPress,
+    "AudioPlayerRandomCheckBoxOnPress", AudioPlayerRandomCheckBoxOnPress,
+    "AudioPlayerScrollMediaFileListBoxOnSelection", AudioPlayerScrollMediaFileListBoxOnSelection,
+
+    "VideoPlayerOnEnter", VideoPlayerOnEnter,
+    "VideoPlayerOnLeave", VideoPlayerOnLeave,
+    "VideoPlayerSDInsertedOnCustom", VideoPlayerSDInsertedOnCustom,
+    "VideoPlayerSDRemovedOnCustom", VideoPlayerSDRemovedOnCustom,
+    "VideoPlayerUsbInsertedOnCustom", VideoPlayerUsbInsertedOnCustom,
+    "VideoPlayerUsbRemovedOnCustom", VideoPlayerUsbRemovedOnCustom,
+    "VideoPlayerOnTimer", VideoPlayerOnTimer,
+    "VideoPlayerStorageRadioBoxOnPress", VideoPlayerStorageRadioBoxOnPress,
+    "VideoPlayerVolTrackBarOnChanged", VideoPlayerVolTrackBarOnChanged,
+    "VideoPlayerPlayCheckBoxOnPress", VideoPlayerPlayCheckBoxOnPress,
+    "VideoPlayerNextButtonOnPress", VideoPlayerNextButtonOnPress,
+    "VideoPlayerLastButtonOnPress", VideoPlayerLastButtonOnPress,
+    "VideoPlayerRandomCheckBoxOnPress", VideoPlayerRandomCheckBoxOnPress,
+    "VideoPlayerRepeatButtonOnPress", VideoPlayerRepeatButtonOnPress,
+    "VideoPlayerScrollMediaFileListBoxOnSelection", VideoPlayerScrollMediaFileListBoxOnSelection,
+    "VideoPlayerStorageTypeCheckBoxOnPress", VideoPlayerStorageTypeCheckBoxOnPress,
+
+    "VideoViewOnTimer", VideoViewOnTimer,
+    "VideoViewOnEnter", VideoViewOnEnter,
+    "VideoViewOnLeave", VideoViewOnLeave,
+    "VideoViewSDRemovedOnCustom", VideoViewSDRemovedOnCustom,
+    "VideoViewUsbRemovedOnCustom", VideoViewUsbRemovedOnCustom,
+    "VideoViewPlayCheckBoxOnPress", VideoViewPlayCheckBoxOnPress,
+    "VideoViewRepeatButtonOnPress", VideoViewRepeatButtonOnPress,
+    "VideoViewVolTrackBarOnChanged", VideoViewVolTrackBarOnChanged,
+    "VideoViewNextButtonOnPress", VideoViewNextButtonOnPress,
+    "VideoViewLastButtonOnPress", VideoViewLastButtonOnPress,
+    "VideoViewRandomCheckBoxOnPress", VideoViewRandomCheckBoxOnPress,
+    "VideoViewViewButtonOnPress", VideoViewViewButtonOnPress,
+
+    "ImagePlayerOnEnter", ImagePlayerOnEnter,
+    "ImagePlayerOnLeave", ImagePlayerOnLeave,
+    "ImagePlayerSDInsertedOnCustom", ImagePlayerSDInsertedOnCustom,
+    "ImagePlayerSDRemovedOnCustom", ImagePlayerSDRemovedOnCustom,
+    "ImagePlayerUsbInsertedOnCustom", ImagePlayerUsbInsertedOnCustom,
+    "ImagePlayerUsbRemovedOnCustom", ImagePlayerUsbRemovedOnCustom,
+    "ImagePlayerOnTimer", ImagePlayerOnTimer,
+    "ImagePlayerStorageRadioBoxOnPress", ImagePlayerStorageRadioBoxOnPress,
+    "ImagePlayerNextButtonOnPress", ImagePlayerNextButtonOnPress,
+    "ImagePlayerLastButtonOnPress", ImagePlayerLastButtonOnPress,
+    "ImagePlayerScrollMediaFileListBoxOnSelection", ImagePlayerScrollMediaFileListBoxOnSelection,
+    "ImagePlayerStorageTypeCheckBoxOnPress", ImagePlayerStorageTypeCheckBoxOnPress,
+
+    "ImageViewOnTimer", ImageViewOnTimer,
+    "ImageViewOnEnter", ImageViewOnEnter,
+    "ImageViewOnLeave", ImageViewOnLeave,
+    "ImageViewSDRemovedOnCustom", ImageViewSDRemovedOnCustom,
+    "ImageViewUsbRemovedOnCustom", ImageViewUsbRemovedOnCustom,
+    "ImageViewViewButtonOnPress", ImageViewViewButtonOnPress,
+    "ImageViewNextButtonOnPress", ImageViewNextButtonOnPress,
+    "ImageViewLastButtonOnPress", ImageViewLastButtonOnPress,
+
+    "CalendarOnEnter", CalendarOnEnter,
+    "CalendarWheelOnChanged", CalendarWheelOnChanged,
+    "CalendarConfirmButtonOnPress", CalendarConfirmButtonOnPress,
+    "CalendarCoverFlowOnChanged", CalendarCoverFlowOnChanged,
+    "CalendarBackButtonOnPress", CalendarBackButtonOnPress,
+
+    "ClockOnEnter", ClockOnEnter,
+    "ClockOnTimer", ClockOnTimer,
+    "ClockConfirmButtonOnPress", ClockConfirmButtonOnPress,
+
     NULL, NULL
 };

@@ -731,7 +731,7 @@ void clear_montion_start()
 void *user_snap(int mode)
 {
 	char* file_name = NULL;
-//	if(storageCurrType != STORAGE_SD)
+//	if(StorageGetCurrType() != STORAGE_SD)
 //		return;
 	if(mode == 1 && !b_SNAPSHOT )
 	{
@@ -751,7 +751,7 @@ void *user_snap(int mode)
 		printf("Image-------->%s\n",filename);
 		b_SNAPSHOT_START= true;
 	}
-	else if(mode == 2 && storageCurrType == STORAGE_SD)
+	else if(mode == 2 && StorageGetCurrType() == STORAGE_SD)
 	{
 		if(!b_RECORDING)
 		{
@@ -1372,21 +1372,7 @@ void avi_end()
         }
         _packetQueueEnd(&gDet_YUVInputQueue);
         _packetQueueEnd(&gJpegInputQueue);
-		/*
-		if(SUPPORT_REC_AUDIO_S)
-		{
-			if(audio_tid)
-			{
-				while(audio_stop == false)
-					usleep(1000);
-				_packetQueueEnd(&gAudioInputQueue);
-				pthread_join(audio_tid, NULL);
-				audio_tid = 0;
-				audio_stop = false;
-				printf("pthread_join(audio_tid, NULL)\r\n");
-			}
-		}
-		*/
+
 		if(!get_auto_start_ing())
 			clear_mon_rec_ing();
 		

@@ -260,9 +260,9 @@ void _user_pr2000_init()
 	pr2000_is_ok  = true;
 	while(1)
 	{
-		if(user_get_videoPlayerIsPlaying())//my.wei mask for test ahd
-			usleep(20*2000);
-		else
+		//if(user_get_videoPlayerIsPlaying())//my.wei mask for test ahd
+		//	usleep(20*2000);
+		//else
 			usleep(10);
 
 		

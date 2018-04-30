@@ -18,6 +18,50 @@
 extern "C" {
 #endif
 
+typedef enum
+{
+    STORAGE_NONE = -1,
+    STORAGE_USB,
+    STORAGE_SD,
+    STORAGE_INTERNAL,
+    STORAGE_MAX_COUNT
+} StorageType;
+
+typedef enum
+{
+    STORAGE_UNKNOWN,
+    STORAGE_SD_INSERTED,
+    STORAGE_SD_REMOVED,
+    STORAGE_USB_INSERTED,
+    STORAGE_USB_REMOVED
+} StorageAction;
+
+typedef enum
+{
+	EVENT_CUSTOM_SCREENSAVER = ITU_EVENT_CUSTOM,    ///< Ready to enter screensaver mode. Custom0 event on GUI Designer.
+    EVENT_CUSTOM_SD_INSERTED,                       ///< #1: SD card inserted.
+    EVENT_CUSTOM_SD_REMOVED,                        ///< #2: SD card removed.
+	EVENT_CUSTOM_USB_INSERTED,                      ///< #3: USB drive inserted.
+    EVENT_CUSTOM_USB_REMOVED,                       ///< #4: USB drive removed.
+    EVENT_CUSTOM_KEY0,                              ///< #5: Key #0 pressed.
+    EVENT_CUSTOM_KEY1,                              ///< #6: Key #1 pressed.
+	EVENT_CUSTOM_KEY2,                              ///< #7: Key #2 pressed.
+    EVENT_CUSTOM_KEY3,                              ///< #8: Key #3 pressed.
+    EVENT_CUSTOM_UART                               ///< #9: UART message.
+
+} CustomEvent;
+
+/**
+ * Screensaver type definition.
+ */
+typedef enum
+{
+    SCREENSAVER_NONE,   ///< No screensaver
+    SCREENSAVER_CLOCK,  ///< Clock sreensaver
+    SCREENSAVER_BLANK,  ///< Black screen screensaver
+    SCREENSAVER_PHOTO   ///< Photo screensaver
+} ScreensaverType;
+
 /** @defgroup template_audio Audio Player
  *  @{
  */
@@ -87,34 +131,9 @@ bool AudioIsPlaying(void);
 
 void AudioSetVolume(int level);
 int AudioGetVolume(void);
+void AudioSetLevel(int level);
 
 /** @} */ // end of template_audio
-
-typedef enum
-{
-	EVENT_CUSTOM_SCREENSAVER = ITU_EVENT_CUSTOM,    ///< Ready to enter screensaver mode. Custom0 event on GUI Designer.
-    EVENT_CUSTOM_SD_INSERTED,                       ///< #1: SD card inserted.
-    EVENT_CUSTOM_SD_REMOVED,                        ///< #2: SD card removed.
-	EVENT_CUSTOM_USB_INSERTED,                      ///< #3: USB drive inserted.
-    EVENT_CUSTOM_USB_REMOVED,                       ///< #4: USB drive removed.
-    EVENT_CUSTOM_KEY0,                              ///< #5: Key #0 pressed.
-    EVENT_CUSTOM_KEY1,                              ///< #6: Key #1 pressed.
-	EVENT_CUSTOM_KEY2,                              ///< #7: Key #2 pressed.
-    EVENT_CUSTOM_KEY3,                              ///< #8: Key #3 pressed.
-    EVENT_CUSTOM_UART                               ///< #9: UART message.
-
-} CustomEvent;
-
-/**
- * Screensaver type definition.
- */
-typedef enum
-{
-    SCREENSAVER_NONE,   ///< No screensaver
-    SCREENSAVER_CLOCK,  ///< Clock sreensaver
-    SCREENSAVER_BLANK,  ///< Black screen screensaver
-    SCREENSAVER_PHOTO   ///< Photo screensaver
-} ScreensaverType;
 
 
 
@@ -153,6 +172,7 @@ typedef struct
 	int interphone;
 	int door1;
 	int door2;
+    int audiolevel;                                               // /< Audio volume percentage, range is 0~100
 
 	//[display]
     int screensaver_time;                                               ///< Time to enter screen saver mode, unit is minute
