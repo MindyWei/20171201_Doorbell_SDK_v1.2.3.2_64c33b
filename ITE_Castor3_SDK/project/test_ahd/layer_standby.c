@@ -101,7 +101,7 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
-		printf("%s: line #%d,theConfig.md=%d, master_vdp=%d\r\n", __FUNCTION__, __LINE__, theConfig.md, master_vdp);
+		//printf("%s: line #%d,theConfig.md=%d, master_vdp=%d\r\n", __FUNCTION__, __LINE__, theConfig.md, master_vdp);
 		if(1)//!uart_is_busy())
 		{
 			if(theConfig.md && master_vdp)
@@ -122,7 +122,7 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 		if(theConfig.mdtime)
 		{
 			if(!time_enable_montion())
-				montion_end();
+				UserMotionEnd();
 		}
 	}
 	

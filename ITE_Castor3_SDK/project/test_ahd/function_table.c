@@ -22,6 +22,8 @@ extern bool monitor_open(ITUWidget* widget, char* param);
 extern bool monitor_talk(ITUWidget* widget, char* param);
 extern bool monitor_sw_cam(ITUWidget* widget, char* param);
 extern bool monitor_vol_set(ITUWidget* widget, char* param);
+extern bool MonitorMDButtonOnPress(ITUWidget* widget, char* param);
+
 #if 0 //my.wei mask for test ahd
 extern bool media_init(ITUWidget* widget, char* param);
 extern bool media_timer(ITUWidget* widget, char* param);
@@ -199,6 +201,7 @@ ITUActionFunction actionFunctions[] =
     "monitor_talk", monitor_talk,
     "monitor_sw_cam", monitor_sw_cam,
     "monitor_vol_set", monitor_vol_set,
+    "MonitorMDButtonOnPress", MonitorMDButtonOnPress,
 
     "AudioPlayerOnEnter", AudioPlayerOnEnter,
     "AudioPlayerOnLeave", AudioPlayerOnLeave,

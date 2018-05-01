@@ -15,7 +15,6 @@ int SDL_main(int argc, char *argv[])
 #ifdef CFG_CHECK_FILES_CRC_ON_BOOTING
 	int restryCount = 0;
 
-	//user_gpio_init();
 	BackupInit();
 retry_backup:
 	ret = UpgradeInit();
@@ -48,17 +47,18 @@ retry_backup:
 	SceneLoad();
 	
 	//flash_file_init(); //my.wei remove from test_ahd
+	ScreenInit();
 	PhotoInit();
 	StorageInit();
 	image_memo_init();
 	video_memo_init();
 	user_gpio_init();
-	user_timer_init();
+	UserTimerInit();
 	user_pr2000_init();
 	user_signal_control_init();
-	user_call_init();
-	//user_uart_init();
-	//_user_rtc_init();
+	//user_call_init();//my.wei remove from test_ahd
+	//user_uart_init();//my.wei remove from test_ahd
+	//_user_rtc_init();//my.wei remove from test_ahd
 	user_cam_detect();
 	user_time_init();
 	user_auto_init();

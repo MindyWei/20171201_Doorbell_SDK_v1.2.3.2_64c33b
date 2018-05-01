@@ -89,6 +89,8 @@ bool led_blink_ing = false;
 
 bool auto_rec_start = false;
 
+static bool isSnapRecIconDisplay = false;
+
 bool get_call_ring_play()
 {
 	return call_ring_playing;
@@ -892,7 +894,7 @@ static void event_call_process(void)		//call 机事件处理
 	{
 		printf("the other door call...............................\n");
 		if(montion_enable)      //退出移动侦测
-			montion_end();
+			UserMotionEnd();
 		standby_state= false;
 		master_vdp = true;
 		door_call_num = event_call;
@@ -945,7 +947,7 @@ static void event_uart_process(void)		//uart 事件处理
 		if(signal_insert[DOOR_1] || signal_insert[DOOR_2])
 			uart_set_busy();
 		if(montion_enable)      //退出移动侦测
-			montion_end();
+			UserMotionEnd();
 		if(signal_insert[DOOR_1])
 			master_offer_signal(1);
 		else if(signal_insert[DOOR_2])
@@ -974,7 +976,7 @@ static void event_uart_process(void)		//uart 事件处理
 		if(signal_insert[CCTV_1] || signal_insert[CCTV_2])
 			uart_set_busy();
 		if(montion_enable)      //退出移动侦测
-			montion_end();
+			UserMotionEnd();
 		if(signal_insert[CCTV_1])
 			master_offer_signal(3);
 		else if(signal_insert[CCTV_2])
@@ -1127,7 +1129,7 @@ static void event_uart_process(void)		//uart 事件处理
 	else if(event_uart == CMD_INTER_CALL)
 	{	
 		if(montion_enable)      //退出移动侦测
-			montion_end();
+			UserMotionEnd();
 		if(format_ing || delete_ing)
 		{
 			uart_set_busy();
@@ -1264,9 +1266,11 @@ void snap_rec_state()
 		}
 		else if(show_snap_rec_icon == icon_displaying)
 		{
+			isSnapRecIconDisplay = true;
 		}
-		else
+		else if(isSnapRecIconDisplay) //just need to clear icon one time
 		{
+			isSnapRecIconDisplay = false;
 			temp_rec_time = 60;
 			ITUButton* MON_BTN_REC = ituSceneFindWidget(&theScene, "MON_BTN_REC");
 			assert(MON_BTN_REC);
@@ -1384,25 +1388,25 @@ static void montion_end_event_process()
 }
 void event_process()					//事件处理
 {
-	if(event_call_s)
-		event_call_process();
+	//if(event_call_s)
+	//	event_call_process();
 	
-	snap_rec_state();	//my.wei mask for debug					//显示拍照/录像图标
+	snap_rec_state();						//显示拍照/录像图标
 	
-	if(event_intercom > 0x0F)
-		event_intercom_process();
+	//if(event_intercom > 0x0F)
+	//	event_intercom_process();
 
-	if(event_uart)
-		event_uart_process();
+	//if(event_uart)
+	//	event_uart_process();
 
-	if(event_home_go)
-		event_home_go_process();
+	//if(event_home_go)
+	//	event_home_go_process();
 	
-	if(event_go_home)
-		event_go_home_process();
+	//if(event_go_home)
+	//	event_go_home_process();
 	
-	if(montion_end_event && !montion_enable)
-		montion_end_event_process();
+	//if(montion_end_event && !montion_enable)
+	//	montion_end_event_process();
 		
 }
 
@@ -1534,7 +1538,7 @@ static float screenSaverCountDown;
 static uint32_t screenSaverLastTick;
 static bool screenOff = false;
 
-void backlight_init(void)
+void ScreenInit(void)
 {
     screenSaverLastTick = SDL_GetTicks();
     screenSaverCountDown = theConfig.screensaver_time * 60.0f;
@@ -1850,7 +1854,7 @@ bool time_enable_montion()
 		return true;
 }
 
-void montion_end()
+void UserMotionEnd()
 {
 	printf("montion_end....................................\n");
 	montion_enable = false;

@@ -61,6 +61,7 @@ static ITUIcon* MON_ICON_TALK_VOL_1;
 static ITUIcon* MON_ICON_TALK_VOL_2;
 static ITUIcon* MON_ICON_TALK_VOL_3;
 static ITUIcon* MON_ICON_TALK_VOL_4;
+static ITUSprite* monitorMotionDetectionSprite;
 
 
 static bool play_call_ring_once = false;
@@ -276,8 +277,9 @@ void user_itu_init()
 	{
 		ituWidgetSetVisible(MON_ICON_STATE_VIDEO,false);
 		ituWidgetSetVisible(MON_ICON_STATE_PHOTO,false);
-	}	
-	
+	}
+	if(monitorMotionDetectionSprite)
+		ituSpriteGoto(monitorMotionDetectionSprite, theConfig.md);
 }
 
 void signal_itu_init(int val)
@@ -453,6 +455,9 @@ bool monitor_init(ITUWidget* widget, char* param)
 		assert(MON_ICON_TALK_VOL_3);
 		MON_ICON_TALK_VOL_4 = ituSceneFindWidget(&theScene, "MON_ICON_TALK_VOL_4");
 		assert(MON_ICON_TALK_VOL_4);
+
+		monitorMotionDetectionSprite = ituSceneFindWidget(&theScene, "monitorMotionDetectionSprite");
+		assert(monitorMotionDetectionSprite);
 	}
 	printf("enter page monitor........................\n");
 	//printf("monitor_1------------------------->%d\n",SDL_GetTicks()-test_tick);
@@ -742,6 +747,8 @@ bool monitor_leave(ITUWidget* widget, char* param)
 bool monitor_rec_end(ITUWidget* widget, char* param)
 {
 	user_snap(2);
+	//ituWidgetSetVisible(MON_BTN_REC,true);//use timer
+	//ituWidgetSetVisible(MON_BTN_REC_ING,false);
 	return true;
 }
 
@@ -799,6 +806,9 @@ bool monitor_rec_start(ITUWidget* widget, char* param)
 		mon_rec_ing = true;
 		AudioStop();
 		user_snap(2);
+		//ituWidgetSetVisible(MON_BTN_REC,false);//use timer
+		//ituWidgetSetVisible(MON_BTN_REC_ING,true);
+		
 	}
 	return true;
 }
@@ -1297,3 +1307,14 @@ bool monitor_gain_adjust(ITUWidget* widget, char* param)
 	}
 	return true;
 }
+
+bool MonitorMDButtonOnPress(ITUWidget* widget, char* param)
+{
+    int motionDetection = atoi(param);
+	printf("motionDetection=%d\n", motionDetection);
+	if(monitorMotionDetectionSprite)
+		ituSpriteGoto(monitorMotionDetectionSprite, motionDetection);
+	theConfig.md = motionDetection;
+	return true;
+}
+

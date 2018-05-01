@@ -321,7 +321,7 @@ int SceneRun(void)
 #endif
 		tick = SDL_GetTicks();
 		StorageCheck();
-		//event_process();//20180426 my.wei mask
+		event_process();//20180426 my.wei mask
 
 		frames++;
 

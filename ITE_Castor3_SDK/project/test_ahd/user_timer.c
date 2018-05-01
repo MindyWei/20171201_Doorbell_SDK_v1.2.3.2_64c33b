@@ -505,7 +505,7 @@ void md_start_delay_end(timer_t timerid, int arg)
 	set_md_delay_over();//my.wei mask for test ahd
 }
 
-void user_timer_init()
+void UserTimerInit()
 {
     timer_create(CLOCK_REALTIME, NULL, &door_open_TimerId);
     timer_connect(door_open_TimerId, door_open_timer_end, 0);
