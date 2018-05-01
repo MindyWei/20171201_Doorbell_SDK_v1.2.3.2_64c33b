@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "user_function.h"
 
-static ITUIcon* ST_BG_MD_WIN;
+static ITUIcon* standbyMotionDectionBackground;
 
 static uint32_t md_start_time_t;
 static bool cam_reboot = false;
@@ -33,22 +33,22 @@ static void VideoPlayerViewBackgroundDraw(ITUWidget* widget, ITUSurface* dest, i
 	ituDrawVideoSurface(dest, destx, desty, rect->width, rect->height);
 }
 
-bool standby_init(ITUWidget* widget, char* param)
+bool StandbyOnEnter(ITUWidget* widget, char* param)
 {
 	printf("standby page enter\r\n");
 	standbyLastTick = SDL_GetTicks();
 	cur_page  = page_standby;
-	if (!ST_BG_MD_WIN)
+	if (!standbyMotionDectionBackground)
 	{
-		ST_BG_MD_WIN = ituSceneFindWidget(&theScene, "ST_BG_MD_WIN");
-		assert(ST_BG_MD_WIN);
-		ituWidgetSetDraw(ST_BG_MD_WIN,VideoPlayerViewBackgroundDraw);
+		standbyMotionDectionBackground = ituSceneFindWidget(&theScene, "standbyMotionDectionBackground");
+		assert(standbyMotionDectionBackground);
+		ituWidgetSetDraw(standbyMotionDectionBackground,VideoPlayerViewBackgroundDraw);
 	}
 	SceneEnterVideoState();		//ÇÐ»»Ö¡ÂÊ
 	
 	//md_delay_over = false;
 #if TEST_CAM
-	ituWidgetSetVisible(ST_BG_MD_WIN,true);
+	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = 1;
 	monitor_signal(cur_signal);
 	PR2000_set_start();
@@ -62,7 +62,7 @@ bool standby_init(ITUWidget* widget, char* param)
 	//ithGpioClear(AUDIO_OUT);	
 	return true;
 }
-void _md_start()
+static void _md_start()
 {
 	printf("_md_start...................................................................\n");
 	
@@ -70,7 +70,7 @@ void _md_start()
 	md_start_time_t = SDL_GetTicks();
 	montion_enable = true;
 	//clear_montion_start();
-	ituWidgetSetVisible(ST_BG_MD_WIN,true);
+	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = theConfig.mdcam+1;
 	monitor_signal(cur_signal);
 	PR2000_set_start();
@@ -80,7 +80,7 @@ void _md_start()
 	montion_start_again();
 }
 
-bool standby_time(ITUWidget* widget, char* param)
+bool StandbyOnTimer(ITUWidget* widget, char* param)
 {
 	uint32_t diff, tick = SDL_GetTicks();
 	
@@ -101,7 +101,7 @@ bool standby_time(ITUWidget* widget, char* param)
 
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
-		//printf("%s: line #%d\r\n", __FUNCTION__, __LINE__);
+		printf("%s: line #%d,theConfig.md=%d, master_vdp=%d\r\n", __FUNCTION__, __LINE__, theConfig.md, master_vdp);
 		if(1)//!uart_is_busy())
 		{
 			if(theConfig.md && master_vdp)
@@ -156,7 +156,7 @@ bool standby_time(ITUWidget* widget, char* param)
 	return false;
 }
 
-bool standby_leave(ITUWidget* widget, char* param)
+bool StandbyOnLeave(ITUWidget* widget, char* param)
 {
 	printf("standby_leave........................................1\n");
 	if(montion_enable)

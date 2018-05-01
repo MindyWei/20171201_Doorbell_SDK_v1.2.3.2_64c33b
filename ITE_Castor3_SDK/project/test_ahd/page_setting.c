@@ -468,6 +468,7 @@ void set_main_init()
 	
 	ituWidgetSetVisible(SET_MAIN_1_2_1_TEXT1, false);
 	ituWidgetSetVisible(SET_MAIN_1_2_1_TEXT2, false);
+	printf("theConfig.md:%d\r\n", theConfig.md);
 	if(theConfig.md == 0)
 		ituWidgetSetVisible(SET_MAIN_1_2_1_TEXT2, true);
 	else if(theConfig.md == 1)

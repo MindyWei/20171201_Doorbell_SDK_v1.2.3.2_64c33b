@@ -15,6 +15,60 @@ static bool cfgIsSaving;
 static int cfgSavingCount;
 static pthread_mutex_t cfgMutex  = PTHREAD_MUTEX_INITIALIZER;
 
+static void configDump(void)
+{
+	printf("-------configDump Begin------\r\n");
+	printf("[record]\n");
+	printf("theConfig.zidong = %d\n", theConfig.zidong);
+	printf("theConfig.md = %d\n", theConfig.md);
+	printf("theConfig.mdcam = %d\n", theConfig.mdcam);
+	printf("theConfig.mdsave = %d\n", theConfig.mdsave);
+	printf("theConfig.mdsensitive = %d\n", theConfig.mdsensitive);
+	printf("theConfig.mdtime = %d\n", theConfig.mdtime);
+	printf("theConfig.mdsyear = %d\n", theConfig.mdsyear);
+	printf("theConfig.mdsmonth = %d\n", theConfig.mdsmonth);
+	printf("theConfig.mdsday = %d\n", theConfig.mdsday);
+	printf("theConfig.mdshour = %d\n", theConfig.mdshour);
+	printf("theConfig.mdsmin = %d\n", theConfig.mdsmin);
+	printf("theConfig.mdssec = %d\n", theConfig.mdssec);
+	printf("theConfig.mdeyear = %d\n", theConfig.mdeyear);
+	printf("theConfig.mdemonth = %d\n", theConfig.mdemonth);
+	printf("theConfig.mdeday = %d\n", theConfig.mdeday);
+	printf("theConfig.mdehour = %d\n", theConfig.mdehour);
+	printf("theConfig.mdemin = %d\n", theConfig.mdemin);
+	printf("theConfig.mdesec = %d\n", theConfig.mdesec);
+	printf("[volume]\n");
+	printf("theConfig.mute = %d\n", theConfig.mute);
+	printf("theConfig.ringvol = %d\n", theConfig.ringvol);
+	printf("theConfig.talkvol = %d\n", theConfig.talkvol);
+	printf("theConfig.Iringvol = %d\n", theConfig.Iringvol);
+	printf("theConfig.Italkvol = %d\n", theConfig.Italkvol);
+	printf("theConfig.keyvol = %d\n", theConfig.keyvol);
+	printf("theConfig.interphone = %d\n", theConfig.interphone);
+	printf("theConfig.door1 = %d\n", theConfig.door1);
+	printf("theConfig.door2 = %d\n", theConfig.door2);
+	printf("theConfig.audiolevel = %d\n", theConfig.audiolevel);
+	printf("[display]\n");
+	printf("theConfig.screensaver_time = %d\n", theConfig.screensaver_time);
+	printf("theConfig.screensaver_type = %d\n", theConfig.screensaver_type);
+	printf("theConfig.brightness = %d\n", theConfig.brightness);
+	printf("theConfig.contrast = %d\n", theConfig.contrast);
+	printf("theConfig.hue = %d\n", theConfig.hue);
+	printf("theConfig.brightness_c = %d\n", theConfig.brightness_c);
+	printf("theConfig.contrast_c = %d\n", theConfig.contrast_c);
+	printf("theConfig.hue_c = %d\n", theConfig.hue_c);
+	printf("theConfig.lcdout = %d\n", theConfig.lcdout);
+	printf("theConfig.lcdouttime = %d\n", theConfig.lcdouttime);
+	printf("theConfig.infoframe = %d\n", theConfig.infoframe);
+	printf("[other]\n");
+	printf("theConfig.language = %d\n", theConfig.language);
+	printf("theConfig.id = %d\n", theConfig.id);
+	printf("theConfig.open = %d\n", theConfig.open);
+	printf("[user]\n");
+	printf("theConfig.firstboot = %d\n", theConfig.firstboot);
+	printf("-------configDump End------\r\n");
+}
+
 void Config_Reinit(void)
 {
 	//[record]
@@ -132,8 +186,6 @@ void ConfigInit(void)
 	theConfig.lcdouttime = iniparser_getint(cfgIni, "display:lcdouttime", 0);
 	theConfig.infoframe = iniparser_getint(cfgIni, "display:infoframe", 0);
 
-	printf("theConfig.screensaver_time:%d,theConfig.screensaver_type:%d\r\n", theConfig.screensaver_time, theConfig.screensaver_type);
-
 	//[other]
 	theConfig.language = iniparser_getint(cfgIni, "other:language", 0);
 	theConfig.id = iniparser_getint(cfgIni, "other:id", 0);
@@ -142,6 +194,8 @@ void ConfigInit(void)
 	//[user]
 	theConfig.firstboot = iniparser_getint(cfgIni, "user:firstboot", 1);
 	cfgSavingCount = 0;
+
+	configDump();
 }
 
 void ConfigExit(void)

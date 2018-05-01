@@ -68,11 +68,12 @@ static void user_gpio_init()
 	ithGpioEnable(BL_VOL_PIN);			
 	ithGpioSet(BL_VOL_PIN);
 	
+#if 0
 	ithGpioSetMode(CAM_VOL_PIN, ITH_GPIO_MODE0);
 	ithGpioSetOut(CAM_VOL_PIN);
 	ithGpioEnable(CAM_VOL_PIN); 
-	ithGpioSet(CAM_VOL_PIN);	
-#if 0
+	ithGpioSet(CAM_VOL_PIN);
+	
 	ithGpioSetMode(PR2000_MPP3, ITH_GPIO_MODE0);
 	ithGpioSetOut(PR2000_MPP3);
 	ithGpioEnable(PR2000_MPP3); 

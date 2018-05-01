@@ -127,6 +127,7 @@ static char ring_str[6][25] 		= {"A:/sounds/sound1.mp3",
 #define BL_EN_PWM			64		//±³¹â
 
 #if defined(TARGET_BOARD_G)
+
 #if defined(TARGET_BOARD_G_V03)
 #define CAM_VOL_PIN  	63//32
 #define BL_VOL_PIN  	36//34

@@ -170,7 +170,9 @@ extern bool CalendarBackButtonOnPress(ITUWidget* widget, char* param);
 extern bool ClockOnEnter(ITUWidget* widget, char* param);
 extern bool ClockOnTimer(ITUWidget* widget, char* param);
 extern bool ClockConfirmButtonOnPress(ITUWidget* widget, char* param);
-
+extern bool StandbyOnEnter(ITUWidget* widget, char* param);
+extern bool StandbyOnTimer(ITUWidget* widget, char* param);
+extern bool StandbyOnLeave(ITUWidget* widget, char* param);
 
 ITUActionFunction actionFunctions[] =
 {
@@ -276,6 +278,10 @@ ITUActionFunction actionFunctions[] =
     "ClockOnEnter", ClockOnEnter,
     "ClockOnTimer", ClockOnTimer,
     "ClockConfirmButtonOnPress", ClockConfirmButtonOnPress,
+
+	"StandbyOnEnter", StandbyOnEnter,
+	"StandbyOnTimer", StandbyOnTimer,
+	"StandbyOnLeave", StandbyOnLeave,
 
     NULL, NULL
 };
