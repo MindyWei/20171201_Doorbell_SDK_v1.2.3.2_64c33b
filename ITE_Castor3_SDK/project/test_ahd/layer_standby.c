@@ -46,7 +46,6 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 	}
 	SceneEnterVideoState();		//ÇÐ»»Ö¡ÂÊ
 	
-	//md_delay_over = false;
 #if TEST_CAM
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = 1;
@@ -59,7 +58,6 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 	ScreenOff();
 	md_start_delay_start();
 #endif
-	//ithGpioClear(AUDIO_OUT);	
 	return true;
 }
 static void _md_start()
@@ -69,7 +67,6 @@ static void _md_start()
 	ithGpioClear(AUDIO_OUT);
 	md_start_time_t = SDL_GetTicks();
 	montion_enable = true;
-	//clear_montion_start();
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = theConfig.mdcam+1;
 	monitor_signal(cur_signal);
@@ -102,7 +99,7 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
 		//printf("%s: line #%d,theConfig.md=%d, master_vdp=%d\r\n", __FUNCTION__, __LINE__, theConfig.md, master_vdp);
-		if(1)//!uart_is_busy())
+		if(1)
 		{
 			if(theConfig.md && master_vdp)
 			{

@@ -65,7 +65,7 @@ static void
 _ISP_Deinter_Param(
     ISP_DEINTERLACE_CTRL *pDeInterlace)
 {
-    pDeInterlace->DeinterMode           = DEINTER3D;
+    pDeInterlace->DeinterMode           = DEINTER2D;
     pDeInterlace->Disable30MotionDetect = MMP_FALSE;
     pDeInterlace->EnUV2DMethod          = MMP_FALSE;
 

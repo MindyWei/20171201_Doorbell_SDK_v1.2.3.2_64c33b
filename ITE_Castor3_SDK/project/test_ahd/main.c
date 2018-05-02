@@ -46,7 +46,6 @@ retry_backup:
 	AudioInit();
 	SceneLoad();
 	
-	//flash_file_init(); //my.wei remove from test_ahd
 	ScreenInit();
 	PhotoInit();
 	StorageInit();
@@ -56,9 +55,6 @@ retry_backup:
 	UserTimerInit();
 	user_pr2000_init();
 	user_signal_control_init();
-	//user_call_init();//my.wei remove from test_ahd
-	//user_uart_init();//my.wei remove from test_ahd
-	//_user_rtc_init();//my.wei remove from test_ahd
 	user_cam_detect();
 	user_time_init();
 	user_auto_init();

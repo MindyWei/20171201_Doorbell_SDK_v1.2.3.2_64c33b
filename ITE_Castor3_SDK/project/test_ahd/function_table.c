@@ -3,9 +3,9 @@
 extern bool MainMenuOnEnter(ITUWidget* widget, char* param);
 extern bool MainMenuOnTimer(ITUWidget* widget, char* param);
 extern bool MainMenuOnLeave(ITUWidget* widget, char* param);
-extern bool monitor_init(ITUWidget* widget, char* param);
-extern bool monitor_timer(ITUWidget* widget, char* param);
-extern bool monitor_leave(ITUWidget* widget, char* param);
+extern bool MonitorOnEnter(ITUWidget* widget, char* param);
+extern bool MonitorOnTimer(ITUWidget* widget, char* param);
+extern bool MonitorOnLeave(ITUWidget* widget, char* param);
 extern bool monitor_gain_adjust(ITUWidget* widget, char* param);
 extern bool monitor_vol_adjust(ITUWidget* widget, char* param);
 extern bool monitor_dis_reset(ITUWidget* widget, char* param);
@@ -23,82 +23,6 @@ extern bool monitor_talk(ITUWidget* widget, char* param);
 extern bool monitor_sw_cam(ITUWidget* widget, char* param);
 extern bool monitor_vol_set(ITUWidget* widget, char* param);
 extern bool MonitorMDButtonOnPress(ITUWidget* widget, char* param);
-
-#if 0 //my.wei mask for test ahd
-extern bool media_init(ITUWidget* widget, char* param);
-extern bool media_timer(ITUWidget* widget, char* param);
-extern bool media_leave(ITUWidget* widget, char* param);
-extern bool delete_video(ITUWidget* widget, char* param);
-extern bool video_bar_jump(ITUWidget* widget, char* param);
-extern bool video_btn_jump_full(ITUWidget* widget, char* param);
-extern bool video_btn_jump(ITUWidget* widget, char* param);
-extern bool stop_video(ITUWidget* widget, char* param);
-extern bool play_video(ITUWidget* widget, char* param);
-extern bool next_video(ITUWidget* widget, char* param);
-extern bool prev_video(ITUWidget* widget, char* param);
-extern bool video_delete_pop(ITUWidget* widget, char* param);
-extern bool video_back_list(ITUWidget* widget, char* param);
-extern bool media_close_full(ITUWidget* widget, char* param);
-extern bool media_full(ITUWidget* widget, char* param);
-extern bool video_l_slistbox_3_load(ITUWidget* widget, char* param);
-extern bool view_video(ITUWidget* widget, char* param);
-extern bool video_l_slistbox_2_load(ITUWidget* widget, char* param);
-extern bool video_l_slistbox_1_load(ITUWidget* widget, char* param);
-extern bool video_l_slistbox_0_load(ITUWidget* widget, char* param);
-extern bool media_change(ITUWidget* widget, char* param);
-extern bool delete_photo(ITUWidget* widget, char* param);
-extern bool next_photo(ITUWidget* widget, char* param);
-extern bool prev_photo(ITUWidget* widget, char* param);
-extern bool photo_back_list(ITUWidget* widget, char* param);
-extern bool photo_l_slistbox_3_load(ITUWidget* widget, char* param);
-extern bool view_photo(ITUWidget* widget, char* param);
-extern bool photo_l_slistbox_2_load(ITUWidget* widget, char* param);
-extern bool photo_l_slistbox_1_load(ITUWidget* widget, char* param);
-extern bool photo_l_slistbox_0_load(ITUWidget* widget, char* param);
-extern bool intercom_init(ITUWidget* widget, char* param);
-extern bool intercom_timer(ITUWidget* widget, char* param);
-extern bool intercom_leave(ITUWidget* widget, char* param);
-extern bool inter_call(ITUWidget* widget, char* param);
-extern bool intercom_ing_init(ITUWidget* widget, char* param);
-extern bool intercom_ing_timer(ITUWidget* widget, char* param);
-extern bool intercom_ing_leave(ITUWidget* widget, char* param);
-extern bool intercom_ing_adjust(ITUWidget* widget, char* param);
-extern bool intercom_answer(ITUWidget* widget, char* param);
-extern bool intercom_quit(ITUWidget* widget, char* param);
-extern bool intercom_hang(ITUWidget* widget, char* param);
-extern bool intercom_ing_vol_set(ITUWidget* widget, char* param);
-extern bool set_main_bg_1_show(ITUWidget* widget, char* param);
-extern bool set_init(ITUWidget* widget, char* param);
-extern bool set_timer(ITUWidget* widget, char* param);
-extern bool set_leave(ITUWidget* widget, char* param);
-extern bool set_pop_up_confirm(ITUWidget* widget, char* param);
-extern bool set_pop_up_cancel(ITUWidget* widget, char* param);
-extern bool set_modify(ITUWidget* widget, char* param);
-extern bool lang_slistbox_0_load(ITUWidget* widget, char* param);
-extern bool set_change_lang(ITUWidget* widget, char* param);
-extern bool lang_slistbox_1_load(ITUWidget* widget, char* param);
-extern bool set_dis_reset(ITUWidget* widget, char* param);
-extern bool set_dis_ch_hue(ITUWidget* widget, char* param);
-extern bool set_dis_dajust(ITUWidget* widget, char* param);
-extern bool set_dis_ch_con(ITUWidget* widget, char* param);
-extern bool set_dis_ch_bri(ITUWidget* widget, char* param);
-extern bool set_dis_back(ITUWidget* widget, char* param);
-extern bool set_time_back(ITUWidget* widget, char* param);
-extern bool volume_set(ITUWidget* widget, char* param);
-extern bool set_vol_adjust(ITUWidget* widget, char* param);
-extern bool set_vol_back(ITUWidget* widget, char* param);
-extern bool set_md_time_change(ITUWidget* widget, char* param);
-extern bool set_md_time_back(ITUWidget* widget, char* param);
-extern bool set_md_video_check(ITUWidget* widget, char* param);
-extern bool set_md_time(ITUWidget* widget, char* param);
-extern bool set_auto_video_check(ITUWidget* widget, char* param);
-extern bool set_enter_lang(ITUWidget* widget, char* param);
-extern bool set_enter_clear_mode(ITUWidget* widget, char* param);
-extern bool set_enter_display(ITUWidget* widget, char* param);
-extern bool set_to_time_set(ITUWidget* widget, char* param);
-extern bool set_format(ITUWidget* widget, char* param);
-extern bool set_main_bg_1_hide(ITUWidget* widget, char* param);
-#endif
 
 extern bool AudioPlayerOnEnter(ITUWidget* widget, char* param);
 extern bool AudioPlayerOnLeave(ITUWidget* widget, char* param);
@@ -182,9 +106,9 @@ ITUActionFunction actionFunctions[] =
     "MainMenuOnTimer", MainMenuOnTimer,
     "MainMenuOnLeave", MainMenuOnLeave,
 
-    "monitor_init", monitor_init,
-    "monitor_timer", monitor_timer,
-    "monitor_leave", monitor_leave,
+    "MonitorOnEnter", MonitorOnEnter,
+    "MonitorOnTimer", MonitorOnTimer,
+    "MonitorOnLeave", MonitorOnLeave,
     "monitor_gain_adjust", monitor_gain_adjust,
     "monitor_vol_adjust", monitor_vol_adjust,
     "monitor_dis_reset", monitor_dis_reset,

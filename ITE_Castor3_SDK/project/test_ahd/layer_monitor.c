@@ -333,7 +333,7 @@ void monitor_time_update(int val)
 	ituTextSetString(MON_TEXT_REC_TIME_S, time_buf);	
 }
 
-bool monitor_init(ITUWidget* widget, char* param)
+bool MonitorOnEnter(ITUWidget* widget, char* param)
 {
 	if (!MON_ICON_WIN)
 	{
@@ -552,7 +552,7 @@ bool monitor_init(ITUWidget* widget, char* param)
 	
 }
 
-bool monitor_timer(ITUWidget* widget, char* param)
+bool MonitorOnTimer(ITUWidget* widget, char* param)
 {
 	uint32_t tick = SDL_GetTicks();
 	uint32_t diff = tick - monitor_start_time;
@@ -693,16 +693,14 @@ bool monitor_timer(ITUWidget* widget, char* param)
 	return true;
 }
 
-bool monitor_leave(ITUWidget* widget, char* param)
+bool MonitorOnLeave(ITUWidget* widget, char* param)
 {
-	printf("monitor_leave........................................1\n");
+	printf("MonitorOnLeave........................................1\n");
 	rec_start_time = 0;							//结束录像
-	//while(get_record_stop_over())
 	auto_rec_once = false;						//清除自动标志
 	play_call_ring_once = false;					//清除CALL机铃声播放标志
 	mon_rec_ing = false;
 	cur_call_ing = 0;
-	//usleep(50*1000);
 	gState = SEND_STOP;							//停止图像
 	if(!pre_page)
 	{
@@ -733,13 +731,8 @@ bool monitor_leave(ITUWidget* widget, char* param)
 	AudioResumeKeySound();						//恢复按键音
 	usleep(100*1000);
 	PR2000_set_end();
-	if(cur_mon_state == M_TALK_STATE)
-	{
-		clear_back_home_flag();
-	}
 	user_amp_off();
-	//ioctl(ITP_DEVICE_NOR, ITP_IOCTL_FLUSH, NULL);
-	printf("monitor_leave........................................2\n");
+	printf("MonitorOnLeave........................................2\n");
 	
 	return true;
 }
@@ -747,8 +740,6 @@ bool monitor_leave(ITUWidget* widget, char* param)
 bool monitor_rec_end(ITUWidget* widget, char* param)
 {
 	user_snap(2);
-	//ituWidgetSetVisible(MON_BTN_REC,true);//use timer
-	//ituWidgetSetVisible(MON_BTN_REC_ING,false);
 	return true;
 }
 
@@ -805,10 +796,7 @@ bool monitor_rec_start(ITUWidget* widget, char* param)
 		}
 		mon_rec_ing = true;
 		AudioStop();
-		user_snap(2);
-		//ituWidgetSetVisible(MON_BTN_REC,false);//use timer
-		//ituWidgetSetVisible(MON_BTN_REC_ING,true);
-		
+		user_snap(2);		
 	}
 	return true;
 }
@@ -1118,7 +1106,6 @@ bool monitor_dis_change(ITUWidget* widget, char* param)
 		pr2000_i2c_write(0xb8,PR2000_BRGT,theConfig.hue*200/100+28);
 		break;
 	}
-	//ConfigSave();
 	return true;
 }
 

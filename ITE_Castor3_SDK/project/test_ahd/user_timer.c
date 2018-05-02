@@ -85,43 +85,13 @@
  timer_t md_start_delay_TimerId;		//±³¹â¶¨Ê±Æ÷	60S
  #define	 md_start_delay_Time		1
 
-
-static bool need_back_home = true;
-static bool monitor_back_home = false;
 static bool avi_is_playing = false;
-static bool door_is_calling = false;
 static bool auto_start_ing = false;
 
- bool get_auto_start_ing()
- {
+bool get_auto_start_ing()
+{
 	return auto_start_ing;
- }
-
-
- bool get_door_is_calling()
- {
-	return door_is_calling;
- }
-
- bool get_back_home_flag()
- {
-	return need_back_home;
- }
-
- void set_back_home_flag()
- {
-	need_back_home = true;
- }
-
- void clear_back_home_flag()
- {
-	need_back_home = false;
- }
-
- bool get_mon_back_home_flag()
- {
-	return monitor_back_home;
- }
+}
 
 void set_avi_playing()
 {
@@ -132,7 +102,6 @@ void clear_avi_playing()
 {
 	avi_is_playing = false;
 }
-
 
 void door_open_timer_start()
 {
@@ -253,127 +222,6 @@ void montion_snap_reinit()
 	timer_create(CLOCK_REALTIME, NULL, &md_snap_TimerId);
 	timer_connect(md_snap_TimerId, montion_snap_end, 0);
 }
-void call_delay_start(long time)
-{
-	struct itimerspec value;
-	printf("---------->inter_delay_start<--------------\n");
-	
-	value.it_value.tv_sec   = 0;
-	value.it_value.tv_nsec  = time*1000;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(call_delay_TimerId, 0, &value, NULL);
-}
-
-void call_delay_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_delay_end<--------------\n");
-}
-
-void power_delay_start(long time)
-{
-	struct itimerspec value;
-	printf("---------->inter_delay_start<--------------\n");
-	value.it_value.tv_sec   = 0;
-	value.it_value.tv_nsec  = time*1000;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(power_delay_TimerId, 0, &value, NULL);
-}
-
-void power_delay_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_delay_end<--------------\n");
-}
-
-void power_ack_time_start()
-{
-	struct itimerspec value;
-	printf("---------->inter_delay_start<--------------\n");
-	value.it_value.tv_sec   = 0;
-	value.it_value.tv_nsec  = 100*1000*1000;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(power_ack_time_TimerId, 0, &value, NULL);
-}
-
-void power_ack_time_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_delay_end<--------------\n");
-}
-void power_ack_time_reinit()
-{
-	timer_delete(power_ack_time_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &power_ack_time_TimerId);
-	timer_connect(power_ack_time_TimerId, power_ack_time_end, 0);
-}
-
-void inter_delay_start(long time)
-{
-	struct itimerspec value;
-	printf("---------->inter_delay_start<--------------\n");
-	
-	value.it_value.tv_sec   = 0;
-	value.it_value.tv_nsec  = time*1000;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(inter_delay_TimerId, 0, &value, NULL);
-}
-
-void inter_delay_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_delay_end<--------------\n");
-}
-
-void inter_delay_reinit()
-{
-	timer_delete(inter_delay_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &inter_delay_TimerId);
-	timer_connect(inter_delay_TimerId, inter_delay_end, 0);
-}
-
-void inter_call_start()
-{
-	struct itimerspec value;
-	printf("---------->inter_call_start<--------------\n");
-	
-	value.it_value.tv_sec   = 30;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(inter_call_TimerId, 0, &value, NULL);
-}
-
-void inter_call_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_call_end<--------------\n");
-}
-
-void inter_call_reinit()
-{
-	timer_delete(inter_call_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &inter_call_TimerId);
-	timer_connect(inter_call_TimerId, inter_call_end, 0);
-}
-
-void inter_talk_start()
-{
-	struct itimerspec value;
-	printf("---------->inter_call_start<--------------\n");
-	
-	value.it_value.tv_sec   = 60;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(inter_talk_TimerId, 0, &value, NULL);
-	inter_call_reinit();
-}
-
-void inter_talk_end(timer_t timerid, int arg)
-{
-	printf("---------->inter_call_end<--------------\n");
-}
-
-void inter_talk_reinit()
-{
-	timer_delete(inter_talk_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &inter_talk_TimerId);
-	timer_connect(inter_talk_TimerId, inter_talk_end, 0);
-}
 
 void busy_30_start()
 {
@@ -438,32 +286,6 @@ void busy_over_3s_end(timer_t timerid, int arg)
 	busy_over_3s = false;
 }
 
-void key_sound_start()
-{
-	struct itimerspec value;
-	printf("---------->key_sound_start<--------------\n");
-	value.it_value.tv_sec   = 1;
-	value.it_value.tv_nsec  = 0;
-	value.it_interval.tv_sec = value.it_interval.tv_nsec = 0;
-	timer_settime(key_sound_TimerId, 0, &value, NULL);
-}
-
-void key_sound_end(timer_t timerid, int arg)
-{
-	printf("---------->key_sound_end<--------------\n");
-	//my.wei mask for test ahd
-	//if(!cur_talk_ing && !get_interphone_talk_start() && !user_get_videoPlayerIsPlaying() && !call_ring_playing)
-	//	user_amp_off();
-}
-
-void key_sound_reinit()
-{
-	printf("---------->key_sound_reinit<--------------\n");
-	timer_delete(key_sound_TimerId);
-	timer_create(CLOCK_REALTIME, NULL, &key_sound_TimerId);
-	timer_connect(key_sound_TimerId, key_sound_end, 0);
-}
-
 void md_enable_start()
 {
 	struct itimerspec value;
@@ -520,56 +342,27 @@ void UserTimerInit()
 //md_begin_time
     timer_create(CLOCK_REALTIME, NULL, &md_begin_TimerId);
     timer_connect(md_begin_TimerId, montion_begin_end, 0);
+	
 //md_snap_time
     timer_create(CLOCK_REALTIME, NULL, &md_snap_TimerId);
     timer_connect(md_snap_TimerId, montion_snap_end, 0);
-//call_delay
-    timer_create(CLOCK_REALTIME, NULL, &call_delay_TimerId);
-    timer_connect(call_delay_TimerId, call_delay_end, 0);
-//power_delay
-    timer_create(CLOCK_REALTIME, NULL, &power_delay_TimerId);
-    timer_connect(power_delay_TimerId, power_delay_end, 0);
-//power_ack_time
-    timer_create(CLOCK_REALTIME, NULL, &power_ack_time_TimerId);
-    timer_connect(power_ack_time_TimerId, power_ack_time_end, 0);
 	
-//inter_delay
-    timer_create(CLOCK_REALTIME, NULL, &inter_delay_TimerId);
-    timer_connect(inter_delay_TimerId, inter_delay_end, 0);
-//inter_call
-    timer_create(CLOCK_REALTIME, NULL, &inter_call_TimerId);
-    timer_connect(inter_call_TimerId, inter_call_end, 0);
-//inter_talk
-    timer_create(CLOCK_REALTIME, NULL, &inter_talk_TimerId);
-    timer_connect(inter_talk_TimerId, inter_talk_end, 0);
 //busy_30
     timer_create(CLOCK_REALTIME, NULL, &busy_30_TimerId);
     timer_connect(busy_30_TimerId, busy_30_end, 0);
+	
 //busy_60
     timer_create(CLOCK_REALTIME, NULL, &busy_60_TimerId);
     timer_connect(busy_60_TimerId, busy_60_end, 0);
+	
 //busy_over_3s
     timer_create(CLOCK_REALTIME, NULL, &busy_over_3s_TimerId);
     timer_connect(busy_over_3s_TimerId, busy_over_3s_end, 0);
-//key_sound
-    timer_create(CLOCK_REALTIME, NULL, &key_sound_TimerId);
-    timer_connect(key_sound_TimerId, key_sound_end, 0);
 //md_enable
     timer_create(CLOCK_REALTIME, NULL, &md_enable_TimerId);
     timer_connect(md_enable_TimerId, md_enable_end, 0);
 //md_start_delay
     timer_create(CLOCK_REALTIME, NULL, &md_start_delay_TimerId);
     timer_connect(md_start_delay_TimerId, md_start_delay_end, 0);
-	
-	
-   // timer_create(CLOCK_REALTIME, NULL, &auto_start_TimerId);
-    //timer_connect(auto_start_TimerId, auto_start_over, 0);
-	
-    //timer_create(CLOCK_REALTIME, NULL, &auto_view_TimerId);
-    //timer_connect(auto_view_TimerId, auto_view_over, 0);
 }
-
-
-
-
 
