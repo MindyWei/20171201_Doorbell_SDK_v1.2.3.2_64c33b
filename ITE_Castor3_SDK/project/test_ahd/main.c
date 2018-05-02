@@ -55,10 +55,8 @@ retry_backup:
 	UserTimerInit();
 	user_pr2000_init();
 	user_signal_control_init();
-	user_cam_detect();
+	UserCameraDetect();
 	user_time_init();
-	user_auto_init();
-	user_ring_play();
 	image_copy_sd();
 	while(1)
 	{

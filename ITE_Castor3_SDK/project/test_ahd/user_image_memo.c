@@ -408,7 +408,7 @@ char* ImageMemoRecord()
 	char name_buf[30] = "\0";
 	char name_buf_s[30] = "\0";
 	int photo_max;
-
+	printf("%s:ImageMemoRecording, cur_signal(%d,%d)\n", __FUNCTION__, ImageMemoRecording, cur_signal);
 
 	if (ImageMemoRecording ||!cur_signal)
 		return NULL;

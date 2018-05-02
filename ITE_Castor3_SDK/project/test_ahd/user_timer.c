@@ -119,7 +119,6 @@ void door_open_timer_end(timer_t timerid, int arg)
 	printf("---------->door_open_timer_end<--------------\n");
 	ithGpioSet(DOOR_1_OPEN);	
 	ithGpioSet(DOOR_2_OPEN);	
-	cur_open = false;
 }
 
 void black_wind_timer_start()
@@ -143,7 +142,6 @@ void black_wind_timer_end(timer_t timerid, int arg)
 	assert(monitorWindowBackground);
 	ituWidgetSetVisible(monitorWindowBackground, false);
 #endif
-	cur_wind = true;
 }
 
 void photo_icon_start()
@@ -193,10 +191,6 @@ void UserTimerMotionBeginReinit()
 void montion_snap_start()
 {
 	struct itimerspec value;
-	if(theConfig.mdcam == DOOR_1)
-		ithGpioSet(cam_gpio[DOOR_1][ON]);
-	else if(theConfig.mdcam == DOOR_2)
-		ithGpioSet(cam_gpio[DOOR_2][ON]);
 
 	value.it_value.tv_sec   = 30;
 	value.it_value.tv_nsec  = 0;
@@ -208,10 +202,6 @@ void montion_snap_end(timer_t timerid, int arg)
 {
 	printf("---------->montion_snap_end<--------------\n");
 	reset_md_start_time_t();//my.wei mask for test ahd
-	if(theConfig.mdcam == DOOR_1)
-		ithGpioClear(cam_gpio[DOOR_1][ON]);
-	else if(theConfig.mdcam == DOOR_2)
-		ithGpioClear(cam_gpio[DOOR_2][ON]);
 	set_montion_pass_once();
 	montion_start_again();
 }

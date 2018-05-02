@@ -147,8 +147,6 @@ int AudioPlay(char* filename, AudioPlayCallback func)
 
 void AudioStop(void)
 {
-	if(get_call_ring_play())
-		clear_call_ring_play();	
 	audioPlayCallback = NULL;
 	smtkAudioMgrQuickStop();
 }

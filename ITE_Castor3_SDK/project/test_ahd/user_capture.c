@@ -733,9 +733,11 @@ void *user_snap(int mode)
 	char* file_name = NULL;
 //	if(StorageGetCurrType() != STORAGE_SD)
 //		return;
+	printf("user_snap:mode, b_SNAPSHOT(%d, %d)\n", mode, b_SNAPSHOT);
 	if(mode == 1 && !b_SNAPSHOT )
 	{
 		file_name = ImageMemoRecord();
+		printf("file_name:%s\n", file_name);
 		if(file_name == NULL)
 		{
 			if(b_MOTION_RECING)
@@ -743,7 +745,6 @@ void *user_snap(int mode)
 				b_MOTION_RECING = false;
 				montion_snap_start();
 			}
-			led_blink_1s_end();
 			return;
 		}
 		memset(filename,'\0',sizeof(filename));
@@ -765,14 +766,12 @@ void *user_snap(int mode)
 						b_MOTION_RECING = false;
 						montion_snap_start();
 					}
-					led_blink_1s_end();
 					return;
 				}
 				record_stop_over = false;
 				memset(filename,'\0',sizeof(filename));
 				strcpy(filename,file_name);
 				printf("Video-------->%s\n",filename);
-				user_amp_on();
 				b_RECORDING_START = true;
 			}
 		}
@@ -1189,7 +1188,6 @@ static void *PackageMjpegToAVI(void *arg)
 					if(enc_count == rec_file_range[input_mode][2]*10 || rec_start_time == 0)
 					{
 						printf("rec_start_time---------------->0\n");
-						led_blink_1s_end();
 						md_avi = false;
 						b_RECORDING = false;
 						break;
@@ -1220,8 +1218,6 @@ static void *PackageMjpegToAVI(void *arg)
 	}
 	usleep(100*1000);
 	record_stop = true;
-	if(!cur_talk_ing)
-		user_amp_off();
 //	avi_end();
 	if(b_MOTION_RECING)
 	{
@@ -1420,12 +1416,7 @@ void SettingISPAnd_FilpLCD(
 			currCam = currCam ? 0 : 1;
 			UserCameraSwitch(currCam);	
 			return;
-#else
-			ithGpioSet(cam_gpio[DOOR_1][ON]);
-			usleep(500000);
-			ithGpioClear(cam_gpio[DOOR_1][ON]);
-			return;
-#endif
+#endif			
         }
     }
     else
@@ -1444,11 +1435,6 @@ void SettingISPAnd_FilpLCD(
 
 			currCam = currCam ? 0 : 1;
 			UserCameraSwitch(currCam);	
-			return;
-#else
-			ithGpioSet(cam_gpio[DOOR_1][ON]);
-			usleep(500000);
-			ithGpioClear(cam_gpio[DOOR_1][ON]);
 			return;
 #endif
 	
@@ -1499,8 +1485,6 @@ void SettingISPAnd_FilpLCD(
 									user_snap(1);
 								else
 								{
-									if(theConfig.mdsave)
-										led_blink_1s_start();
 									user_snap(theConfig.mdsave+1);
 								}
 							}

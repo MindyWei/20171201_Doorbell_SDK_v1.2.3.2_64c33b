@@ -15,46 +15,12 @@ static ITUButton* monitorRecordingButton;
 static ITUText* monitorRecTimeText;
 static ITUSprite* monitorMotionDetectionSprite;
 
-
-static bool play_call_ring_once = false;
-static bool play_call_ring_same = false;
-static bool auto_rec_once = false;
-static bool dis_talk_bar = false;
-static bool mute_icon_change = false;
-static unsigned long md_start_time = 0;			//移动侦测时间
-static bool monitor_need_update_ui = false;
-
+static unsigned long md_start_time = 0;
 static bool mon_rec_ing = false;
-static bool call_cant_rec = false;
-
-static bool monitor_call_start = false;
-static bool monitor_talk_start = false;
 static int monitor_time;	
 static uint32_t monitor_start_time;
-
 static uint8_t monitor_sd_icon = 0;
-
 static int x, y, width, height = 0;
-
-int get_monitor_time()
-{
-	return monitor_time;
-}
-
-void clear_play_call_ring_same()
-{
-	play_call_ring_same =false;
-}
-
-void clear_call_cant_rec()
-{
-	call_cant_rec = false;
-}
-
-void set_call_cant_rec()
-{
-	call_cant_rec = true;
-}
 
 bool get_mon_rec_ing()
 {
@@ -72,32 +38,6 @@ void set_mon_rec_ing()
 	mon_rec_ing = true;
 }
 
-void set_monitor_need_update_ui()
-{
-	monitor_need_update_ui = true;
-}
-
-bool get_auto_rec_once()
-{
-	return auto_rec_once;
-}
-
-void clear_auto_rec_once()
-{
-	auto_rec_once = false;
-}
-
-void set_auto_rec_once()
-{
-	auto_rec_once = true;
-}
-
-void set_play_call_ring_once()
-{
-	play_call_ring_once = true;
-	play_call_ring_same = true;
-}
-
 static void VideoPlayerViewBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha)
 {
 	int destx, desty;
@@ -107,7 +47,7 @@ static void VideoPlayerViewBackgroundDraw(ITUWidget* widget, ITUSurface* dest, i
 	ituDrawVideoSurface(dest, destx, desty, rect->width, rect->height);
 }
 
-void user_itu_init()
+static void monitor_itu_init()
 {
 	ituWidgetSetVisible(monitorWindowBackground, true);
 	ituWidgetSetVisible(monitorRecordButton,true);
@@ -149,17 +89,7 @@ void user_itu_init()
 		ituSpriteGoto(monitorMotionDetectionSprite, theConfig.md);
 }
 
-void signal_itu_init(int val)
-{
-	ituWidgetSetVisible(monitorCameraSwitchButton,false);
-		
-	if(1 == val)
-	{
-		ituWidgetSetVisible(monitorCameraSwitchButton,true);
-	}
-}
-
-void monitor_time_update(int val)
+static void monitor_time_update(int val)
 {
 	char time_buf[10] = "\0";
 	static ITUText* monitorRecTimeText_S ;
@@ -208,7 +138,7 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 	}
 	printf("enter page monitor........................\n");
 	//printf("monitor_1------------------------->%d\n",SDL_GetTicks()-test_tick);
-	user_itu_init();
+	monitor_itu_init();
 
 	SceneEnterVideoState();
 	//printf("monitor_------------------------->%d\n",SDL_GetTicks()-test_tick);
@@ -222,15 +152,12 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 
 	if(1)
 	{
+#if defined(TARGET_BOARD_G)
+		cur_signal = currCam + 1;
+#else
+		cur_signal = 1;
+#endif
 		printf("page_monitor.....................................................\n");
-		if(master_vdp)
-		{
-			if(signal_insert[DOOR_1])
-				cur_signal = signal_door_1;
-			else if(signal_insert[DOOR_2])
-				cur_signal = signal_door_2;
-		}
-		monitor_signal(cur_signal);
 		monitor_time = 30;	
 	}
 
@@ -244,7 +171,6 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(monitorRecTimeText,true);
 	ithGpioClear(AUDIO_IN);
-	signal_itu_init(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
 	//printf(".....................................................\n");
@@ -262,17 +188,11 @@ bool MonitorOnTimer(ITUWidget* widget, char* param)
 #if TEST_CAM	//my.wei add for debug
 		if(cur_signal == signal_door_1)
 		{
-			//if(!signal_insert[DOOR_2])
-			//	return true;
 			cur_signal = signal_door_2;
-			monitor_signal(cur_signal);
 		}
 		else if(cur_signal == signal_door_2)
 		{
-			//if(!signal_insert[DOOR_1])
-			//	return true;
 			cur_signal = signal_door_1;
-			monitor_signal(cur_signal);
 		}
 #endif
 		monitor_start_time = tick;
@@ -284,7 +204,6 @@ bool MonitorOnTimer(ITUWidget* widget, char* param)
 		}
 #else
 		{
-			door_call_num = 0;
 			ITULayer* mainMenuLayer = ituSceneFindWidget(&theScene, "mainMenuLayer");
 			assert(mainMenuLayer);
 			ituLayerGoto(mainMenuLayer);
@@ -293,47 +212,6 @@ bool MonitorOnTimer(ITUWidget* widget, char* param)
 		monitor_time_update(monitor_time);
 	}
 		
-	if(event_call > 0 && event_call < 0x10)		//处理CALL 机事件
-	{
-		//printf("change signal........................................................\n");
-		rec_start_time = 0;				//结束录像
-		usleep(50*1000);
-		play_call_ring_once = true;
-		if(cur_mon_state != C_TALK_STATE)
-		{
-			cur_mon_state = CALL_STATE;
-			led_blink_1s_start();
-		}
-		if(!cur_talk_ing)
-		{
-			monitor_time = 30;	
-			monitor_start_time = SDL_GetTicks();
-			monitor_time_update(monitor_time);
-		}
-		/*
-		if(cur_talk_ing)					//通话时 其他户外机call
-			door_talk_start();
-		else
-			door_call_start();
-		*/
-		ituWidgetSetVisible(monitorWindowBackground, false);
-		if(theConfig.zidong != 2)
-		{
-			auto_rec_once = true;			//自动录像
-		}
-		gState = SEND_STOP;
-		usleep(50*1000);
-		PR2000_set_end();
-		cur_signal = event_call;
-		event_call = 0;
-		signal_itu_init(cur_signal);
-		call_signal(cur_signal);
-		usleep(10*1000);
-		PR2000_set_start();
-		usleep(50*1000);
-		gState = SEND_BEGIN;
-	}
-
 #if 1
 	if(pre_singnal_lock != pr2000_signal_lock)
 	{
@@ -341,17 +219,10 @@ bool MonitorOnTimer(ITUWidget* widget, char* param)
 		if(!pr2000_signal_lock)
 		{
 			ituWidgetSetVisible(monitorWindowBackground, true);
-			cur_wind = false;
 		}
 
 	}
 #endif
-
-	if(play_call_ring_once)
-	{
-		play_call_ring_once = false;
-		play_call_ring(play_call_ring_same);
-	}
 
 	if(sd_state_change)
 	{
@@ -367,10 +238,6 @@ bool MonitorOnTimer(ITUWidget* widget, char* param)
 	{
 		monitor_sd_icon = 0;
 	}
-	if(mute_icon_change)
-	{
-		mute_icon_change = false;
-	}
 
 	return true;
 }
@@ -379,35 +246,23 @@ bool MonitorOnLeave(ITUWidget* widget, char* param)
 {
 	printf("MonitorOnLeave........................................1\n");
 	rec_start_time = 0;
-	auto_rec_once = false;
-	play_call_ring_once = false;
 	mon_rec_ing = false;
-	cur_call_ing = 0;
 	gState = SEND_STOP;
-	if(!pre_page)
+	if(1)
 	{
-		 if(cur_mon_state == MON_STATE ||cur_mon_state == CCTV_STATE)
+		 //if(cur_mon_state == MON_STATE ||cur_mon_state == CCTV_STATE)
 			mon_quit();
-		else if(cur_mon_state == MTION_STATE)
-			md_quit();
-	}
-	else
-	{
-		set_auto_rec_once();
-		set_mon_rec_ing();	
-		user_itu_init();
-		pre_page = 0;
-		return;
+		//else if(cur_mon_state == MTION_STATE)
+		//	md_quit();
 	}
 
-	cur_mon_state = 0;
+	//cur_mon_state = 0;
 	cur_signal = 0;
 	AudioStop();
 	SceneLeaveVideoState();
 	AudioResumeKeySound();
 	usleep(100*1000);
 	PR2000_set_end();
-	user_amp_off();
 	printf("MonitorOnLeave........................................2\n");
 	
 	return true;
@@ -427,7 +282,8 @@ bool MonitorSnapButtonOnPress(ITUWidget* widget, char* param)
 	else 
 		pr2000_test = true;
 #else 
-	if(rec_start_time  == 0 && (!auto_rec_once) && (!mon_rec_ing) && !sd_card_check)
+	printf("Snap:rec_start_time, mon_rec_ing, sd_card_check(%d, %d, %d)\n", rec_start_time, mon_rec_ing, sd_card_check);
+	if(rec_start_time  == 0 && (!mon_rec_ing) && !sd_card_check)
 	{
 		mon_rec_ing = true;
 		user_snap(1);
@@ -439,12 +295,13 @@ bool MonitorSnapButtonOnPress(ITUWidget* widget, char* param)
 bool MonitorRecordButtonOnPress(ITUWidget* widget, char* param)
 {
     struct statvfs info;
-	if(StorageGetCurrType() == STORAGE_SD && (!auto_rec_once)&& (!mon_rec_ing) && !sd_card_check)
+	printf("Rec: StorageGetCurrType, mon_rec_ing, sd_card_check(%d,%d, %d)\n", StorageGetCurrType(), mon_rec_ing, sd_card_check);
+	if(StorageGetCurrType() == STORAGE_SD && (!mon_rec_ing) && !sd_card_check)
 	{		
 		if (statvfs("E:/", &info) == 0)
 		{
 			uint64_t avail = (uint64_t)info.f_bfree * info.f_bsize /1024 /1024;
-			//printf("SD_CARD---------------->%ld------>%ld\n",(uint64_t)info.f_bfree * info.f_bsize,avail);
+			printf("SD_CARD---------------->%ld------>%ld\n",(uint64_t)info.f_bfree * info.f_bsize,avail);
 			if(avail < 200)
 				return true;
 		}
@@ -454,31 +311,12 @@ bool MonitorRecordButtonOnPress(ITUWidget* widget, char* param)
 	}
 	return true;
 }
-static void _monitor_sw_cam()
-{
-	signal_itu_init(cur_signal);
-	ituWidgetSetVisible(monitorWindowBackground, true);
-	gState = SEND_STOP;
-	usleep(50*1000);
-	PR2000_set_end();
-	rec_start_time = 0;
-	if(cur_signal == signal_door_1 || cur_signal == signal_door_1)
-		monitor_signal(cur_signal);
-	else if(cur_signal == signal_cctv_1 || cur_signal == signal_cctv_2)
-		cctv_signal(cur_signal);
-	//signal_switch(cur_signal);
-	usleep(10*1000);
-	PR2000_set_start();
-	usleep(50*1000);
-	gState = SEND_BEGIN;
-}
 
 bool MonitorCameraSwitchButtonOnPress(ITUWidget* widget, char* param)
 {
 #if defined(TARGET_BOARD_G)
 	currCam = currCam ? 0 : 1;
 	UserCameraSwitch(currCam);
-	return true;
 #endif
 	return true;
 }

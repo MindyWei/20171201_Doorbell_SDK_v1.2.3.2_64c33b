@@ -80,63 +80,6 @@
 
 #define ALC5616_VOL 		0//90
 
-#else
-
-#define DOOR_1_ON			98		//户外机1 供电GPIO
-#define DOOR_2_ON			99		//户外机2 供电GPIO
-#define DOOR_3_ON			0		//户外机3 供电GPIO
-#define DOOR_4_ON			0		//户外机4 供电GPIO
-
-#define DOOR_1_CALL			6		//户外机1 检测GPIO
-#define DOOR_2_CALL			5		//户外机2 检测GPIO
-#define DOOR_3_CALL			0		//户外机3 检测GPIO
-#define DOOR_4_CALL			0		//户外机4检测GPIO
-
-#define DOOR_1				0
-#define DOOR_2				1
-#define CCTV_1				2
-#define CCTV_2				3
-
-#define DOOR_1_OPEN		88		//户外机1 开锁GPIO	
-#define DOOR_2_OPEN		89		//户外机2 开锁GPIO	
-
-#define CCTV_1_ON			0
-#define CCTV_2_ON			0
-
-#define DOOR_RING			29		//控制铃声输出到户外机
-#define DOOR_1_AUDIO		28
-#define AUDIO_IN			27
-#define AUDIO_OUT			26
-#define DOOR_2_AUDIO		25
-
-#define CONV_CONT			22		//34118 IC 控制开关
-#define MIC_NUTE			30		// 控制通话声音输出到户外机
-
-
-
-#define RING_OPEN			96		//免提IC
-#define RING_POWER			83		//功放供电
-
-#define RING_VOL_1			93		
-#define RING_VOL_2			94		
-
-#define TALK_VOL_1			92
-#define TALK_VOL_2			95
-
-#define LED_CONT			63		//指示灯
-
-
-#define INTER_CON_CNT 		38		//interphone 音量
-
-
-#define ON		0
-#define CALL		1
-
-#define PR2000_CONT		0x20
-#define PR2000_BRGT		0x21
-#define PR2000_HUE		0x22
-
-#define ALC5616_VOL 		90
 #endif
 
 typedef enum
@@ -251,55 +194,16 @@ extern int currCam;
 extern bool pr2000_test;
 
 //
-extern bool master_vdp;				//主机标志
 extern bool montion_enable;
 extern int montion_end_event;
 extern int montion_event_cmd;
-extern bool need_check_video;
-
-extern bool boot_logo;
 extern bool busy_over_3s;
-extern bool video_first;
-
-extern uint8_t door_call_num;
-extern bool call_ring_playing;
-extern bool format_ing;
-extern bool format_over;
-extern bool delete_ing;
-extern bool delete_over;
-extern bool set_display_signal;
-
-extern bool door_is_call;
-extern bool door_call_out;
-extern bool door_talk_out;
-extern bool standby_state;
-
-extern uint8_t ring_play; 
-
 extern bool back_light;
 
-//当前状态标志
-extern int pre_page;
 extern int cur_page;					//当前页面
-extern int pre_mon_state;				//当前监控状态
-extern int cur_mon_state;				//当前监控状态
-extern int cur_call_ing;					
 extern int cur_signal;					//当前通道
-extern bool cur_wind;					//当前信号通道
-extern bool pre_open;					//开锁标志
-extern bool cur_open;					//当前开锁标志
 extern uint8_t cam_detecting;				//户外机检测状态
 extern bool cam_detect_over;				//户外机检测状
-extern bool signal_insert[4];			//door 1 接入状态
-//extern bool door_1_insert;				//door 1 接入状态
-//extern bool door_2_insert;				//door 2 接入状态
-//extern bool cctv_1_insert;				//cctv 1 接入状态
-//extern bool cctv_2_insert;				//cctv 2 接入状态
-extern uint8_t offer_signal_channel;		//当前提供的信号
-extern uint8_t use_signal_channel;		//当前使用的信号
-extern bool cur_signal_call;				//当前显示信号的状态
-extern bool signal_channel_busy ;		//当前信号通道忙
-extern bool interphone_mast;
 extern uint8_t interphone_number;		//interphone 号码
 extern bool cur_inter_call;				//interphone 状态
 extern uint8_t cur_inter_times;			//interphone 状态
@@ -312,7 +216,6 @@ extern bool sd_state_change;			//SD卡状态变化
 
 
 //事件标志
-extern int event_call;					//call 机事件
 extern int event_call_s;					//call 机事件
 extern int event_intercom;				//intercom 事件
 extern int event_uart;					//串口 事件
@@ -325,8 +228,6 @@ extern int show_snap_rec_icon;			//显示拍照/录像图标
 extern unsigned long rec_start_time;		//更新录像时间
 extern int temp_rec_time;				//录像时间累计值
 extern bool pop_up[POP_UP_TOTAL];		//弹窗标志
-extern uint8_t once_key_ring;					//跳过一次按键音
-extern int cam_gpio[signal_total][2];		//	
 extern SEND_STATE  gState;				//信号标志
 extern bool pr2000_signal_lock;			//信号锁
 extern bool g_videoPlayerIsFileEOF;		//视频播放标志
@@ -343,8 +244,6 @@ extern bool sd_card_check;
 
 //extern StorageType storageCurrType;
 extern uint32_t test_tick;
-
-extern bool auto_rec_start;
 
 typedef void (*PhotoLoadCallback)(uint8_t* data, int size);
 extern uint8_t pr2000_i2c_read(uint8_t slaveAddr,uint8_t regAddr);

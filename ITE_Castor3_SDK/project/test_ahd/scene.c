@@ -309,8 +309,6 @@ int SceneRun(void)
 #endif
 	ituScenePreDraw(&theScene, screenSurf);
 
-	user_vdp_power_on();
-
 	while (!done)
 	{
 		bool result = false;
@@ -321,7 +319,7 @@ int SceneRun(void)
 #endif
 		tick = SDL_GetTicks();
 		StorageCheck();
-		event_process();//20180426 my.wei mask
+		UserEventProcess();
 
 		frames++;
 

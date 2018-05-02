@@ -49,12 +49,10 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 #if TEST_CAM
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = 1;
-	monitor_signal(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
 	gState = SEND_BEGIN;
 #else
-	standby_state = true;
 	ScreenOff();
 	md_start_delay_start();
 #endif
@@ -69,7 +67,6 @@ static void _md_start()
 	montion_enable = true;
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = theConfig.mdcam+1;
-	monitor_signal(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
 	gState = SEND_BEGIN;
@@ -99,11 +96,11 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	{
 		if(1)
 		{
-			if(theConfig.md && master_vdp)
+			if(theConfig.md)
 			{
 				if(theConfig.mdtime)
 				{
-					if(time_enable_montion())
+					if(UserTimeEnableMontion())
 						_md_start();
 				}		
 				else
@@ -115,7 +112,7 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	{
 		if(theConfig.mdtime)
 		{
-			if(!time_enable_montion())
+			if(!UserTimeEnableMontion())
 				UserMotionEnd();
 		}
 	}
@@ -134,18 +131,11 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	if(cam_reboot)
 	{
 		cam_reboot = false;
-		if(theConfig.mdcam == DOOR_1)
-		{
-			ithGpioSet(cam_gpio[DOOR_1][ON]);
-			usleep(500*1000);
-			ithGpioClear(cam_gpio[DOOR_1][ON]);
-		}
-		else if(theConfig.mdcam == DOOR_2)
-		{
-			ithGpioSet(cam_gpio[DOOR_2][ON]);
-			usleep(500*1000);
-			ithGpioClear(cam_gpio[DOOR_2][ON]);
-		}
+		currCam = currCam ? 0 : 1;
+		UserCameraSwitch(currCam);
+		usleep(500000);
+		currCam = currCam ? 0 : 1;
+		UserCameraSwitch(currCam);	
 	}
 	return false;
 }
@@ -164,7 +154,6 @@ bool StandbyOnLeave(ITUWidget* widget, char* param)
 		PR2000_set_end();
 	}
 	UserTimerMotionSnapReinit();
-	standby_state = false;
 	ithGpioSet(AUDIO_OUT);
 	md_enable_reinit();
 	ScreenOn();	
