@@ -346,7 +346,6 @@ ITUActionFunc ituSceneFindFunction(ITUScene *scene, const char *name)
 void *ituSceneFindWidget(ITUScene *scene, const char *name)
 {
     ITCTree *node;
-	printf("%s: %s\r\n", __FUNCTION__, name);
     assert(scene);
     assert(name);
     ITU_ASSERT_THREAD();
