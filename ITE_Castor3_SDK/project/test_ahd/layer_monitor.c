@@ -136,12 +136,9 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 		monitorMotionDetectionSprite = ituSceneFindWidget(&theScene, "monitorMotionDetectionSprite");
 		assert(monitorMotionDetectionSprite);
 	}
-	printf("enter page monitor........................\n");
-	//printf("monitor_1------------------------->%d\n",SDL_GetTicks()-test_tick);
 	monitor_itu_init();
 
 	SceneEnterVideoState();
-	//printf("monitor_------------------------->%d\n",SDL_GetTicks()-test_tick);
 
 	ituWidgetGetGlobalPosition(monitorWindowIcon, &x, &y);
 	width = ituWidgetGetWidth(monitorWindowIcon);
@@ -157,7 +154,6 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 #else
 		cur_signal = 1;
 #endif
-		printf("page_monitor.....................................................\n");
 		monitor_time = 30;	
 	}
 
@@ -173,7 +169,6 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 	ithGpioClear(AUDIO_IN);
 	PR2000_set_start();
 	usleep(100*1000);
-	//printf(".....................................................\n");
 	gState = SEND_BEGIN;
 	return true;
 	
@@ -251,7 +246,7 @@ bool MonitorOnLeave(ITUWidget* widget, char* param)
 	if(1)
 	{
 		 //if(cur_mon_state == MON_STATE ||cur_mon_state == CCTV_STATE)
-			mon_quit();
+		//	mon_quit();
 		//else if(cur_mon_state == MTION_STATE)
 		//	md_quit();
 	}

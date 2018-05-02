@@ -195,7 +195,7 @@ void ConfigInit(void)
 	theConfig.firstboot = iniparser_getint(cfgIni, "user:firstboot", 1);
 	cfgSavingCount = 0;
 
-	configDump();
+	//configDump();
 }
 
 void ConfigExit(void)

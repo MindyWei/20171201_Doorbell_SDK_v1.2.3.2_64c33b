@@ -200,45 +200,26 @@ extern int montion_event_cmd;
 extern bool busy_over_3s;
 extern bool back_light;
 
-extern int cur_page;					//当前页面
-extern int cur_signal;					//当前通道
-extern uint8_t cam_detecting;				//户外机检测状态
-extern bool cam_detect_over;				//户外机检测状
-extern uint8_t interphone_number;		//interphone 号码
-extern bool cur_inter_call;				//interphone 状态
-extern uint8_t cur_inter_times;			//interphone 状态
-extern bool cur_inter_ing;				//interphone状态
-extern bool cur_talk_ing;				//通话状态
-extern bool other_talk_ing;				//通话状态
-extern int other_talk_id;					//通话状态
-extern uint8_t cur_wash_mode;			//通话状态
-extern bool sd_state_change;			//SD卡状态变化
+extern int cur_page;
+extern int cur_signal;
+extern uint8_t cam_detecting;
+extern bool cam_detect_over;
+extern bool sd_state_change;
 
-
-//事件标志
-extern int event_call_s;					//call 机事件
-extern int event_intercom;				//intercom 事件
-extern int event_uart;					//串口 事件
-extern uint8_t event_home_go;				//主界面切换事件
-extern bool event_go_home;				//切换到主界面
-
-
-//逻辑标志
-extern int show_snap_rec_icon;			//显示拍照/录像图标
-extern unsigned long rec_start_time;		//更新录像时间
-extern int temp_rec_time;				//录像时间累计值
-extern bool pop_up[POP_UP_TOTAL];		//弹窗标志
-extern SEND_STATE  gState;				//信号标志
-extern bool pr2000_signal_lock;			//信号锁
-extern bool g_videoPlayerIsFileEOF;		//视频播放标志
-extern bool PlayerStop;					//播放视频结束标志
+extern int show_snap_rec_icon;
+extern unsigned long rec_start_time;
+extern int temp_rec_time;
+extern bool pop_up[POP_UP_TOTAL];
+extern SEND_STATE  gState;
+extern bool pr2000_signal_lock;
+extern bool g_videoPlayerIsFileEOF;
+extern bool PlayerStop;
 extern bool PlayerStart;
 extern bool PlayerRead;
 extern bool pr2000_signal_lock;
 extern bool pre_singnal_lock;
 extern bool pr2000_is_ok;
 extern bool pr2000_start;
-extern bool set_to_time_set_flag;	
 extern bool auto_snap_filename;	
 extern bool sd_card_check;
 

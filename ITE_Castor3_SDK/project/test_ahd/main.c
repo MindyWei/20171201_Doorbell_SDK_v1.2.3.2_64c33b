@@ -49,8 +49,8 @@ retry_backup:
 	ScreenInit();
 	PhotoInit();
 	StorageInit();
-	image_memo_init();
-	video_memo_init();
+	//image_memo_init();
+	//video_memo_init();
 	user_gpio_init();
 	UserTimerInit();
 	user_pr2000_init();

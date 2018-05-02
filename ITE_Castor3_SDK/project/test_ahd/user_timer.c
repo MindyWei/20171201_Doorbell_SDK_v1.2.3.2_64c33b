@@ -176,7 +176,6 @@ void montion_begin_end(timer_t timerid, int arg)
 {
 	printf("---------->montion_begin_end<--------------\n");
 	cur_page  = page_motion;
-	event_home_go = page_motion;
 	set_motion_satrt();
 	montion_start_again();
 }

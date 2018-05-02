@@ -4,7 +4,6 @@
 bool MainMenuOnEnter(ITUWidget* widget, char* param)
 {
 #if TEST_CAM
-	event_call_s = 1;
 	return true;
 #endif
 	int i;

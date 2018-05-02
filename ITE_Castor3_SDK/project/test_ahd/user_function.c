@@ -3,65 +3,26 @@
 #include <fat/Api_f.h>
 
 bool pr2000_test = false;
-
-//
 bool montion_enable = false;
 int montion_end_event = 0;
 int montion_event_cmd = 0;
-
 bool busy_over_3s = false;
-
 int cur_page = 0;
-int cur_signal = 0;					//当前信号通道
-uint8_t cam_detecting = 0;				//户外机检测状
-bool cam_detect_over = false;				//户外机检测状
-uint8_t interphone_number = 0;		//interphone 号码
-bool cur_inter_call = false;				//interphone 状态
-uint8_t cur_inter_times = 3;			//interphone 状态
-bool cur_inter_ing = false;				//interphone状态
-bool cur_talk_ing = false;				//通话状态
-bool other_talk_ing = false;				//通话状态
-int other_talk_id = 0;					//通话状态
-uint8_t cur_wash_mode = 0;				//通话状态
-bool sd_state_change = false;			//SD卡状态变化
-
-	
-//事件标志
-int event_call_s = 0;					//call 机事件
-int event_intercom = 0;				//intercom 事件
-int event_uart = 0;					//串口 事件
-uint8_t event_home_go = 0;			//主界面切换事件
-bool event_go_home = false;				//切换到主界面
-
-//定时器事件
-bool call_is_end = false;				
-
-//逻辑标志
-int show_snap_rec_icon = 0;				//显示拍照/录像图标
-unsigned long rec_start_time = 0;			//更新录像时间
-int temp_rec_time = 60;					//录像时间累计值
-bool pop_up[POP_UP_TOTAL] ={false};		//弹窗标志
-bool set_to_time_set_flag = false;	
+int cur_signal = 0;
+uint8_t cam_detecting = 0;
+bool cam_detect_over = false;
+bool sd_state_change = false;
+int show_snap_rec_icon = 0;
+unsigned long rec_start_time = 0;
+int temp_rec_time = 60;
+bool pop_up[POP_UP_TOTAL] ={false};
 bool auto_snap_filename = false;
-bool led_blink_enable = false;
-bool led_blink_ing = false;
+uint32_t test_tick;
 
 static bool isSnapRecIconDisplay = false;
 static float screenSaverCountDown;
 static uint32_t screenSaverLastTick;
 static bool screenOff = false;
-
-uint32_t test_tick;
-static char ring_str[6][25] 		= {"A:/sounds/sound1.mp3",
-								"A:/sounds/sound2.mp3",
-								"A:/sounds/sound3.mp3",
-								"A:/sounds/sound4.mp3",
-								"A:/sounds/sound5.mp3",
-								"A:/sounds/sound6.mp3"};
-
-#define AVDD_COUNT			37		//图像
-#define DVDD_COUNT			38		//图像
-#define BL_EN_PWM			64		//背光
 
 #if defined(TARGET_BOARD_G)
 
@@ -97,18 +58,6 @@ void user_gpio_init()
 	ithGpioSetOut(CAM_VOL_PIN);
 	ithGpioEnable(CAM_VOL_PIN); 
 	ithGpioSet(CAM_VOL_PIN);	
-
-#if 0
-	ithGpioSetMode(PR2000_MPP3, ITH_GPIO_MODE0);
-	ithGpioSetOut(PR2000_MPP3);
-	ithGpioEnable(PR2000_MPP3); 
-	ithGpioClear(PR2000_MPP3);	
-
-	ithGpioSetMode(PR2000_MPP4, ITH_GPIO_MODE0);
-	ithGpioSetOut(PR2000_MPP4);
-	ithGpioEnable(PR2000_MPP4); 
-	ithGpioClear(PR2000_MPP4);		
-#endif	
 }
 #endif
 
@@ -147,7 +96,6 @@ void UserCameraSwitch(int iCamNum)
 void mon_quit()
 {
 	printf("mon_quit...........................................\n");
-	cur_talk_ing = 0;
 }
 
 
@@ -290,13 +238,13 @@ void ScreenInit(void)
 
 void ScreenOn()
 {
-	ithGpioSet(BL_EN_PWM);
+	ithGpioSet(BL_GPIO_PIN);
 	screenOff = false;
 }
 
 void ScreenOff()
 {
-	ithGpioClear(BL_EN_PWM);
+	ithGpioClear(BL_GPIO_PIN);
 	screenOff = true;
 }
 
