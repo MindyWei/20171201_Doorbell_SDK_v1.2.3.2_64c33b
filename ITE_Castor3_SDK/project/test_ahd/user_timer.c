@@ -137,11 +137,11 @@ void black_wind_timer_end(timer_t timerid, int arg)
 	printf("---------->black_wind_timer_end<--------------\n");
 	//2018.3.28 my.wei add for UI command queue
 #if defined(SCENE_MSG_CMD_QUEUE_ENABLE)
-	SceneWidgetSetVisible("MON_BG_WIN", false);
+	SceneWidgetSetVisible("monitorWindowBackground", false);
 #else	
-	ITUBackground* MON_BG_WIN = ituSceneFindWidget(&theScene, "MON_BG_WIN");
-	assert(MON_BG_WIN);
-	ituWidgetSetVisible(MON_BG_WIN, false);
+	ITUBackground* monitorWindowBackground = ituSceneFindWidget(&theScene, "monitorWindowBackground");
+	assert(monitorWindowBackground);
+	ituWidgetSetVisible(monitorWindowBackground, false);
 #endif
 	cur_wind = true;
 }
@@ -183,7 +183,7 @@ void montion_begin_end(timer_t timerid, int arg)
 	montion_start_again();
 }
 
-void montion_begin_reinit()
+void UserTimerMotionBeginReinit()
 {
 	timer_delete(md_begin_TimerId);
 	timer_create(CLOCK_REALTIME, NULL, &md_begin_TimerId);
@@ -216,7 +216,7 @@ void montion_snap_end(timer_t timerid, int arg)
 	montion_start_again();
 }
 
-void montion_snap_reinit()
+void UserTimerMotionSnapReinit()
 {
 	timer_delete(md_snap_TimerId);
 	timer_create(CLOCK_REALTIME, NULL, &md_snap_TimerId);

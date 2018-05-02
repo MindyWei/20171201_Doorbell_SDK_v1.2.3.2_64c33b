@@ -44,7 +44,7 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 		assert(standbyMotionDectionBackground);
 		ituWidgetSetDraw(standbyMotionDectionBackground,VideoPlayerViewBackgroundDraw);
 	}
-	SceneEnterVideoState();		//ÇÐ»»Ö¡ÂÊ
+	SceneEnterVideoState();
 	
 #if TEST_CAM
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
@@ -52,7 +52,7 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 	monitor_signal(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
-	gState = SEND_BEGIN;			//ÏÔÊ¾Í¼Ïñ±êÖ¾
+	gState = SEND_BEGIN;
 #else
 	standby_state = true;
 	ScreenOff();
@@ -72,7 +72,7 @@ static void _md_start()
 	monitor_signal(cur_signal);
 	PR2000_set_start();
 	usleep(100*1000);
-	gState = SEND_BEGIN;			//ÏÔÊ¾Í¼Ïñ±êÖ¾
+	gState = SEND_BEGIN;
 	set_montion_pass_once();
 	montion_start_again();
 }
@@ -93,12 +93,10 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	if (diff >= 1000)
 	{
 		standbyLastTick = tick;
-		//printf("montion_enable, md_delay_over, busy_over_3s(%d,%d,%d)\r\n", montion_enable, md_delay_over, busy_over_3s);
 	}
 
 	if(!montion_enable && md_delay_over && !busy_over_3s)
 	{
-		//printf("%s: line #%d,theConfig.md=%d, master_vdp=%d\r\n", __FUNCTION__, __LINE__, theConfig.md, master_vdp);
 		if(1)
 		{
 			if(theConfig.md && master_vdp)
@@ -115,7 +113,6 @@ bool StandbyOnTimer(ITUWidget* widget, char* param)
 	}
 	if(montion_enable)
 	{
-		//printf("%s: line #%d\r\n", __FUNCTION__, __LINE__);
 		if(theConfig.mdtime)
 		{
 			if(!time_enable_montion())
@@ -158,15 +155,15 @@ bool StandbyOnLeave(ITUWidget* widget, char* param)
 	printf("standby_leave........................................1\n");
 	if(montion_enable)
 	{
-		rec_start_time = 0;							//½áÊøÂ¼Ïñ
+		rec_start_time = 0;
 		cur_signal = 0;
-		gState = SEND_STOP;							//Í£Ö¹Í¼Ïñ
+		gState = SEND_STOP;
 		md_quit();
-		SceneLeaveVideoState();						//ÇÐ»»Ö¡ÂÊ
+		SceneLeaveVideoState();
 		usleep(100*1000);
 		PR2000_set_end();
 	}
-	montion_snap_reinit();
+	UserTimerMotionSnapReinit();
 	standby_state = false;
 	ithGpioSet(AUDIO_OUT);
 	md_enable_reinit();

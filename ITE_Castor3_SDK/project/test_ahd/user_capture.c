@@ -1413,17 +1413,17 @@ void SettingISPAnd_FilpLCD(
                 outdata.DisplayAddrY[outdata.OutWidth*outdata.OutHeight-15]);
 #if defined(TARGET_BOARD_G)
 			currCam = currCam ? 0 : 1;
-			cam_switch(currCam);
+			UserCameraSwitch(currCam);
 
 			usleep(500000);
 
 			currCam = currCam ? 0 : 1;
-			cam_switch(currCam);	
+			UserCameraSwitch(currCam);	
 			return;
 #else
-			ithGpioSet(cam_gpio[DOOR_1][ON]);   //CAM1断电.
+			ithGpioSet(cam_gpio[DOOR_1][ON]);
 			usleep(500000);
-			ithGpioClear(cam_gpio[DOOR_1][ON]); //CAM1给电.
+			ithGpioClear(cam_gpio[DOOR_1][ON]);
 			return;
 #endif
         }
@@ -1438,17 +1438,17 @@ void SettingISPAnd_FilpLCD(
                 outdata.DisplayAddrY[outdata.OutWidth*outdata.OutHeight-15]);
 #if defined(TARGET_BOARD_G)
 			currCam = currCam ? 0 : 1;
-			cam_switch(currCam);
+			UserCameraSwitch(currCam);
 
 			usleep(500000);
 
 			currCam = currCam ? 0 : 1;
-			cam_switch(currCam);	
+			UserCameraSwitch(currCam);	
 			return;
 #else
-			ithGpioSet(cam_gpio[DOOR_1][ON]);   //CAM1断电.
+			ithGpioSet(cam_gpio[DOOR_1][ON]);
 			usleep(500000);
-			ithGpioClear(cam_gpio[DOOR_1][ON]); //CAM1给电.
+			ithGpioClear(cam_gpio[DOOR_1][ON]);
 			return;
 #endif
 	
@@ -1460,13 +1460,13 @@ void SettingISPAnd_FilpLCD(
 		MOTION_DETECTION   motion_info;
 
 		
-		motion_info.motion_threshold = (theConfig.mdsensitive + 2)*20;		//检测阈值  超过--算移动
-		motion_info.motion_sensitivity = 20;								//数据分块
-		motion_info.motion_start_x = 0;									//检测区域
+		motion_info.motion_threshold = (theConfig.mdsensitive + 2)*20;
+		motion_info.motion_sensitivity = 20;
+		motion_info.motion_start_x = 0;
 		motion_info.motion_end_x = rec_file_range[input_mode][0];
 		motion_info.motion_start_y = 0;
 		motion_info.motion_end_y = rec_file_range[input_mode][1];
-		motion_info.motion_mask_enable = false;							//不检查区域
+		motion_info.motion_mask_enable = false;
 		motion_info.motion_mask_start_x = 320;
 		motion_info.motion_mask_end_x =960;
 		motion_info.motion_mask_start_y = 180;
@@ -1519,8 +1519,6 @@ void SettingISPAnd_FilpLCD(
 	}
 #endif
 	dbuf = itv_get_dbuf_anchor();
-	//if (dbuf == NULL)
-		//return;
 
 	if(outdata.IsInterlaced)
 		itv_enable_isp_feature(MMP_ISP_DEINTERLACE);
@@ -1559,12 +1557,7 @@ void SettingISPAnd_FilpLCD(
 			pthread_create(&sw_yuv_tid, &attr, sw_yuv, NULL);
 			_packetQueueInit(&gYUVInputQueue, _yuvInputPktRelease, 50);
 			pthread_create(&isp_tid, NULL, Isp_process, NULL);
-			//_packetQueueInit(&gSW_YUVInputQueue, _sw_yuvInputPktRelease, 50);
-			//pthread_create(&sw_yuv_tid, NULL, sw_yuv, NULL);
 		}
-		//_packetQueueInit(&gJpegInputQueue, _jpegInputPktRelease, 50);
-		//pthread_create(&avi_tid, NULL, PackageMjpegToAVI, NULL);
-
 
 		if(SUPPORT_REC_AUDIO_S)
 		{

@@ -6,22 +6,11 @@ extern bool MainMenuOnLeave(ITUWidget* widget, char* param);
 extern bool MonitorOnEnter(ITUWidget* widget, char* param);
 extern bool MonitorOnTimer(ITUWidget* widget, char* param);
 extern bool MonitorOnLeave(ITUWidget* widget, char* param);
-extern bool monitor_gain_adjust(ITUWidget* widget, char* param);
-extern bool monitor_vol_adjust(ITUWidget* widget, char* param);
-extern bool monitor_dis_reset(ITUWidget* widget, char* param);
-extern bool monitor_dis_ch_hue(ITUWidget* widget, char* param);
-extern bool monitor_dis_dajust(ITUWidget* widget, char* param);
-extern bool monitor_dis_ch_con(ITUWidget* widget, char* param);
-extern bool monitor_dis_ch_bri(ITUWidget* widget, char* param);
-extern bool monitor_dis_full(ITUWidget* widget, char* param);
-extern bool monitor_rec_end(ITUWidget* widget, char* param);
-extern bool monitor_dis_set(ITUWidget* widget, char* param);
-extern bool monitor_snap(ITUWidget* widget, char* param);
-extern bool monitor_rec_start(ITUWidget* widget, char* param);
-extern bool monitor_open(ITUWidget* widget, char* param);
-extern bool monitor_talk(ITUWidget* widget, char* param);
-extern bool monitor_sw_cam(ITUWidget* widget, char* param);
-extern bool monitor_vol_set(ITUWidget* widget, char* param);
+extern bool MonitorFullBackgroundButtonOnPress(ITUWidget* widget, char* param);
+extern bool MonitorRecordingButtonOnPress(ITUWidget* widget, char* param);
+extern bool MonitorSnapButtonOnPress(ITUWidget* widget, char* param);
+extern bool MonitorRecordButtonOnPress(ITUWidget* widget, char* param);
+extern bool MonitorCameraSwitchButtonOnPress(ITUWidget* widget, char* param);
 extern bool MonitorMDButtonOnPress(ITUWidget* widget, char* param);
 
 extern bool AudioPlayerOnEnter(ITUWidget* widget, char* param);
@@ -109,22 +98,11 @@ ITUActionFunction actionFunctions[] =
     "MonitorOnEnter", MonitorOnEnter,
     "MonitorOnTimer", MonitorOnTimer,
     "MonitorOnLeave", MonitorOnLeave,
-    "monitor_gain_adjust", monitor_gain_adjust,
-    "monitor_vol_adjust", monitor_vol_adjust,
-    "monitor_dis_reset", monitor_dis_reset,
-    "monitor_dis_ch_hue", monitor_dis_ch_hue,
-    "monitor_dis_dajust", monitor_dis_dajust,
-    "monitor_dis_ch_con", monitor_dis_ch_con,
-    "monitor_dis_ch_bri", monitor_dis_ch_bri,
-    "monitor_dis_full", monitor_dis_full,
-    "monitor_rec_end", monitor_rec_end,
-    "monitor_dis_set", monitor_dis_set,
-    "monitor_snap", monitor_snap,
-    "monitor_rec_start", monitor_rec_start,
-    "monitor_open", monitor_open,
-    "monitor_talk", monitor_talk,
-    "monitor_sw_cam", monitor_sw_cam,
-    "monitor_vol_set", monitor_vol_set,
+    "MonitorFullBackgroundButtonOnPress", MonitorFullBackgroundButtonOnPress,
+    "MonitorRecordingButtonOnPress", MonitorRecordingButtonOnPress,
+    "MonitorSnapButtonOnPress", MonitorSnapButtonOnPress,
+    "MonitorRecordButtonOnPress", MonitorRecordButtonOnPress,
+    "MonitorCameraSwitchButtonOnPress", MonitorCameraSwitchButtonOnPress,
     "MonitorMDButtonOnPress", MonitorMDButtonOnPress,
 
     "AudioPlayerOnEnter", AudioPlayerOnEnter,

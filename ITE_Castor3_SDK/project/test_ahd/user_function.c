@@ -304,7 +304,7 @@ void cam_all_off()						//关闭所有摄像头电源
 #endif
 int currCam = 0;
 
-void cam_switch(int iCamNum)
+void UserCameraSwitch(int iCamNum)
 {
 	ithGpioSetMode(CAM_SWITCH_PIN, ITH_GPIO_MODE0);
 	ithGpioSetOut(CAM_SWITCH_PIN);
@@ -315,54 +315,6 @@ void cam_switch(int iCamNum)
 		ithGpioSet(CAM_SWITCH_PIN);	
 	else if(iCamNum == 1)
 		ithGpioClear(CAM_SWITCH_PIN);	
-}
-
-#else
-
-void cam_switch( uint8_t val)				//摄像头电源切换		
-{
-	char buf_1[6][10] = {"DOOR1","DOOR2","CCTV 1","CCTV 2","CCTV 3","CCTV4"};
-	
-	ITUText* MON_TEXT_CAM = ituSceneFindWidget(&theScene, "MON_TEXT_CAM");
-	assert(MON_TEXT_CAM);
-	ITUButton* MON_BTN_CAM_SW_1 = ituSceneFindWidget(&theScene, "MON_BTN_CAM_SW_1");
-	assert(MON_BTN_CAM_SW_1);
-	ITUButton* MON_BTN_CAM_SW_2 = ituSceneFindWidget(&theScene, "MON_BTN_CAM_SW_2");
-	assert(MON_BTN_CAM_SW_2);
-	ITUButton* MON_BTN_CAM_SW_3 = ituSceneFindWidget(&theScene, "MON_BTN_CAM_SW_3");
-	assert(MON_BTN_CAM_SW_3);
-	ITUButton* MON_BTN_CAM_SW_4 = ituSceneFindWidget(&theScene, "MON_BTN_CAM_SW_4");
-	assert(MON_BTN_CAM_SW_4);
-	
-	ithGpioSet(cam_gpio[DOOR_1][ON]);
-	ithGpioSet(cam_gpio[DOOR_2][ON]);
-	ituWidgetSetVisible(MON_BTN_CAM_SW_1,false);
-	ituWidgetSetVisible(MON_BTN_CAM_SW_2,false);
-	ituWidgetSetVisible(MON_BTN_CAM_SW_3,false);
-	ituWidgetSetVisible(MON_BTN_CAM_SW_4,false);
-	ituTextSetString(MON_TEXT_CAM,buf_1[val-1]);
-	if(1 == val)
-	{
-		ituWidgetSetVisible(MON_BTN_CAM_SW_1,true);
-		if(signal_insert[DOOR_1])
-		{
-			ithGpioClear(cam_gpio[DOOR_1][ON]);
-		}
-	}
-	else if(2 == val)
-	{
-		ituWidgetSetVisible(MON_BTN_CAM_SW_2,true);
-		if(signal_insert[DOOR_2])
-			ithGpioClear(cam_gpio[DOOR_2][ON]);
-	}
-	else if(3 == val)
-	{
-		ituWidgetSetVisible(MON_BTN_CAM_SW_3,true);
-	}
-	else if(4 == val)
-	{
-		ituWidgetSetVisible(MON_BTN_CAM_SW_4,true);
-	}
 }
 #endif
 
@@ -498,8 +450,8 @@ void md_quit()
 	ithGpioSet(cam_gpio[DOOR_1][ON]);
 	ithGpioSet(cam_gpio[DOOR_2][ON]);
 	usleep(500*1000);
-	montion_begin_reinit();
-	montion_snap_reinit();
+	UserTimerMotionBeginReinit();
+	UserTimerMotionSnapReinit();
 	ithGpioSet(AUDIO_OUT);
 	montion_enable = false;
 }
@@ -738,27 +690,27 @@ void snap_rec_state()
 		if(show_snap_rec_icon == sanp_display)
 		{
 			show_snap_rec_icon = icon_displaying;
-			ITUButton* MON_BTN_SNAP = ituSceneFindWidget(&theScene, "MON_BTN_SNAP");
-			assert(MON_BTN_SNAP);
-			ITUIcon* MON_ICON_SNAP = ituSceneFindWidget(&theScene, "MON_ICON_SNAP");
-			assert(MON_ICON_SNAP);
-			ituWidgetSetVisible(MON_BTN_SNAP,false);
-			ituWidgetSetVisible(MON_ICON_SNAP,true);
+			ITUButton* monitorSnapButton = ituSceneFindWidget(&theScene, "monitorSnapButton");
+			assert(monitorSnapButton);
+			ITUIcon* monitorSnapIcon = ituSceneFindWidget(&theScene, "monitorSnapIcon");
+			assert(monitorSnapIcon);
+			ituWidgetSetVisible(monitorSnapButton,false);
+			ituWidgetSetVisible(monitorSnapIcon,true);
 			
 		}
 		else if(show_snap_rec_icon == rec_display)
 		{
 			show_snap_rec_icon = icon_displaying;
-			ITUButton* MON_BTN_REC = ituSceneFindWidget(&theScene, "MON_BTN_REC");
-			assert(MON_BTN_REC);
-			ITUButton* MON_BTN_REC_ING = ituSceneFindWidget(&theScene, "MON_BTN_REC_ING");
-			assert(MON_BTN_REC_ING);
-			//ITUText* MON_TEXT_REC_TIME = ituSceneFindWidget(&theScene, "MON_TEXT_REC_TIME");
-			//assert(MON_TEXT_REC_TIME);
-			ituWidgetSetVisible(MON_BTN_REC,false);
-			ituWidgetSetVisible(MON_BTN_REC_ING,true);
-			//ituWidgetSetVisible(MON_TEXT_REC_TIME,true);
-			//ituTextSetString(MON_TEXT_REC_TIME, "01:00");
+			ITUButton* monitorRecordButton = ituSceneFindWidget(&theScene, "monitorRecordButton");
+			assert(monitorRecordButton);
+			ITUButton* monitorRecordingButton = ituSceneFindWidget(&theScene, "monitorRecordingButton");
+			assert(monitorRecordingButton);
+			//ITUText* monitorRecTimeText = ituSceneFindWidget(&theScene, "monitorRecTimeText");
+			//assert(monitorRecTimeText);
+			ituWidgetSetVisible(monitorRecordButton,false);
+			ituWidgetSetVisible(monitorRecordingButton,true);
+			//ituWidgetSetVisible(monitorRecTimeText,true);
+			//ituTextSetString(monitorRecTimeText, "01:00");
 		}
 		else if(show_snap_rec_icon == icon_displaying)
 		{
@@ -768,24 +720,24 @@ void snap_rec_state()
 		{
 			isSnapRecIconDisplay = false;
 			temp_rec_time = 60;
-			ITUButton* MON_BTN_REC = ituSceneFindWidget(&theScene, "MON_BTN_REC");
-			assert(MON_BTN_REC);
-			ITUButton* MON_BTN_REC_ING = ituSceneFindWidget(&theScene, "MON_BTN_REC_ING");
-			assert(MON_BTN_REC_ING);
-			//ITUText* MON_TEXT_REC_TIME = ituSceneFindWidget(&theScene, "MON_TEXT_REC_TIME");
-			//assert(MON_TEXT_REC_TIME);
-			ituWidgetSetVisible(MON_BTN_REC,true);
-			ituWidgetSetVisible(MON_BTN_REC_ING,false);
-			//ituWidgetSetVisible(MON_TEXT_REC_TIME,false);
-			ITUButton* MON_BTN_SNAP = ituSceneFindWidget(&theScene, "MON_BTN_SNAP");
-			assert(MON_BTN_SNAP);
-			ITUIcon* MON_ICON_SNAP = ituSceneFindWidget(&theScene, "MON_ICON_SNAP");
-			assert(MON_ICON_SNAP);
-			if(ituWidgetIsVisible(MON_ICON_SNAP))
+			ITUButton* monitorRecordButton = ituSceneFindWidget(&theScene, "monitorRecordButton");
+			assert(monitorRecordButton);
+			ITUButton* monitorRecordingButton = ituSceneFindWidget(&theScene, "monitorRecordingButton");
+			assert(monitorRecordingButton);
+			//ITUText* monitorRecTimeText = ituSceneFindWidget(&theScene, "monitorRecTimeText");
+			//assert(monitorRecTimeText);
+			ituWidgetSetVisible(monitorRecordButton,true);
+			ituWidgetSetVisible(monitorRecordingButton,false);
+			//ituWidgetSetVisible(monitorRecTimeText,false);
+			ITUButton* monitorSnapButton = ituSceneFindWidget(&theScene, "monitorSnapButton");
+			assert(monitorSnapButton);
+			ITUIcon* monitorSnapIcon = ituSceneFindWidget(&theScene, "monitorSnapIcon");
+			assert(monitorSnapIcon);
+			if(ituWidgetIsVisible(monitorSnapIcon))
 			{
 				clear_mon_rec_ing();
-				ituWidgetSetVisible(MON_BTN_SNAP,true);
-				ituWidgetSetVisible(MON_ICON_SNAP,false);
+				ituWidgetSetVisible(monitorSnapButton,true);
+				ituWidgetSetVisible(monitorSnapIcon,false);
 			}
 		}
 	}
@@ -1238,8 +1190,8 @@ void UserMotionEnd()
 {
 	printf("montion_end....................................\n");
 	montion_enable = false;
-	rec_start_time = 0;							//结束录像
-	gState = SEND_STOP;							//停止图像
+	rec_start_time = 0;
+	gState = SEND_STOP;
 	md_quit();
 	usleep(100*1000);
 	PR2000_set_end();
@@ -1252,7 +1204,7 @@ void _user_video_time_check()
 
 void user_video_time_check()
 {
-	pthread_t det_p;			//线程ID
+	pthread_t det_p;
 	pthread_attr_t det_pat;
 	pthread_attr_init(&det_pat);
 	pthread_attr_setdetachstate(&det_pat, PTHREAD_CREATE_DETACHED);
@@ -1272,13 +1224,8 @@ void _user_sd_card_check()
 	if (statvfs("E:/", &info) == 0)
 	{
 		uint64_t avail = (uint64_t)info.f_bfree * info.f_bsize /1024 /1024;
-		if(cur_page == page_monitor || cur_page == page_cctv)
-		{
-			if(avail < 200)
-				set_monitor_sd_icon(2);
-			else
-				set_monitor_sd_icon(1);
-		}
+		if(avail < 200)
+			printf("no enough space!\n");
 	}
 	printf("_user_sd_card_check...over..............................\n");
 	sd_card_check = false;
@@ -1288,7 +1235,7 @@ void user_sd_card_check()
 {
 	if(sd_card_check)
 		return;
-	pthread_t det_p;			//线程ID
+	pthread_t det_p;
 	pthread_attr_t det_pat;
 	pthread_attr_init(&det_pat);
 	pthread_attr_setdetachstate(&det_pat, PTHREAD_CREATE_DETACHED);
@@ -1304,7 +1251,7 @@ void UserCheckDiskSpace(void)
     if (statvfs("C:/", &info) == 0)
     {
         uint64_t avail = info.f_bfree * info.f_bsize;
-        printf("A-disk space: %llu\n", avail/1024);
+        printf("C-disk space: %llu\n", avail/1024);
     }
 	/*
     if (statvfs("B:/", &info) == 0)
