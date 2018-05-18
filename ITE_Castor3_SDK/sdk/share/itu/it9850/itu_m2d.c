@@ -448,8 +448,11 @@ static void M2dSetRotation(ITURotation rot)
         gfxSurfaceSetSurfaceBaseAddress(
             screenSurf->m2dSurf,
             screenSurf->surf.addr);
-            
-        gRoateSurf = M2dCreateSurface(ithLcdGetWidth(), ithLcdGetHeight(), ithLcdGetPitch(), ITU_RGB565, ithLcdGetBaseAddrA(), ITU_STATIC);       
+
+		if(ithLcdGetFormat() == ITH_LCD_ARGB8888)
+        	gRoateSurf = M2dCreateSurface(ithLcdGetWidth(), ithLcdGetHeight(), ithLcdGetPitch(), ITU_ARGB8888, ithLcdGetBaseAddrA(), ITU_STATIC);    
+		else
+        	gRoateSurf = M2dCreateSurface(ithLcdGetWidth(), ithLcdGetHeight(), ithLcdGetPitch(), ITU_RGB565, ithLcdGetBaseAddrA(), ITU_STATIC);   
         gfxSurfaceSetWidth(screenSurf->m2dSurf, lcdSurf->width);
         gfxSurfaceSetHeight(screenSurf->m2dSurf, lcdSurf->height);
         gfxSurfaceSetPitch(screenSurf->m2dSurf, pitch);
