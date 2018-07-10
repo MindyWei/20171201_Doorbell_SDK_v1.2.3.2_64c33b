@@ -44,6 +44,12 @@ if (DEFINED CFG_ITU_DRAW)
     )
 endif()
 
+if (DEFINED CFG_ITU_ASSERT_THREAD)
+    add_definitions(
+        -DCFG_ITU_ASSERT_THREAD
+    )
+endif()
+
 if (DEFINED CFG_ITU_FT_CACHE_ENABLE)
     add_definitions(
         -DCFG_ITU_FT_CACHE_SIZE=${CFG_ITU_FT_CACHE_SIZE}
@@ -118,6 +124,7 @@ add_library(itu STATIC
     itu_listbox.c
     itu_mediafilelistbox.c
     itu_meter.c
+    itu_oscilloscope.c
     itu_pageflow.c
     itu_png.c
     itu_popupbutton.c
@@ -137,10 +144,12 @@ add_library(itu STATIC
     itu_scrollmediafilelistbox.c
     itu_scrolltext.c
     itu_shadow.c
+    itu_simpleanimation.c
     itu_slideshow.c
     itu_sprite.c
     itu_spritebutton.c
     itu_stepwheel.c
+    itu_stopanywhere.c
     itu_stringset.c
     itu_surface.c
     itu_tablelistbox.c
@@ -155,6 +164,7 @@ add_library(itu STATIC
     itu_wheelbackground.c
     itu_widget.c
     itu_wipeeffect.c
+    ArabicConverter.c
 )
 
 if (DEFINED CFG_VIDEO_ENABLE)

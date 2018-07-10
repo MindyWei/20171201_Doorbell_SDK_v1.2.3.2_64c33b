@@ -207,6 +207,7 @@ bool ituVideoUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
         mtal_pb_stop();
         mtal_pb_exit();
         videoloopIsPlaying = false;
+        audioKeySoundPaused = false;        
         ItuLeaveVideoState();
         if (video->repeat)
         {

@@ -50,12 +50,24 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                     {
                         ituAnimationStop(animation);
                         animation->frame = 0;
-                        memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-                        memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-                        animation->child->alpha = animation->orgAlpha;
-                        animation->child->angle = animation->orgAngle;
-                        animation->child->transformX = animation->orgTransformX;
-                        animation->child->transformY = animation->orgTransformY;
+
+                        if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                            memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
+
+                        if (animation->animationFlags & ITU_ANIM_COLOR)
+                        {
+                            memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+                            animation->child->alpha = animation->orgAlpha;
+                        }
+
+                        if (animation->animationFlags & ITU_ANIM_ROTATE)
+                            animation->child->angle = animation->orgAngle;
+
+                        if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+                        {
+                            animation->child->transformX = animation->orgTransformX;
+                            animation->child->transformY = animation->orgTransformY;
+                        }
 
                         if (animation->animationFlags & ITU_ANIM_REVERSE)
                             ituAnimationGoto(animation, animation->keyframe - 1);
@@ -77,12 +89,24 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                                 {
                                     ituAnimationStop(animation);
                                     animation->frame = 0;
-                                    memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-                                    memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-                                    animation->child->alpha = animation->orgAlpha;
-                                    animation->child->angle = animation->orgAngle;
-                                    animation->child->transformX = animation->orgTransformX;
-                                    animation->child->transformY = animation->orgTransformY;
+
+                                    if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                                        memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
+
+                                    if (animation->animationFlags & ITU_ANIM_COLOR)
+                                    {
+                                        memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+                                        animation->child->alpha = animation->orgAlpha;
+                                    }
+
+                                    if (animation->animationFlags & ITU_ANIM_ROTATE)
+                                        animation->child->angle = animation->orgAngle;
+
+                                    if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+                                    {
+                                        animation->child->transformX = animation->orgTransformX;
+                                        animation->child->transformY = animation->orgTransformY;
+                                    }
                                     ituAnimationGoto(animation, 0);
                                     animation->playCount = 0;
                                     ituAnimationOnStop(animation);
@@ -107,12 +131,24 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                                 {
                                     ituAnimationStop(animation);
                                     animation->frame = 0;
-                                    memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-                                    memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-                                    animation->child->alpha = animation->orgAlpha;
-                                    animation->child->angle = animation->orgAngle;
-                                    animation->child->transformX = animation->orgTransformX;
-                                    animation->child->transformY = animation->orgTransformY;
+
+                                    if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                                        memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
+
+                                    if (animation->animationFlags & ITU_ANIM_COLOR)
+                                    {
+                                        memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+                                        animation->child->alpha = animation->orgAlpha;
+                                    }
+
+                                    if (animation->animationFlags & ITU_ANIM_ROTATE)
+                                        animation->child->angle = animation->orgAngle;
+
+                                    if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+                                    {
+                                        animation->child->transformX = animation->orgTransformX;
+                                        animation->child->transformY = animation->orgTransformY;
+                                    }
                                     ituAnimationGoto(animation, 0);
                                     animation->playCount = 0;
                                     ituAnimationOnStop(animation);
@@ -249,18 +285,33 @@ bool ituAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
             animation->child = (ITUWidget*) itcTreeGetChildAt(animation, animation->keyframe);
             if (animation->child)
             {
-                memcpy(&animation->orgRect, &animation->child->rect, sizeof (ITURectangle));
-                memcpy(&animation->orgColor, &animation->child->color, sizeof (ITUColor));
-                animation->orgAlpha = animation->child->alpha;
-                animation->orgAngle = animation->child->angle;
-                animation->orgTransformX = animation->child->transformX;
-                animation->orgTransformY = animation->child->transformY;
-                memcpy(&animation->keyRect, &animation->child->rect, sizeof (ITURectangle));
-                memcpy(&animation->keyColor, &animation->child->color, sizeof (ITUColor));
-                animation->keyAlpha = animation->child->alpha;
-                animation->keyAngle = animation->child->angle;
-                animation->keyTransformX = animation->child->transformX;
-                animation->keyTransformY = animation->child->transformY;
+                if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                {
+                    memcpy(&animation->orgRect, &animation->child->rect, sizeof (ITURectangle));
+                    memcpy(&animation->keyRect, &animation->child->rect, sizeof (ITURectangle));
+                }
+
+                if (animation->animationFlags & ITU_ANIM_COLOR)
+                {
+                    memcpy(&animation->orgColor, &animation->child->color, sizeof (ITUColor));
+                    animation->orgAlpha = animation->child->alpha;
+                    memcpy(&animation->keyColor, &animation->child->color, sizeof (ITUColor));
+                    animation->keyAlpha = animation->child->alpha;
+                }
+
+                if (animation->animationFlags & ITU_ANIM_ROTATE)
+                {
+                    animation->orgAngle = animation->child->angle;
+                    animation->keyAngle = animation->child->angle;
+                }
+
+                if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+                {
+                    animation->orgTransformX = animation->child->transformX;
+                    animation->orgTransformY = animation->child->transformY;
+                    animation->keyTransformX = animation->child->transformX;
+                    animation->keyTransformY = animation->child->transformY;
+                }
                 animation->frame = 0;
                 result = widget->dirty = true;
             }
@@ -552,12 +603,22 @@ void ituAnimationPlay(ITUAnimation* animation, int keyframe)
         }
         else
         {
-            memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-            memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-            animation->child->alpha = animation->orgAlpha;
-            animation->child->angle = animation->orgAngle;
-            animation->child->transformX = animation->orgTransformX;
-            animation->child->transformY = animation->orgTransformY;
+            if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
+
+            if (animation->animationFlags & ITU_ANIM_COLOR)
+            {
+                memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+                animation->child->alpha = animation->orgAlpha;
+            }
+            if (animation->animationFlags & ITU_ANIM_ROTATE)
+                animation->child->angle = animation->orgAngle;
+
+            if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+            {
+                animation->child->transformX = animation->orgTransformX;
+                animation->child->transformY = animation->orgTransformY;
+            }
             ituAnimationOnStop(animation);
             ituExecActions((ITUWidget*)animation, animation->actions, ITU_EVENT_STOPPED, 0);
         }
@@ -809,13 +870,22 @@ void ituAnimationReset(ITUAnimation* animation)
     animation->frame = 0;
     if (animation->child)
     {
-        memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-        memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-        animation->child->alpha = animation->orgAlpha;
-        animation->child->angle = animation->orgAngle;
-        animation->child->transformX = animation->orgTransformX;
-        animation->child->transformY = animation->orgTransformY;
+        if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+            memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
 
+        if (animation->animationFlags & ITU_ANIM_COLOR)
+        {
+            memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+            animation->child->alpha = animation->orgAlpha;
+        }
+        if (animation->animationFlags & ITU_ANIM_ROTATE)
+            animation->child->angle = animation->orgAngle;
+
+        if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+        {
+            animation->child->transformX = animation->orgTransformX;
+            animation->child->transformY = animation->orgTransformY;
+        }
         animation->child = NULL;
     }
     animation->keyframe = 0;
@@ -869,12 +939,22 @@ void ituAnimationReversePlay(ITUAnimation* animation, int keyframe)
         }
         else
         {
-            memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
-            memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
-            animation->child->alpha = animation->orgAlpha;
-            animation->child->angle = animation->orgAngle;
-            animation->child->transformX = animation->orgTransformX;
-            animation->child->transformY = animation->orgTransformY;
+            if ((animation->animationFlags & ITU_ANIM_MOVE) || (animation->animationFlags & ITU_ANIM_EASE_IN) || (animation->animationFlags & ITU_ANIM_EASE_OUT) || (animation->animationFlags & ITU_ANIM_SCALE))
+                memcpy(&animation->child->rect, &animation->orgRect, sizeof (ITURectangle));
+
+            if (animation->animationFlags & ITU_ANIM_COLOR)
+            {
+                memcpy(&animation->child->color, &animation->orgColor, sizeof (ITUColor));
+                animation->child->alpha = animation->orgAlpha;
+            }
+            if (animation->animationFlags & ITU_ANIM_ROTATE)
+                animation->child->angle = animation->orgAngle;
+
+            if (animation->animationFlags & ITU_ANIM_TRANSFORM)
+            {
+                animation->child->transformX = animation->orgTransformX;
+                animation->child->transformY = animation->orgTransformY;
+            }
             ituAnimationOnStop(animation);
             ituExecActions((ITUWidget*)animation, animation->actions, ITU_EVENT_STOPPED, 0);
         }

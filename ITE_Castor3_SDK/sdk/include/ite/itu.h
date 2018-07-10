@@ -674,6 +674,17 @@ void ituFtExit(void);
 int ituFtLoadFont(int index, char* filename, ITUGlyphFormat format);
 
 /**
+* Loads font array to specified index.
+*
+* @param index the index to load to. Must small than ITU_FREETYPE_MAX_FONTS.
+* @param array The array buffer to load.
+* @param size The array size.
+* @param format the glyph format to convert to.
+* @return 0 if success. non-zero value if failed.
+*/
+int ituFtLoadFontArray(int index, uint8_t* array, int size, ITUGlyphFormat format);
+
+/**
  * Sets current font to use.
  *
  * @param index the index of loaded font to use.
@@ -744,6 +755,7 @@ bool ituFtIsCharValid(const char* text);
 // Style definitions
 #define ITU_FT_STYLE_DEFAULT	0x0       ///< Default style
 #define ITU_FT_STYLE_BOLD 		0x1       ///< Bold style
+#define ITU_FT_STYLE_ARABIC		0x2       ///< Arabic style
 
 /**
 * Sets the style of current font.
@@ -771,46 +783,46 @@ void ituFtSetFontStyleValue(unsigned int style, int value);
  */
 typedef enum
 {
-    ITU_EVENT_TIMER             = 0,    ///< Timer event, should be issued every 33ms in main loop
-    ITU_EVENT_PRESS             = 1,    ///< Press event, equals union of ITU_EVENT_KEYDOWN and ITU_EVENT_MOUSEDOWN
-    ITU_EVENT_LAYOUT            = 2,    ///< Notify widgets should relayout itself
-    ITU_EVENT_LANGUAGE          = 3,    ///< Notify widgets to change its lanauage
-    ITU_EVENT_KEYDOWN           = 4,    ///< Notify the key-down event to all visible widgets
-    ITU_EVENT_KEYUP             = 5,    ///< Notify the key-up event to all visible widgets
-    ITU_EVENT_MOUSEDOWN         = 6,    ///< Notify the mouse-down event to all visible widgets
-    ITU_EVENT_MOUSEUP           = 7,    ///< Notify the mouse-up event to all visible widgets
-    ITU_EVENT_MOUSEDOUBLECLICK  = 8,    ///< Notify the mouse-double-click event to all visible widgets
-    ITU_EVENT_MOUSEMOVE         = 9,    ///< Notify the mouse-move event to all visible widgets
-    ITU_EVENT_TOUCHSLIDELEFT    = 10,   ///< Notify the slide to left event of touch panel to all visible widgets
-    ITU_EVENT_TOUCHSLIDEUP      = 11,   ///< Notify the slide to left event of touch panel to all visible widgets
-    ITU_EVENT_TOUCHSLIDERIGHT   = 12,   ///< Notify the slide to left event of touch panel to all visible widgets
-    ITU_EVENT_TOUCHSLIDEDOWN    = 13,   ///< Notify the slide to left event of touch panel to all visible widgets
-    ITU_EVENT_LOAD              = 14,   ///< Notify the widget to load data
-    ITU_EVENT_RELEASE           = 15,   ///< Notify the widgets to release surface
-    ITU_EVENT_ENTER             = 16,   ///< Notify the layer is entered.
-    ITU_EVENT_LEAVE             = 17,   ///< Notify the layer is leaved.
-    ITU_EVENT_SELECT            = 18,   ///< Notify the item of list box is selected.
-    ITU_EVENT_DELAY             = 19,   ///< Notify the delayed event.
-    ITU_EVENT_CHANGED           = 20,   ///< Notify the changed event.
-    ITU_EVENT_MOUSELONGPRESS    = 21,   ///< Notify the mouse-long-press event to all visible widgets
-    ITU_EVENT_SYNC              = 22,   ///< Notify the sync event to binded widgets
-    ITU_EVENT_MOUSEDOWN_OUTSIDE = 23,   ///< mouse-down event on pressed outside this widget
-    ITU_EVENT_MOUSEUP_OUTSIDE   = 24,   ///< mouse-up event on pressed outside this widget
-    ITU_EVENT_DELAY0            = 25,   ///< Notify the delayed #0 event.
-    ITU_EVENT_DELAY1            = 26,   ///< Notify the delayed #1 event.
-    ITU_EVENT_DELAY2            = 27,   ///< Notify the delayed #2 event.
-    ITU_EVENT_DELAY3            = 28,   ///< Notify the delayed #3 event.
-    ITU_EVENT_DELAY4            = 29,   ///< Notify the delayed #4 event.
-    ITU_EVENT_DELAY5            = 30,   ///< Notify the delayed #5 event.
-    ITU_EVENT_DELAY6            = 31,   ///< Notify the delayed #6 event.
-    ITU_EVENT_DELAY7            = 32,   ///< Notify the delayed #7 event.
-    ITU_EVENT_STOPPED           = 33,   ///< Notify the stopped event.
-    ITU_EVENT_TOUCHPINCH        = 34,   ///< Notify the pinch event of touch panel to all visible widgets
-    ITU_EVENT_LOAD_EXTERNAL     = 35,   ///< Notify the widget to load external data
-    ITU_EVENT_LOAD_IMAGE        = 36,   ///< Notify the widget to load external image
-    ITU_EVENT_DRAGGING          = 37,   ///< Notify the widget is dragging
+    ITU_EVENT_TIMER                 = 0,    ///< Timer event, should be issued every 33ms in main loop
+    ITU_EVENT_PRESS                 = 1,    ///< Press event, equals union of ITU_EVENT_KEYDOWN and ITU_EVENT_MOUSEDOWN
+    ITU_EVENT_LAYOUT                = 2,    ///< Notify widgets should relayout itself
+    ITU_EVENT_LANGUAGE              = 3,    ///< Notify widgets to change its lanauage
+    ITU_EVENT_KEYDOWN               = 4,    ///< Notify the key-down event to all visible widgets
+    ITU_EVENT_KEYUP                 = 5,    ///< Notify the key-up event to all visible widgets
+    ITU_EVENT_MOUSEDOWN             = 6,    ///< Notify the mouse-down event to all visible widgets
+    ITU_EVENT_MOUSEUP               = 7,    ///< Notify the mouse-up event to all visible widgets
+    ITU_EVENT_MOUSEDOUBLECLICK      = 8,    ///< Notify the mouse-double-click event to all visible widgets
+    ITU_EVENT_MOUSEMOVE             = 9,    ///< Notify the mouse-move event to all visible widgets
+    ITU_EVENT_TOUCHSLIDELEFT        = 10,   ///< Notify the slide to left event of touch panel to all visible widgets
+    ITU_EVENT_TOUCHSLIDEUP          = 11,   ///< Notify the slide to left event of touch panel to all visible widgets
+    ITU_EVENT_TOUCHSLIDERIGHT       = 12,   ///< Notify the slide to left event of touch panel to all visible widgets
+    ITU_EVENT_TOUCHSLIDEDOWN        = 13,   ///< Notify the slide to left event of touch panel to all visible widgets
+    ITU_EVENT_LOAD                  = 14,   ///< Notify the widget to load data
+    ITU_EVENT_RELEASE               = 15,   ///< Notify the widgets to release surface
+    ITU_EVENT_ENTER                 = 16,   ///< Notify the layer is entered.
+    ITU_EVENT_LEAVE                 = 17,   ///< Notify the layer is leaved.
+    ITU_EVENT_SELECT                = 18,   ///< Notify the item of list box is selected.
+    ITU_EVENT_DELAY                 = 19,   ///< Notify the delayed event.
+    ITU_EVENT_CHANGED               = 20,   ///< Notify the changed event.
+    ITU_EVENT_MOUSELONGPRESS        = 21,   ///< Notify the mouse-long-press event to all visible widgets
+    ITU_EVENT_SYNC                  = 22,   ///< Notify the sync event to binded widgets
+    ITU_EVENT_MOUSEDOWN_OUTSIDE     = 23,   ///< mouse-down event on pressed outside this widget
+    ITU_EVENT_MOUSEUP_OUTSIDE       = 24,   ///< mouse-up event on pressed outside this widget
+    ITU_EVENT_DELAY0                = 25,   ///< Notify the delayed #0 event.
+    ITU_EVENT_DELAY1                = 26,   ///< Notify the delayed #1 event.
+    ITU_EVENT_DELAY2                = 27,   ///< Notify the delayed #2 event.
+    ITU_EVENT_DELAY3                = 28,   ///< Notify the delayed #3 event.
+    ITU_EVENT_DELAY4                = 29,   ///< Notify the delayed #4 event.
+    ITU_EVENT_DELAY5                = 30,   ///< Notify the delayed #5 event.
+    ITU_EVENT_DELAY6                = 31,   ///< Notify the delayed #6 event.
+    ITU_EVENT_DELAY7                = 32,   ///< Notify the delayed #7 event.
+    ITU_EVENT_STOPPED               = 33,   ///< Notify the stopped event.
+    ITU_EVENT_TOUCHPINCH            = 34,   ///< Notify the pinch event of touch panel to all visible widgets
+    ITU_EVENT_LOAD_EXTERNAL         = 35,   ///< Notify the widget to load external data
+    ITU_EVENT_LOAD_IMAGE            = 36,   ///< Notify the widget to load external image
+    ITU_EVENT_DRAGGING              = 37,   ///< Notify the widget is dragging
 
-    ITU_EVENT_CUSTOM            = 100   ///< Notify the custom event
+    ITU_EVENT_CUSTOM                = 100   ///< Notify the custom event
 } ITUEvent;
 
 struct ITUWidgetTag;
@@ -1473,7 +1485,10 @@ typedef enum
     ITU_DRAWPEN,                ///< Draw Pen
     ITU_WAVEBACKGROUND,         ///< Wave background
 	ITU_STEPWHEEL,              ///< Step Wheel
-    ITU_CLIPPER                 ///< Clipper
+    ITU_CLIPPER,                ///< Clipper
+    ITU_SIMPLEANIMATION,        ///< Simple animation
+	ITU_STOPANYWHERE,           ///< StopAnywhere container
+    ITU_OSCILLOSCOPE            ///< Oscilloscope
 } ITUWidgetType;
 
 /**
@@ -1811,6 +1826,34 @@ void ituWidgetShowImpl(ITUWidget* widget, ITUEffectType effect, int step);
  * @param step The step count.
  */
 void ituWidgetHideImpl(ITUWidget* widget, ITUEffectType effect, int step);
+
+/**
+* Moves the widget to the first child of parent widget. This is the implementation of base widget.
+*
+* @param widget Pointer referring to the widget.
+*/
+void ituWidgetToTopImpl(ITUWidget* widget);
+
+/**
+* Moves the widget to the last child of parent widget. This is the implementation of base widget.
+*
+* @param widget Pointer referring to the widget.
+*/
+void ituWidgetToBottomImpl(ITUWidget* widget);
+
+/**
+* Moves the widget to the last sibling widget. This is the implementation of base widget.
+*
+* @param widget Pointer referring to the widget.
+*/
+void ituWidgetMoveUpImpl(ITUWidget* widget);
+
+/**
+* Moves the widget to the next sibling widget. This is the implementation of base widget.
+*
+* @param widget Pointer referring to the widget.
+*/
+void ituWidgetMoveDownImpl(ITUWidget* widget);
 
 // Macros to easily use ITUWidget structure
 /**
@@ -2195,6 +2238,34 @@ void ituWidgetHideImpl(ITUWidget* widget, ITUEffectType effect, int step);
  */
 #define ituWidgetHide(widget, effect, step)                 ituWidgetHideImpl((ITUWidget*)(widget), (effect), (step))
 
+/**
+* Moves the widget to the first child of parent widget.
+*
+* @param widget The widget to move.
+*/
+#define ituWidgetToTop(widget)                              ituWidgetToTopImpl((ITUWidget*)(widget))
+
+/**
+* Moves the widget to the last child of parent widget.
+*
+* @param widget The widget to move.
+*/
+#define ituWidgetToBottom(widget)                           ituWidgetToBottomImpl((ITUWidget*)(widget))
+
+/**
+* Moves the widget to the last sibling widget.
+*
+* @param widget The widget to move.
+*/
+#define ituWidgetMoveUp(widget)                              ituWidgetMoveUpImpl((ITUWidget*)(widget))
+
+/**
+* Moves the widget to the next sibling widget.
+*
+* @param widget The widget to move.
+*/
+#define ituWidgetMoveDown(widget)                           ituWidgetMoveDownImpl((ITUWidget*)(widget))
+
 /** @defgroup itu_widget_layer Layer
  *  @{
  */
@@ -2532,6 +2603,7 @@ void ituStringSetLoad(ITUStringSet* stringSet, uint32_t base);
  *  @{
  */
 #define ITU_TEXT_BOLD    0x1     ///< Bold type.
+#define ITU_TEXT_ARABIC  0x2     ///< Arabic text enabled.
 
 /**
  * Text widget definition. This is used for drawing label.
@@ -2548,6 +2620,7 @@ typedef struct
     int fontIndex;              ///< Font index.
 	unsigned int textFlags;     ///< Flags for the text type.
 	int boldSize;               ///< Bold size. Unit is pixel.
+    int arabicIndex;            ///< Arabic text index.
     ITUStringSet* stringSet;    ///< The string set definition.
 } ITUText;
 
@@ -2896,7 +2969,11 @@ typedef struct
     ITUSurface* staticPressSurf;            ///< The static pressed button surface.
     ITUSurface* pressSurf;                  ///< Pressed bitmap surface
     int pressed;                            ///< Is pressed or not
-	int fsg1;                               ///< Special flag usage
+    int mouseLongPressDelay;                ///< The delay on issuing mouse long-press event. Unit is depend on ITU_EVENT_TIMER event.
+    int mouseLongPressDelayCount;           ///< The delay count to issue mouse long-press event.
+    int mouseUpDelay;                       ///< The delay on issuing mouse-up event. Unit is depend on ITU_EVENT_TIMER event.
+    int mouseUpDelayCount;                  ///< The delay count to issue mouse-up event.
+    int fsg1;                               ///< Special flag usage
 	int fsg2;                               ///< Special flag usage
 	int fsg3;                               ///< Special flag usage
     ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
@@ -3010,6 +3087,23 @@ void ituButtonLoadStaticData(ITUButton* btn);
  * @param btn The button widget to release.
  */
 void ituButtonReleaseSurface(ITUButton* btn);
+
+/**
+* Sets text layout of the button widget. This is the implementation of button widget.
+*
+* @param btn Pointer referring to the button widget.
+* @param layout The text layout to set.
+*/
+void ituButtonSetTextLayoutImpl(ITUButton* btn, ITULayout layout);
+
+/**
+* Sets text layout of the button widget.
+*
+* @param btn Pointer referring to the button widget.
+* @param layout The text layout to set.
+*/
+#define ituButtonSetTextLayout(btn, layout)  ituButtonSetTextLayoutImpl((ITUButton*)(btn), (layout))
+
 
 /** @} */ // end of itu_widget_button
 
@@ -4734,7 +4828,7 @@ void ituScrollBarSetPosition(ITUScrollBar* bar, int pos);
 
 /**
  * Animation widget definition. This is used for drawing animation.
- * It is a container of 2 widgets to do the animation job.
+ * It is a container of multiple widgets to do the animation job.
  */
 typedef struct ITUAnimationTag
 {
@@ -6348,7 +6442,7 @@ void ituRippleBackgroundDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, 
 #define ITU_CURVE_MAX_POINT_COUNT   32 ///< Maximum point count.
 
 /**
- * Ripple background widget definition.
+ * Curve widget definition.
  */
 typedef struct
 {
@@ -6365,14 +6459,14 @@ typedef struct
 /**
  * Initializes the curve widget.
  *
- * @param rb The curve widget to initialize.
+ * @param curve The curve widget to initialize.
  */
 void ituCurveInit(ITUCurve* curve);
 
 /**
  * Loads the curve widget. This is called by scene manager.
  *
- * @param rb The curve widget to load.
+ * @param curve The curve widget to load.
  * @param base The address in the scene file buffer.
  */
 void ituCurveLoad(ITUCurve* curve, uint32_t base);
@@ -6952,6 +7046,20 @@ bool ituContainerUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
  * @param param The parameter of action.
  */
 void ituContainerOnAction(ITUWidget* widget, ITUActionType action, char* param);
+
+/**
+* Starts dragging widget on the container.
+*
+* @param container The container widget to start dragging.
+*/
+void ituContainerStartDragging(ITUContainer* container);
+
+/**
+* Ends dragging widget on the container.
+*
+* @param container The container widget to end dragging.
+*/
+void ituContainerEndDragging(ITUContainer* container);
 
 /** @} */ // end of itu_widget_container
 
@@ -7839,6 +7947,413 @@ void ituClipperPostDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8
 
 /** @} */ // end of itu_widget_clipper
 
+/** @defgroup itu_widget_simpleanimation Simple Animation
+*  @{
+*/
+/**
+ * Simple animation widget definition. This is used for drawing sanim.
+ * It is a container of 2 widgets to do the simple animation job.
+ */
+typedef struct ITUSimpleAnimationTag
+{
+    ITUWidget widget;                       ///< Base widget definition.
+    unsigned int animationFlags;            ///< Flags for the simple animation type.
+    int delay;                              ///< The delay on playing. Unit is depend on ITU_EVENT_TIMER event.
+    int totalframe;                         ///< Total frame count of sanim between keyframe.
+    int repeat;                             ///< Is play repeatly or not.
+    int playing;                            ///< Is playing or not.
+    int frame;                              ///< Current frame.
+    int delayCount;                         ///< The delay count to play next frame.
+    ITUWidget* child;                       ///< Current frame of widget.
+    ITURectangle orgRect;                   ///< Keep the orginal rectangle of widget
+    ITUColor orgColor;                      ///< Keep the orginal color of widget    
+    int orgAlpha;                           ///< Keep the orginal alpha value of widget
+    int orgAngle;                           ///< Keep the orginal angle value of widget
+    int orgTransformX;                      ///< Keep the orginal transform x value of widget
+    int orgTransformY;                      ///< Keep the orginal transform y value of widget
+    ITURectangle keyRect;                   ///< Keep the keyframe rectangle of widget
+    ITUColor keyColor;                      ///< Keep the keyframe color of widget    
+    int keyAlpha;                           ///< Keep the keyframe alpha value of widget
+    int keyAngle;                           ///< Keep the keyframe angle value of widget
+    int keyTransformX;                      ///< Keep the keyframe transform x value of widget
+    int keyTransformY;                      ///< Keep the keyframe transform y value of widget
+    int playCount;                          ///< Frame count to play
+    ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
+    /**
+     * Called when sanim stopped.
+     *
+     * @param sanim The stopped simple animation widget.
+     */
+    void (*OnStop)(struct ITUSimpleAnimationTag* sanim);
+
+} ITUSimpleAnimation;
+
+/**
+ * Initializes the simple animation widget.
+ *
+ * @param sanim The simple animation widget to initialize.
+ */
+void ituSimpleAnimationInit(ITUSimpleAnimation* sanim);
+
+/**
+ * Loads the simple animation widget. This is called by scene manager.
+ *
+ * @param sanim The simple animation widget to load.
+ * @param base The address in the scene file buffer.
+ */
+void ituSimpleAnimationLoad(ITUSimpleAnimation* sanim, uint32_t base);
+
+/**
+ * Clones the simple animation widget.
+ *
+ * @param widget The simple animation widget to clone.
+ * @param cloned Retrieved simple animation widget.
+ * @return true if clone is success, false otherwise.
+ */
+bool ituSimpleAnimationClone(ITUWidget* widget, ITUWidget** cloned);
+
+/**
+ * Updates the simple animation widget by specified event.
+ *
+ * @param widget The simple animation widget to update.
+ * @param ev The event to notify.
+ * @param arg1 The event related argument #1.
+ * @param arg2 The event related argument #2.
+ * @param arg3 The event related argument #3.
+ * @return true if the simple animation widget is modified and need to be redraw, false if no need to be redraw.
+ */
+bool ituSimpleAnimationUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+ * Draws the simple animation widget to the specified surface.
+ *
+ * @param widget The simple animation widget to draw.
+ * @param dest The surface to draw to.
+ * @param x The x coordinate of destination surface, in pixels.
+ * @param y The y coordinate of destination surface, in pixels.
+ * @param alpha the alpha value to do the constant alphablending to the surface.
+ */
+void ituSimpleAnimationDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+ * Do the specified action. This is triggered by other widget's event.
+ *
+ * @param widget The simple animation widget to do the action.
+ * @param action The action to do.
+ * @param param The parameter of action.
+ */
+void ituSimpleAnimationOnAction(ITUWidget* widget, ITUActionType action, char* param);
+
+/**
+ * This is called when the simple animation stop playing.
+ *
+ * @param sanim The simple animation widget.
+ */
+#define ituSimpleAnimationOnStop(sanim) ((ITUSimpleAnimation*)(sanim))->OnStop((ITUSimpleAnimation*)(sanim))
+
+/**
+ * Sets OnStop callback function of simple animation.
+ *
+ * @param sanim Pointer referring to the simple animation.
+ * @param onStop The callback function to set.
+ */
+#define ituSimpleAnimationSetOnStop(sanim, onStop)    (((ITUSimpleAnimation*)(sanim))->OnStop = (onStop))
+
+/**
+ * Sets the delay value to the simple animation widget.
+ *
+ * @param sanim The simple animation widget to set.
+ * @param delay The delay on playing. Unit is depend on ITU_EVENT_TIMER event.
+ */
+void ituSimpleAnimationSetDelay(ITUSimpleAnimation* sanim, int delay);
+
+/**
+ * Plays the simple animation widget.
+ *
+ * @param sanim The simple animation widget to play.
+ */
+void ituSimpleAnimationPlay(ITUSimpleAnimation* sanim);
+
+/**
+ * Stops the playing simple animation widget.
+ *
+ * @param sanim The playing simple animation widget to stop.
+ */
+void ituSimpleAnimationStop(ITUSimpleAnimation* sanim);
+
+/**
+ * Gotos the specified frame of sanim widget.
+ *
+ * @param sanim The playing simple animation widget to goto.
+ * @param frame The specified frame of simple animation widget to goto.
+ */
+void ituSimpleAnimationGoto(ITUSimpleAnimation* sanim, int frame);
+
+/**
+ * Resets the simple animation widget.
+ *
+ * @param sanim The simple animation widget to reset.
+ */
+void ituSimpleAnimationReset(ITUSimpleAnimation* sanim);
+
+/**
+ * Reverse plays the simple animation widget.
+ *
+ * @param sanim The simple animation widget to reverse play.
+ */
+void ituSimpleAnimationReversePlay(ITUSimpleAnimation* sanim);
+
+/** @} */ // end of itu_widget_simpleanimation
+
+/** @defgroup itu_widget_stopanywhere StopAnywhere
+*  @{
+*/
+
+#define STOPANYWHERE_TEST 0  ///< The
+#define ITU_STOPANYWHERE_BOUNCING_L 0x1     ///< This stopanywhere is bouncing left.
+#define ITU_STOPANYWHERE_BOUNCING_R 0x2     ///< This stopanywhere is bouncing right.
+#define ITU_STOPANYWHERE_BOUNCING_T 0x4     ///< This stopanywhere is bouncing top.
+#define ITU_STOPANYWHERE_BOUNCING_B 0x8     ///< This stopanywhere is bouncing bottom.
+#define ITU_STOPANYWHERE_BOUNCING   0x1000  ///< This stopanywhere is bouncing.
+#define ITU_STOPANYWHERE_SLIDING    0x2000  ///< This stopanywhere is sliding.
+
+/**
+* StopAnywhere widget definition.
+*/
+typedef struct ITUStopAnywhereTag
+{
+	ITUWidget widget;               ///< Base widget definition
+	unsigned int stopAnywhereFlags; ///< The flags to indicate the status of the stopanywhere.
+	int gap;                        ///< The gap between children.
+	int touchX;                     ///< X-coordinate of touch point.
+	int touchY;                     ///< Y-coordinate of touch point.
+	int touchCount;                 ///< Count time for touch behavior.
+	int offsetX;                    ///< X-coordinate of offset.
+	int offsetY;                    ///< Y-coordinate of offset.
+	int childX;                     ///< X-coordinate of child.
+	int childY;                     ///< Y-coordinate of child.
+	int timerX;                     ///< The X for period timer record.
+	int timerY;                     ///< The Y for period timer record.
+	int slideStepX;                 ///< The X direction motion level.
+	int slideStepY;                 ///< The Y direction motion level.
+	int lastTimerX;                 ///< The current X position for each special timer.
+	int lastTimerY;                 ///< The current Y position for each special timer.
+	int timerCycleCount;            ///< The cycle count for each timer.
+	int factorX;                    ///< The sliding animation X direction factor.
+	int factorY;                    ///< The sliding animation Y direction factor.
+	int frame;                      ///< The frame when doing sliding animation.
+	int totalframe;                 ///< The totalframe for doing sliding animation.
+	int initX;                      ///< The X position when start dragging.
+	int initY;                      ///< The Y position when start dragging.
+	int bounce;                     ///< The bouncing mode of stopanywhere.(0:disable, 1: Horizontal, 2: Vertical)
+	int temp1;                      ///< Temp1 usage.
+	int temp2;                      ///< Temp2 usage.
+	int temp3;                      ///< Temp3 usage.
+	int temp4;                      ///< Temp4 usage.
+	int temp5;                      ///< Temp5 usage.
+	uint32_t clock;                 ///< time clock log
+
+	ITUAction actions[ITU_ACTIONS_SIZE];    ///< Actions for events to trigger
+
+	/**
+	* Called when the stopanywhere is changed and stoped.
+	*
+	* @param saw The StopAnywhere.
+	*/
+	void(*OnChanged)(struct ITUStopAnywhereTag* saw);
+
+	/**
+	* Called when stopanywhere working then stopped.
+	*
+	* @param saw The stopped StopAnywhere widget.
+	*/
+	void(*OnStop)(struct ITUStopAnywhereTag* saw);
+
+} ITUStopAnywhere;
+
+/**
+* Initializes the stopanywhere widget.
+*
+* @param saw The StopAnywhere widget to initialize.
+*/
+void ituStopAnywhereInit(ITUStopAnywhere* saw);
+
+/**
+* Loads the StopAnywhere widget. This is called by scene manager.
+*
+* @param saw The StopAnywhere widget to load.
+* @param base The address in the scene file buffer.
+*/
+void ituStopAnywhereLoad(ITUStopAnywhere* saw, uint32_t base);
+
+/**
+* Updates the StopAnywhere widget by specified event.
+*
+* @param widget The StopAnywhere widget to update.
+* @param ev The event to notify.
+* @param arg1 The event related argument #1.
+* @param arg2 The event related argument #2.
+* @param arg3 The event related argument #3.
+* @return true if the StopAnywhere widget is modified and need to be redraw, false if no need to be redraw.
+*/
+bool ituStopAnywhereUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+* Draws the StopAnywhere widget to the specified surface.
+*
+* @param widget The StopAnywhere widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituStopAnywhereDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+* Do the specified action. This is triggered by other widget's event.
+*
+* @param widget The StopAnywhere widget to do the action.
+* @param action The action to do.
+* @param param The parameter of action.
+*/
+void ituStopAnywhereOnAction(ITUWidget* widget, ITUActionType action, char* param);
+
+/**
+* Called when the value is changed.
+*
+* @param saw The StopAnywhere.
+* @param value The new value.
+*/
+#define ituStopAnywhereOnChanged(saw)   ((ITUStopAnywhere*)(saw))->OnChanged((ITUStopAnywhere*)(saw))
+
+/**
+* Sets OnChanged callback function of StopAnywhere.
+*
+* @param saw Pointer referring to the StopAnywhere.
+* @param onChanged The callback function to set.
+*/
+#define ituStopAnywhereSetChanged(saw, onChanged)  (((ITUStopAnywhere*)(saw))->OnChanged = (onChanged))
+
+/**
+* This is called when the StopAnywhere stop playing.
+*
+* @param saw The StopAnywhere widget.
+*/
+#define ituStopAnywhereOnStop(saw) ((ITUStopAnywhere*)(saw))->OnStop((ITUStopAnywhere*)(saw))
+
+/**
+* Sets OnStop callback function of StopAnywhere.
+*
+* @param saw Pointer referring to the StopAnywhere.
+* @param onStop The callback function to set.
+*/
+#define ituStopAnywhereSetOnStop(saw, onStop)    (((ITUStopAnywhere*)(saw))->OnStop = (onStop))
+
+/**
+* Get X-position of the child of the StopAnywhere widget.
+*
+* @param saw The StopAnywhere widget.
+* @return the X position.
+*/
+int ituStopAnywhereGetChildX(ITUStopAnywhere* saw);
+
+/**
+* Get Y-position of the child of the StopAnywhere widget.
+*
+* @param saw The StopAnywhere widget.
+* @return the Y position.
+*/
+int ituStopAnywhereGetChildY(ITUStopAnywhere* saw);
+
+/** @} */ // end of itu_widget_stopanywhere
+
+/** @defgroup itu_widget_oscilloscope Oscilloscope
+*  @{
+*/
+
+/**
+* Oscilloscope widget definition.
+*/
+typedef struct
+{
+    ITUBackground bg;                       ///< Base background widget definition
+    int resolutionX;                        ///< X coordinate of resolution
+    int resolutionY;                        ///< Y coordinate of resolution
+    int lineWidth;                          ///< Line width
+    ITUColor fgColor;                       ///< Foreground color
+    int gridResolutionX;                    ///< X coordinate of grid resolution
+    int gridResolutionY;                    ///< Y coordinate of grid resolution
+    int gridLineWidth;                      ///< Grid-line width
+    ITUColor gridColor;                     ///< Grid color
+    int* values;                            ///< Total values
+    int offsetX;                            ///< Current X coordinate of offset
+
+} ITUOscilloscope;
+
+/**
+* Initializes the oscilloscope widget.
+*
+* @param osc The oscilloscope widget to initialize.
+*/
+void ituOscilloscopeInit(ITUOscilloscope* osc);
+
+/**
+* Loads the oscilloscope widget. This is called by scene manager.
+*
+* @param osc The oscilloscope widget to load.
+* @param base The address in the scene file buffer.
+*/
+void ituOscilloscopeLoad(ITUOscilloscope* osc, uint32_t base);
+
+/**
+* Exits the oscilloscope widget.
+*
+* @param widget The oscilloscope widget to exit.
+*/
+void ituOscilloscopeExit(ITUWidget* widget);
+
+/**
+* Clones the oscilloscope widget.
+*
+* @param widget The oscilloscope widget to clone.
+* @param cloned Retrieved cloned oscilloscope widget.
+* @return true if clone is success, false otherwise.
+*/
+bool ituOscilloscopeClone(ITUWidget* widget, ITUWidget** cloned);
+
+/**
+* Updates the oscilloscope widget by specified event.
+*
+* @param widget The oscilloscope widget to update.
+* @param ev The event to notify.
+* @param arg1 The event related argument #1.
+* @param arg2 The event related argument #2.
+* @param arg3 The event related argument #3.
+* @return true if the oscilloscope widget is modified and need to be redraw, false if no need to be redraw.
+*/
+bool ituOscilloscopeUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3);
+
+/**
+* Draws the oscilloscope widget to the specified surface.
+*
+* @param widget The oscilloscope widget to draw.
+* @param dest The surface to draw to.
+* @param x The x coordinate of destination surface, in pixels.
+* @param y The y coordinate of destination surface, in pixels.
+* @param alpha the alpha value to do the constant alphablending to the surface.
+*/
+void ituOscilloscopeDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alpha);
+
+/**
+* Inputs the value to oscilloscope widget.
+*
+* @param osc The oscilloscope widget to input.
+* @param value The input value. Must in the range of Y resolution.
+*/
+void ituOscilloscopeInput(ITUOscilloscope* osc, int value);
+
+/** @} */ // end of itu_widget_oscilloscope
+
 /** @} */ // end of itu_widget
 
 /** @defgroup itu_scene Scene
@@ -7912,13 +8427,16 @@ typedef struct
     ITUAudio* playingAudio;                                     ///< Current playing audio widget
     int lastMouseX;                                             ///< Last mouse position in X coordinate, in pixels
     int lastMouseY;                                             ///< Last mouse position in Y coordinate, in pixels
+    int lastMouseEvent;                                         ///< Last mouse event
+    int lastMouseDist;                                          ///< Last pitch distance, in pixels
     int actionQueueLen;                                         ///< Current length of action queue.
     ITUActionExecution actionQueue[ITU_ACTION_QUEUE_SIZE];      ///< Action queue.
     ITUActionExecution delayQueue[ITU_ACTION_QUEUE_SIZE];       ///< Delay queue.
     ITUCommand commands[ITU_COMMAND_SIZE];                      ///< Queued command to execute.
     char path[PATH_MAX];                                        ///< Loaded file path
     ITUVariable variables[ITU_VARIABLE_SIZE];                   ///< Variables
-    pthread_t threadID;
+    pthread_t threadID;                                         ///< The current thread ID
+    bool cancel;                                                ///< Cancel loading scene file or not
 } ITUScene;
 
 extern ITUScene* ituScene;  ///< Current loaded scene
@@ -7965,6 +8483,23 @@ int ituSceneLoadArray(ITUScene* scene, const char* array, int size);
  * @return 0 if success, else failed otherwise.
  */
 int ituSceneLoadFileCore(ITUScene* scene, const char* filename);
+
+/**
+* Loads scene from a file without start and cancelable by ituSceneLoadFileCancel().
+*
+* @param scene The scene to load to.
+* @param filename The file path to load.
+* @param segnum The segment number to load file.
+* @return 0 if success, else failed otherwise.
+*/
+int ituSceneLoadFileCancelable(ITUScene* scene, const char* filename, int segnum);
+
+/**
+* Cancels loading scene from a file.
+*
+* @param scene The scene to cancel loading.
+*/
+void ituSceneLoadFileCancel(ITUScene* scene);
 
 /**
  * Starts scene.
@@ -8253,6 +8788,18 @@ void ituSetVarParam(int index, char* param);
 * @param file the file line.
 */
 void ituAssertThread(const char *file);
+
+/**
+* Sets clipping region to surface.
+*
+* @param surf the surface to set to.
+* @param x the clipping x coordinate.
+* @param y the clipping y coordinate.
+* @param width the clipping width.
+* @param height the clipping height.
+* @param prevClip The previous clipping of surface to backup.
+*/
+void ituSetClipping(ITUSurface* surf, int x, int y, int width, int height, ITURectangle* prevClip);
 
 /** @} */ // end of itu_util
 

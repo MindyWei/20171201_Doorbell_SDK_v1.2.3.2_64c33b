@@ -36,6 +36,7 @@ static ITUSurface* StnLcdCreateSurface(int w, int h, int pitch, ITUPixelFormat f
         if (!surf->addr)
         {
             LOG_ERR "Out of memory: %d\n", size LOG_END
+            free(surf);
             return NULL;
         }
 

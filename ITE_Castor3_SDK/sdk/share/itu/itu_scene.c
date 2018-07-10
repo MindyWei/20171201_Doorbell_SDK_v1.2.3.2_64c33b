@@ -145,6 +145,10 @@ bool ituSceneUpdate(ITUScene *scene, ITUEvent ev, int arg1, int arg2, int arg3)
             scene->lastMouseX = arg2 = x;
             scene->lastMouseY = arg3 = y;
         }
+        scene->lastMouseEvent = ev;
+
+        if (ev == ITU_EVENT_TOUCHPINCH)
+            scene->lastMouseDist = arg1;
     }
 
     childCount = 0;

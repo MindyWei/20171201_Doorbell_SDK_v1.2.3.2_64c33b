@@ -335,6 +335,7 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
     char* orgstr = text->string;
     char* buf = NULL;
     const int borderSize = 1;
+    unsigned int style = ITU_FT_STYLE_DEFAULT;
     assert(textbox);
     assert(dest);
 
@@ -396,11 +397,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
                 if (text->textFlags & ITU_TEXT_BOLD)
                 {
-                    ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                    style |= ITU_FT_STYLE_BOLD;
                     ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
                 }
-                else
-                    ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+                ituFtSetFontStyle(style);
 
                 while (pch != NULL)
                 {
@@ -530,11 +530,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
                     if (text->textFlags & ITU_TEXT_BOLD)
                     {
-                        ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                        style |= ITU_FT_STYLE_BOLD;
                         ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
                     }
-                    else
-                        ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+                    ituFtSetFontStyle(style);
 
                     while (pch != NULL)
                     {
@@ -684,11 +683,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
                 if (text->textFlags & ITU_TEXT_BOLD)
                 {
-                    ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                    style |= ITU_FT_STYLE_BOLD;
                     ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
                 }
-                else
-                    ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+                ituFtSetFontStyle(style);
 
                 ituFtGetTextDimension(buf, &ww, NULL);
                 if (ww < rect->width)
@@ -784,11 +782,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
                     if (text->textFlags & ITU_TEXT_BOLD)
                     {
-                        ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                        style |= ITU_FT_STYLE_BOLD;
                         ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
                     }
-                    else
-                        ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+                    ituFtSetFontStyle(style);
 
                     ituFtGetTextDimension(buf, &ww, NULL);
                     if (ww < rect->width)
@@ -922,11 +919,16 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
         else
             return;
 
+        if ((text->textFlags & ITU_TEXT_ARABIC) && (text->lang == text->arabicIndex))
+            style |= ITU_FT_STYLE_ARABIC;
+
         len = strlen(orgstr);
 
         buf = malloc(len + 2);
         if (!buf)
             return;
+
+        ituFtSetCurrentFont(text->fontIndex);
 
         destx = rect->x + x;
         desty = rect->y + y;
@@ -967,11 +969,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
             if (text->textFlags & ITU_TEXT_BOLD)
             {
-                ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                style |= ITU_FT_STYLE_BOLD;
                 ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
             }
-            else
-                ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+            ituFtSetFontStyle(style);
 
             while (pch != NULL)
             {
@@ -1100,6 +1101,7 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
             if (surf)
             {
                 int yy = 0;
+
                 ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
                 ituSetColor(&surf->fgColor, desta, widget->color.red, widget->color.green, widget->color.blue);
                 if (text->fontHeight > 0)
@@ -1107,11 +1109,10 @@ void ituTextBoxDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t a
 
                 if (text->textFlags & ITU_TEXT_BOLD)
                 {
-                    ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                    style |= ITU_FT_STYLE_BOLD;
                     ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
                 }
-                else
-                    ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+                ituFtSetFontStyle(style);
 
                 while (pch != NULL)
                 {

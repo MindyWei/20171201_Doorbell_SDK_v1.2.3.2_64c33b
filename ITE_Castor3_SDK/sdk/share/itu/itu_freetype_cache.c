@@ -14,6 +14,8 @@
 #include "ite/itu.h"
 #include "itu_private.h"
 
+wchar_t* convertArabic(wchar_t* normal);
+
 #define MAX_SBIT_CACHE 128
 
 /* this simple record is used to model a given `installed' face */
@@ -463,6 +465,16 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
     len = mbstowcs(buf, text, 512);
     x_advance = 0;
 
+    if (ft.style & ITU_FT_STYLE_ARABIC)
+    {
+        wchar_t* ptr = convertArabic(buf);
+        if (ptr)
+        {
+            wcscpy(buf, ptr);
+            free(ptr);
+        }
+    }
+
     if ((ft.style & ITU_FT_STYLE_BOLD) && ft.bold_size > 0)
     {
         for (i = 0; i < len; i++)
@@ -626,9 +638,17 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                         Bitmap_Convert_GRAY4(ft.library, &source, &ft.bitmap);
 
 	                    yy = y + tfont->scaler.height - sbit->top;
-	                    if (yy < 0)
-	                        yy = 0;
-	                    ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                        if (yy < 0)
+                        {
+                            ITURectangle prevClip;
+                            ituSetClipping(surf, x + x_advance + sbit->left, 0, ft.bitmap.width, ft.bitmap.rows, &prevClip);
+                            ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                        }
+                        else
+                        {
+                            ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                        }
                     }
                     else
                     {
@@ -650,9 +670,17 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                             break;
                         }
 	                    yy = y + tfont->scaler.height - sbit->top;
-	                    if (yy < 0)
-	                        yy = 0;
-	                    ituDrawGlyph(surf, x + x_advance + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                        if (yy < 0)
+                        {
+                            ITURectangle prevClip;
+                            ituSetClipping(surf, x + x_advance + sbit->left, 0, sbit->width, sbit->height, &prevClip);
+                            ituDrawGlyph(surf, x + x_advance + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                        }
+                        else
+                        {
+                            ituDrawGlyph(surf, x + x_advance + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                        }
                     }
                 }
 
@@ -713,9 +741,17 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                             Bitmap_Convert_GRAY4(ft.library, source, &ft.bitmap);
 
 	                        yy = y + tfont->scaler.height - sbit->top;
-	                        if (yy < 0)
-	                            yy = 0;
-	                        ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            if (yy < 0)
+                            {
+                                ITURectangle prevClip;
+                                ituSetClipping(surf, x + x_advance + sbit->left, 0, ft.bitmap.width, ft.bitmap.rows, &prevClip);
+                                ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                                ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                            }
+                            else
+                            {
+                                ituDrawGlyph(surf, x + x_advance + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            }
                         }
                         else
                         {
@@ -738,9 +774,17 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
                                 break;
                             }
                             yy = y + tfont->scaler.height - source->rows;
-	                        if (yy < 0)
-	                            yy = 0;
-                            ituDrawGlyph(surf, x + x_advance + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                            if (yy < 0)
+                            {
+                                ITURectangle prevClip;
+                                ituSetClipping(surf, x + x_advance + bitmap->left, 0, source->width, source->rows, &prevClip);
+                                ituDrawGlyph(surf, x + x_advance + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                                ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                            }
+                            else
+                            {
+                                ituDrawGlyph(surf, x + x_advance + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                            }
                         }
                     }
                 }
@@ -787,6 +831,16 @@ void ituFtGetTextDimension(const char* text, int* width, int* height)
     len = mbstowcs(buf, text, 512);
     x_advance = 0;
     max_height = 0;
+
+    if (ft.style & ITU_FT_STYLE_ARABIC)
+    {
+        wchar_t* ptr = convertArabic(buf);
+        if (ptr)
+        {
+            wcscpy(buf, ptr);
+            free(ptr);
+        }
+    }
 
     for (i = 0; i < len; i++)
     {
@@ -1122,9 +1176,17 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
 				else
 				{
 					int yy = y + tfont->scaler.height - sbit->top;
-					if (yy < 0)
-						yy = 0;
-					ituDrawGlyph(surf, x + sbit->left, yy, format, bitmapGlyph->bitmap.buffer, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows);
+                    if (yy < 0)
+                    {
+                        ITURectangle prevClip;
+                        ituSetClipping(surf, x + sbit->left, 0, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows, &prevClip);
+                        ituDrawGlyph(surf, x + sbit->left, yy, format, bitmapGlyph->bitmap.buffer, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows);
+                        ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                    }
+                    else
+                    {
+                        ituDrawGlyph(surf, x + sbit->left, yy, format, bitmapGlyph->bitmap.buffer, bitmapGlyph->bitmap.width, bitmapGlyph->bitmap.rows);
+                    }
 				}
 			}
 			else
@@ -1190,14 +1252,23 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                         source.pixel_mode = sbit->format;
                         Bitmap_Convert_GRAY4(ft.library, &source, &ft.bitmap);
 	                    yy = y + tfont->scaler.height - sbit->top;
-	                    if (yy < 0)
-	                        yy = 0;
-	                    ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                        if (yy < 0)
+                        {
+                            ITURectangle prevClip;
+                            ituSetClipping(surf, x + sbit->left, 0, ft.bitmap.width, ft.bitmap.rows, &prevClip);
+                            ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                        }
+                        else
+                        {
+                            ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                        }
                     }
                     else
                     {
                         ITUGlyphFormat format;
                     	int yy;
+
                         switch (sbit->format)
                         {
                         case FT_PIXEL_MODE_MONO:
@@ -1213,9 +1284,17 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                             break;
                         }
 	                    yy = y + tfont->scaler.height - sbit->top;
-	                    if (yy < 0)
-	                        yy = 0;
-	                    ituDrawGlyph(surf, x + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                        if (yy < 0)
+                        {
+                            ITURectangle prevClip;
+                            ituSetClipping(surf, x + sbit->left, 0, sbit->width, sbit->height, &prevClip);
+                            ituDrawGlyph(surf, x + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                        }
+                        else
+                        {
+                            ituDrawGlyph(surf, x + sbit->left, yy, format, sbit->buffer, sbit->width, sbit->height);
+                        }
                     }
                 }
             }
@@ -1274,9 +1353,17 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                             Bitmap_Convert_GRAY4(ft.library, source, &ft.bitmap);
 
 	                        yy = y + tfont->scaler.height - sbit->top;
-	                        if (yy < 0)
-	                            yy = 0;
-	                        ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            if (yy < 0)
+                            {
+                                ITURectangle prevClip;
+                                ituSetClipping(surf, x + sbit->left, 0, ft.bitmap.width, ft.bitmap.rows, &prevClip);
+                                ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                                ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                            }
+                            else
+                            {
+                                ituDrawGlyph(surf, x + sbit->left, yy, ITU_GLYPH_4BPP, ft.bitmap.buffer, ft.bitmap.width, ft.bitmap.rows);
+                            }
                         }
                         else
                         {
@@ -1298,9 +1385,17 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
                                 break;
                             }
 	                        yy = y + tfont->scaler.height - source->rows;
-	                        if (yy < 0)
-	                            yy = 0;
-	                        ituDrawGlyph(surf, x + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                            if (yy < 0)
+                            {
+                                ITURectangle prevClip;
+                                ituSetClipping(surf, x + bitmap->left, 0, source->width, source->rows, &prevClip);
+                                ituDrawGlyph(surf, x + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                                ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+                            }
+                            else
+                            {
+                                ituDrawGlyph(surf, x + bitmap->left, yy, format, source->buffer, source->width, source->rows);
+                            }
                         }
                     }
                 }

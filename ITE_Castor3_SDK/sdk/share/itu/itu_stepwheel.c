@@ -331,10 +331,13 @@ void stepwheel_wheel_font_size_cal(ITUStepWheel* wheel)
 	//int size_dev = wheel->focusFontHeight - wheel->fontHeight;
 	int size_dev[3];
 
-	//not open stepFontHeight3 now
-	int max_stage_size = 2;
-	wheel->stepFontHeight2 = wheel->fontHeight;
+	//open stage level
+	int max_stage_size = 3;
+
+	//now open stage 2 but not 3 yet
+	//wheel->stepFontHeight2 = wheel->fontHeight;
 	wheel->stepFontHeight3 = wheel->fontHeight;
+
 	size_dev[0] = wheel->focusFontHeight - wheel->stepFontHeight1;
 	size_dev[1] = wheel->stepFontHeight1 - wheel->stepFontHeight2;
 	size_dev[2] = wheel->stepFontHeight2 - wheel->stepFontHeight3;

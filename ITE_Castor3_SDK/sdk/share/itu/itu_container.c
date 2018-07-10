@@ -185,6 +185,7 @@ bool ituContainerUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                             {
                                 widget->flags |= ITU_DRAGGING;
                                 ituScene->dragged = child;
+                                child->flags |= ITU_CLIP_DISABLED;
                             }
                         }
                         break;
@@ -253,6 +254,7 @@ bool ituContainerUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
                     }
                 }
             }
+            widget->flags &= ~ITU_CLIP_DISABLED;
             ituWidgetUpdate(container, ITU_EVENT_LAYOUT, 0, 0, 0);
         }
         widget->flags &= ~ITU_DRAGGING;
@@ -275,7 +277,7 @@ bool ituContainerUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int 
 
             if (dist >= ITU_DRAG_DISTANCE * ITU_DRAG_DISTANCE)
             {
-                widget->flags |= ITU_DRAGGING;
+                widget->flags |= (ITU_DRAGGING | ITU_CLIP_DISABLED);
                 ituScene->dragged = widget;
                 container->touchCount = 0;
             }
@@ -308,13 +310,13 @@ void ituContainerDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t
         {
             ITUWidget* child = (ITUWidget*)node;
 
-            if (child != ituScene->dragged)
+            if (!(child->flags & ITU_CLIP_DISABLED))
                 ituWidgetSetClipping(widget, dest, x, y, &prevClip);
 
             if (child->visible && ituWidgetIsOverlapClipping(child, dest, destx, desty))
                 ituWidgetDraw(node, dest, destx, desty, desta);
 
-            if (child != ituScene->dragged)
+            if (!(child->flags & ITU_CLIP_DISABLED))
                 ituSurfaceSetClipping(dest, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
 
             child->dirty = false;
@@ -407,4 +409,22 @@ void ituContainerLoad(ITUContainer* container, uint32_t base)
     ituWidgetSetUpdate(container, ituContainerUpdate);
     ituWidgetSetDraw(container, ituContainerDraw);
     ituWidgetSetOnAction(container, ituContainerOnAction);
+}
+
+void ituContainerStartDragging(ITUContainer* container)
+{
+    assert(container);
+    ITU_ASSERT_THREAD();
+
+    container->widget.flags |= (ITU_DRAGGABLE | ITU_DRAGGING);
+    ituContainerUpdate(&container->widget, ITU_EVENT_MOUSEDOWN, 1, -container->widget.rect.x + container->touchX, -container->widget.rect.y + container->touchY);
+}
+
+void ituContainerEndDragging(ITUContainer* container)
+{
+    assert(container);
+    ITU_ASSERT_THREAD();
+
+    ituWidgetUpdate(container, ITU_EVENT_LAYOUT, 0, 0, 0);
+    container->widget.flags &= ~ITU_DRAGGABLE;
 }

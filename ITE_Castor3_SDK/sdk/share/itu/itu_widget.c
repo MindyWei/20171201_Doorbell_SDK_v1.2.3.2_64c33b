@@ -1320,19 +1320,23 @@ bool ituWidgetIsOverlapClipping(ITUWidget* widget, ITUSurface* dest, int x, int 
 {
     ITURectangle A, B;
 
-    if (widget->bound.width > 0)
+    if (widget->bound.width > 0 && widget->bound.height)
     {
         A.x = x + widget->bound.x;
         A.y = y + widget->bound.y;
         A.width = widget->bound.width;
         A.height = widget->bound.height;
     }
-    else
+    else if (widget->rect.width > 0 && widget->rect.height > 0)
     {
         A.x = x + widget->rect.x;
         A.y = y + widget->rect.y;
         A.width = widget->rect.width;
         A.height = widget->rect.height;
+    }
+    else
+    {
+        return false;
     }
 
     if (dest->flags & ITU_CLIPPING)
@@ -1403,4 +1407,76 @@ void ituWidgetHideImpl(ITUWidget* widget, ITUEffectType effect, int step)
     widget->effects[ITU_STATE_HIDING] = oldEffect;
     widget->effects[ITU_STATE_NORMAL] = oldStep;
 
+}
+
+void ituWidgetToTopImpl(ITUWidget* widget)
+{
+    ITCTree* parent;
+    assert(widget);
+    ITU_ASSERT_THREAD();
+
+    parent = widget->tree.parent;
+
+    if (parent)
+    {
+        itcTreeRemove(widget);
+        itcTreePushFront(parent, widget);
+    }
+}
+
+void ituWidgetToBottomImpl(ITUWidget* widget)
+{
+    ITCTree* parent;
+    assert(widget);
+    ITU_ASSERT_THREAD();
+
+    parent = widget->tree.parent;
+
+    if (parent)
+    {
+        itcTreeRemove(widget);
+        itcTreePushBack(parent, widget);
+    }
+}
+
+void ituWidgetMoveUpImpl(ITUWidget* widget)
+{
+    ITCTree* parent;
+    assert(widget);
+    ITU_ASSERT_THREAD();
+
+    parent = widget->tree.parent;
+
+    if (parent)
+    {
+        ITCTree* child = parent->child;
+        if (child == (ITCTree*)widget)
+            return;
+
+        while (child)
+        {
+            ITCTree* sibling = child->sibling;
+            if (sibling == (ITCTree*)widget)
+            {
+                itcTreeSwap(child, sibling);
+                return;
+            }
+            child = sibling;
+        }
+    }
+}
+
+void ituWidgetMoveDownImpl(ITUWidget* widget)
+{
+    ITCTree* parent;
+    ITCTree* sibling;
+    assert(widget);
+    ITU_ASSERT_THREAD();
+
+    parent = widget->tree.parent;
+    sibling = widget->tree.sibling;
+    if (parent && sibling)
+    {
+        itcTreeSwap(widget, sibling);
+    }
 }

@@ -72,6 +72,7 @@ void ituTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
     uint8_t desta, destbga;
     ITURectangle prevClip;
     char* string;
+    unsigned int style = ITU_FT_STYLE_DEFAULT;
     assert(text);
     assert(dest);
 
@@ -93,10 +94,20 @@ void ituTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
 		
 	}
 	*/
-	if (text->string)
+    if (text->string)
+    {
         string = text->string;
+
+        if (text->textFlags & ITU_TEXT_ARABIC)
+            style |= ITU_FT_STYLE_ARABIC;
+    }
     else if (text->stringSet)
+    {
         string = text->stringSet->strings[text->lang];
+
+        if ((text->textFlags & ITU_TEXT_ARABIC) && (text->lang == text->arabicIndex))
+            style |= ITU_FT_STYLE_ARABIC;
+    }
     else
     {
         widget->dirty = false;
@@ -144,11 +155,10 @@ void ituTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
 
         if (text->textFlags & ITU_TEXT_BOLD)
         {
-            ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+            style |= ITU_FT_STYLE_BOLD;
             ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
         }
-        else
-            ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+        ituFtSetFontStyle(style);
 
         if (text->layout == ITU_LAYOUT_TOP_CENTER)
         {
@@ -203,6 +213,11 @@ void ituTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
         {
             int w, h, dx = 0, dy = 0;
 
+            if (dest->format != ITU_RGB565)
+            {
+                ITUColor color = { 0, 0, 0, 0 };
+                ituColorFill(surf, 0, 0, rect->width, rect->height, &color);
+            }
             ituBitBlt(surf, 0, 0, rect->width, rect->height, dest, destx, desty);
             ituSetColor(&surf->fgColor, desta, widget->color.red, widget->color.green, widget->color.blue);
             if (text->fontHeight > 0)
@@ -210,11 +225,10 @@ void ituTextDraw(ITUWidget* widget, ITUSurface* dest, int x, int y, uint8_t alph
 
             if (text->textFlags & ITU_TEXT_BOLD)
             {
-                ituFtSetFontStyle(ITU_FT_STYLE_BOLD);
+                style |= ITU_FT_STYLE_BOLD;
                 ituFtSetFontStyleValue(ITU_FT_STYLE_BOLD, text->boldSize);
             }
-            else
-                ituFtSetFontStyle(ITU_FT_STYLE_DEFAULT);
+            ituFtSetFontStyle(style);
 
             if (text->layout == ITU_LAYOUT_TOP_CENTER)
             {

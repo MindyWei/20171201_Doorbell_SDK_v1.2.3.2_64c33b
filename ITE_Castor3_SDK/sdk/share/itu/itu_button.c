@@ -152,6 +152,12 @@ bool ituButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg
 
             if (ituWidgetIsInside(widget, x, y))
             {
+                if (btn->mouseUpDelay > 0)
+                    btn->mouseUpDelayCount = btn->mouseUpDelay;
+
+                if (btn->mouseLongPressDelay > 0)
+                    btn->mouseLongPressDelayCount = btn->mouseLongPressDelay;
+
 				if (arg1 == PRESS_ALPHA_DELAY_ARG)
 				{
 					int count = (int)ituWidgetGetCustomData(btn);
@@ -186,7 +192,13 @@ bool ituButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg
             if (btn->pressed)
             {
                 ituButtonSetPressed(btn, false);
-                result |= ituExecActions((ITUWidget*)btn, btn->actions, ev, 0);
+
+                if (btn->mouseUpDelay == 0 || btn->mouseUpDelayCount < 0)
+                {
+                    result |= ituExecActions((ITUWidget*)btn, btn->actions, ev, 0);
+                    btn->mouseUpDelayCount = 0;
+                    btn->mouseLongPressDelayCount = 0;
+                }
 
                 if (widget->type == ITU_BUTTON)
                     ituFocusWidget(btn);
@@ -205,7 +217,7 @@ bool ituButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg
 
 			ituWidgetSetCustomData(btn, 0);
 
-            if (!widget->rect.width || !widget->rect.height || ituWidgetIsInside(widget, x, y))
+            if (!btn->mouseLongPressDelay && (!widget->rect.width || !widget->rect.height || ituWidgetIsInside(widget, x, y)))
             {
                 result |= ituExecActions(widget, btn->actions, ev, arg1);
             }
@@ -249,6 +261,25 @@ bool ituButtonUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg
 					count--;
 					ituWidgetSetCustomData(btn, count);
 				}
+
+                if (btn->pressed)
+                {
+                    if (btn->mouseUpDelayCount > 0)
+                    {
+                        if (--btn->mouseUpDelayCount <= 0)
+                            btn->mouseUpDelayCount = -1;
+                    }
+
+                    if (btn->mouseLongPressDelayCount > 0)
+                    {
+                        if (--btn->mouseLongPressDelayCount <= 0)
+                        {
+                            result |= ituExecActions(widget, btn->actions, ITU_EVENT_MOUSELONGPRESS, 0);
+                            btn->mouseLongPressDelayCount = 0;
+                            btn->mouseUpDelayCount = 0;
+                        }
+                    }
+                }
 			}
             result |= ituExecActions((ITUWidget*)btn, btn->actions, ev, arg1);
         }
@@ -504,7 +535,37 @@ void ituButtonLoad(ITUButton* btn, uint32_t base)
             btn->staticPressSurf = surf;
         }
     }
-    btn->bwin.widgets[ITU_LAYOUT_CENTER] = &btn->text.widget;
+
+    switch (btn->text.layout)
+    {
+    case ITU_LAYOUT_MIDDLE_LEFT:
+        btn->bwin.widgets[ITU_LAYOUT_LEFT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_MIDDLE_RIGHT:
+        btn->bwin.widgets[ITU_LAYOUT_RIGHT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_MIDDLE_CENTER:
+        btn->bwin.widgets[ITU_LAYOUT_CENTER] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_LEFT:
+        btn->bwin.widgets[ITU_LAYOUT_LEFT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_RIGHT:
+        btn->bwin.widgets[ITU_LAYOUT_RIGHT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_CENTER:
+        btn->bwin.widgets[ITU_LAYOUT_CENTER] = &btn->text.widget;
+        break;
+
+    default:
+        btn->bwin.widgets[btn->text.layout] = &btn->text.widget;
+        break;
+    }
 }
 
 void ituButtonSetPressed(ITUButton* btn, bool pressed)
@@ -586,4 +647,47 @@ void ituButtonReleaseSurface(ITUButton* btn)
         ituSurfaceRelease(btn->focusSurf);
         btn->focusSurf = NULL;
     }
+}
+
+void ituButtonSetTextLayoutImpl(ITUButton* btn, ITULayout layout)
+{
+    int i;
+    assert(btn);
+    ITU_ASSERT_THREAD();
+
+    for (i = 0; i < 5; ++i)
+        btn->bwin.widgets[i] = NULL;
+
+    switch (layout)
+    {
+    case ITU_LAYOUT_MIDDLE_LEFT:
+        btn->bwin.widgets[ITU_LAYOUT_LEFT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_MIDDLE_RIGHT:
+        btn->bwin.widgets[ITU_LAYOUT_RIGHT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_MIDDLE_CENTER:
+        btn->bwin.widgets[ITU_LAYOUT_CENTER] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_LEFT:
+        btn->bwin.widgets[ITU_LAYOUT_LEFT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_RIGHT:
+        btn->bwin.widgets[ITU_LAYOUT_RIGHT] = &btn->text.widget;
+        break;
+
+    case ITU_LAYOUT_BOTTOM_CENTER:
+        btn->bwin.widgets[ITU_LAYOUT_CENTER] = &btn->text.widget;
+        break;
+
+    default:
+        btn->bwin.widgets[layout] = &btn->text.widget;
+        break;
+    }
+    btn->text.layout = layout;
+    ituWidgetUpdate(btn, ITU_EVENT_LAYOUT, 0, 0, 0);
 }

@@ -231,7 +231,46 @@ static void SWDrawGlyph(ITUSurface *surf, int x, int y, ITUGlyphFormat format, c
                 }
             }
         }
-        else
+        else if (format == ITU_GLYPH_4BPP)
+        {
+            for (i = 0; i < h; i++)
+            {
+                if (surf->flags & ITU_CLIPPING)
+                {
+                    if (OUT_OF_RANGE(y + i, surf->clipping.y, surf->clipping.height))
+                        continue;
+                }
+
+                for (j = 0; j < (int)w; j++)
+                {
+                    int index, c, bc, r, g, b;
+
+                    if (surf->flags & ITU_CLIPPING)
+                    {
+                        if (OUT_OF_RANGE(x + j, surf->clipping.x, surf->clipping.width))
+                            continue;
+                    }
+                    index = ((w + 1) / 2) * i + j / 2;
+                    c = bitmap[index];
+                    if (j % 2)
+                    {
+                        c &= 0x0F;
+                    }
+                    else
+                    {
+                        c = (c & 0xF0) >> 4;
+                    }
+                    c |= c << 4;
+
+                    bc = base[surf->width * i + j];
+                    r = ((((bc & 0xf800) >> 11) << 3) * (255 - c) + surf->fgColor.red * c) / 255;
+                    g = ((((bc & 0x07e0) >> 5) << 2) * (255 - c) + surf->fgColor.green * c) / 255;
+                    b = (((bc & 0x001f) << 3) * (255 - c) + surf->fgColor.blue * c) / 255;
+                    base[surf->width * i + j] = ITH_RGB565(r, g, b);
+                }
+            }
+        }
+        else if (format == ITU_GLYPH_8BPP)
         {
             for (i = 0; i < h; i++)
             {

@@ -190,7 +190,7 @@ static void ListBoxPrevPage(ITUListBox* listbox)
     ituWidgetUpdate(listbox, ITU_EVENT_LAYOUT, 0, 0, 0);
 }
 
-void ListBoxNextPage(ITUListBox* listbox)
+static void ListBoxNextPage(ITUListBox* listbox)
 {
     char buf[32];
 

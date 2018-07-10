@@ -2498,7 +2498,104 @@ bool ituWheelUpdate(ITUWidget* widget, ITUEvent ev, int arg1, int arg2, int arg3
 		}
 		else //for cycle TIMER
 		{
-			if ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0))
+			if ((wheel->focus_dev) && ((!(widget->flags & ITU_UNDRAGGING)) && (wheel->sliding == 0)) && (!(widget->flags & ITU_DRAGGING)))
+			{
+				int i, count = itcTreeGetChildCount(wheel);
+				int fmax = count - 1;
+				ITUColor color;
+				ITUText* text; //fuck today
+				int height = 0;
+				int fy = 0;
+
+				//refix_wheel_layout(wheel);
+
+				result = true;
+
+				for (i = 0; i < wheel->cycle_arr_count; i++)
+				{
+					ITUWidget* child;
+					int focus_fy = 0;
+
+					if (i == 0)
+					{
+						child = (ITUWidget*)itcTreeGetChildAt(wheel, 0);
+						height = child->rect.height;
+						//memcpy(&color, &NColor, sizeof (ITUColor));
+						use_normal_color(widget, &color);
+						fy = 0 - height * (wheel->itemCount / 2 + wheel->cycle_tor) + (wheel->itemCount / 4 * height);
+
+						fy -= (wheel->focus_dev * height * wheel->frame / wheel->totalframe);
+					}
+
+					//fy -= (wheel->focus_dev * height * wheel->frame / wheel->totalframe);
+
+					focus_fy = fy - ((wheel->focusFontHeight - wheel->fontHeight) / ITU_WHEEL_FOCUSFONT_POS_Y_FIX_DIV);
+
+					child = (ITUWidget*)itcTreeGetChildAt(wheel, wheel->cycle_arr[i]);
+					text = (ITUText*)child;
+
+					
+
+					if (wheel->cycle_arr[i] == wheel->focus_c)
+					{
+						ituWidgetSetY(child, focus_fy);
+					}
+					else
+					{
+						ituWidgetSetY(child, fy);
+					}
+
+					fy += height;
+					
+				}
+
+				/*for (i = 0; i < count; ++i)
+				{
+					int fy;
+					ITUWidget* child = (ITUWidget*)itcTreeGetChildAt(wheel, i);
+					text = (ITUText*)itcTreeGetChildAt(wheel, i);
+					fy = 0 - ((wheel->focusIndex - good_center + 1) * child->rect.height);
+					fy += i * child->rect.height;
+					fy -= wheel->focus_dev * child->rect.height * wheel->frame / wheel->totalframe;
+
+					if (i == 0)
+					{
+						use_normal_color(widget, &color);
+						wheel_font_size_cal(wheel);
+					}
+
+					ituWidgetSetColor(text, color.alpha, color.red, color.green, color.blue);
+					ituWidgetSetY(child, fy);
+				}*/
+
+				wheel->frame++;
+
+				if (wheel->frame > wheel->totalframe)
+				{
+					bool fi_changed = true;
+
+					if ((wheel->focus_dev < 0) && (wheel->focusIndex > 0))
+						wheel->focusIndex--;
+					else if ((wheel->focus_dev < 0) && (wheel->focusIndex <= 0))
+						wheel->focusIndex = fmax;
+					else if ((wheel->focus_dev > 0) && (wheel->focusIndex < fmax))
+						wheel->focusIndex++;
+					else if ((wheel->focus_dev > 0) && (wheel->focusIndex >= fmax))
+						wheel->focusIndex = 0;
+					else
+						fi_changed = false;
+
+					wheel->frame = 0;
+					wheel->focus_dev = 0;
+
+					if (fi_changed)
+					{
+						ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
+						ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+					}
+				}
+			}
+			else if ((widget->flags & ITU_UNDRAGGING) && (wheel->sliding == 0))
 			{//bless
 				int i, newfocus, count = itcTreeGetChildCount(wheel);
 				ITUColor color;
@@ -2964,13 +3061,15 @@ void ituWheelPrev(ITUWheel* wheel)
 
 	if (wheel->cycle_tor)
 	{
-		if (wheel->focusIndex > 0)
+		/*if (wheel->focusIndex > 0)
 			wheel->focusIndex--;
 		else
 			wheel->focusIndex = fmax;
 
 		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
-		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);*/
+		wheel->frame = 0;
+		wheel->focus_dev = -1;
 	}
 	else
 	{
@@ -3010,13 +3109,15 @@ void ituWheelNext(ITUWheel* wheel)
 
 	if (wheel->cycle_tor)
 	{
-		if (wheel->focusIndex < fmax)
+		/*if (wheel->focusIndex < fmax)
 			wheel->focusIndex++;
 		else
 			wheel->focusIndex = 0;
 
 		ituWidgetUpdate(wheel, ITU_EVENT_LAYOUT, 0, 0, 0);
-		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);
+		ituExecActions((ITUWidget*)wheel, wheel->actions, ITU_EVENT_CHANGED, wheel->focusIndex);*/
+		wheel->frame = 0;
+		wheel->focus_dev = 1;
 	}
 	else
 	{

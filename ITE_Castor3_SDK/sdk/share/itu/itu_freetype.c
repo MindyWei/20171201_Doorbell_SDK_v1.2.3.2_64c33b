@@ -12,6 +12,8 @@
 #include "ite/itu.h"
 #include "itu_private.h"
 
+wchar_t* convertArabic(wchar_t* normal);
+
 struct
 {
     FT_Library     library;             /* the FreeType library            */
@@ -177,6 +179,16 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
         goto end;
     }
 
+    if (ft.style & ITU_FT_STYLE_ARABIC)
+    {
+        wchar_t* ptr = convertArabic(buf);
+        if (ptr)
+        {
+            wcscpy(buf, ptr);
+            free(ptr);
+        }
+    }
+
     for (i = 0; i < len; i++)
     {
         int     charcode;
@@ -197,7 +209,7 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
         if (error)
             continue;
 
-        if (ft.style & ITU_FT_STYLE_BOLD)
+        if ((ft.style & ITU_FT_STYLE_BOLD) && ft.bold_size > 0)
         {
             if (face->glyph->format == FT_GLYPH_FORMAT_OUTLINE)
                 FT_Outline_Embolden(&face->glyph->outline, ft.bold_size * 64);
@@ -226,8 +238,16 @@ int ituFtDrawText(ITUSurface* surf, int x, int y, const char* text)
         }
         yy = y + face->size->metrics.y_ppem - glyf->bitmap_top;
         if (yy < 0)
-            yy = 0;
-		ituDrawGlyph(surf, x + x_advance + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+        {
+            ITURectangle prevClip;
+            ituSetClipping(surf, x + x_advance + glyf->bitmap_left, 0, glyf->bitmap.width, glyf->bitmap.rows, &prevClip);
+            ituDrawGlyph(surf, x + x_advance + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+        }
+        else
+        {
+            ituDrawGlyph(surf, x + x_advance + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+        }
 
         x_advance += glyf->advance.x >> 6;
         FT_Done_Glyph(glyph);
@@ -274,6 +294,16 @@ void ituFtGetTextDimension(const char* text, int* width, int* height)
     default:
         LOG_ERR "unknown glyph format: %d\n", ft.current_glyph_format LOG_END
         return;
+    }
+
+    if (ft.style & ITU_FT_STYLE_ARABIC)
+    {
+        wchar_t* ptr = convertArabic(buf);
+        if (ptr)
+        {
+            wcscpy(buf, ptr);
+            free(ptr);
+        }
     }
 
     max_height = 0;
@@ -472,9 +502,16 @@ int ituFtDrawChar(ITUSurface* surf, int x, int y, const char* text)
         }
         yy = y + face->size->metrics.y_ppem - glyf->bitmap_top;
         if (yy < 0)
-            yy = 0;
-        ituDrawGlyph(surf, x + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
-
+        {
+            ITURectangle prevClip;
+            ituSetClipping(surf, x + glyf->bitmap_left, 0, glyf->bitmap.width, glyf->bitmap.rows, &prevClip);
+            ituDrawGlyph(surf, x + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+            ituSurfaceSetClipping(surf, prevClip.x, prevClip.y, prevClip.width, prevClip.height);
+        }
+        else
+        {
+            ituDrawGlyph(surf, x + glyf->bitmap_left, yy, format, glyf->bitmap.buffer, glyf->bitmap.width, glyf->bitmap.rows);
+        }
         FT_Done_Glyph(glyph);
     }
 
