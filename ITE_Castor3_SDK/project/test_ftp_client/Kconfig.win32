@@ -37,5 +37,8 @@ config NET_HTTP
 config NET_FTP
     def_bool y
 
+config BUILD_PING
+    def_bool y
+	
 source "$CMAKE_SOURCE_DIR/sdk/Kconfig"
 

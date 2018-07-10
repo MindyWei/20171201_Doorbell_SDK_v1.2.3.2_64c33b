@@ -121,6 +121,50 @@ int Photo_DownloadFromURL(char* url_path)
     return 0;
 }
 
+int Ping_Test(char* targetIP)
+{
+	ping_set_target(targetIP);
+	ping_init();
+}
+
+int Socket_Test()
+{
+	int sock;
+	struct sockaddr_in serv_addr;
+	int str_len = 0;
+	char message[30] = { 0 };
+
+	while (1)
+	{
+		if (!NetworkIsReady())
+		{
+			usleep(5000);
+			continue;
+		}
+		sock = socket(PF_INET, SOCK_STREAM, 0);
+
+		memset(&serv_addr, 0, sizeof(serv_addr));
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_addr.s_addr = inet_addr("108.61.191.167");
+		serv_addr.sin_port = htons(atoi("9999"));
+
+		if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
+		{
+			printf("connect() error.\n");
+			exit(1);
+		}
+
+		str_len = read(sock, message, sizeof(message) - 1);
+		if (str_len == -1)
+		{
+			printf("read() error!.\n");
+			exit(1);
+		}
+
+		close(sock);
+	}
+}
+
 int Photo_DownloadFromFtp(char* ftp_path)
 {
     CURL *curl;
@@ -310,6 +354,7 @@ void* TestFunc(void *arg)
         else
             usleep(1000);
     }
-    Photo_DownloadFromFtp(NULL);
+    //Photo_DownloadFromFtp(NULL);
+	Ping_Test("108.61.191.167");
     return NULL;
 }

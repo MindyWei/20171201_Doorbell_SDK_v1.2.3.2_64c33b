@@ -19,10 +19,22 @@ void ConfigInit(void)
 {
     // network
     theConfig.dhcp = 1;
-    strncpy(theConfig.ipaddr, "192.168.1.1", sizeof (theConfig.ipaddr) - 1);
-    strncpy(theConfig.netmask, "255.255.255.0", sizeof (theConfig.netmask) - 1);
-    strncpy(theConfig.gw, "192.168.1.254", sizeof (theConfig.gw) - 1);
-    strncpy(theConfig.dns, "192.168.1.1", sizeof (theConfig.dns) - 1);
+    strncpy(theConfig.ipaddr, "172.20.10.12", sizeof (theConfig.ipaddr) - 1);
+    strncpy(theConfig.netmask, "255.255.255.240", sizeof (theConfig.netmask) - 1);
+    strncpy(theConfig.gw, "172.20.10.1", sizeof (theConfig.gw) - 1);
+    strncpy(theConfig.dns, "172.20.10.1", sizeof (theConfig.dns) - 1);
+
+	//theConfig.dhcp = 1;
+	//strncpy(theConfig.ipaddr, "10.8.8.19", sizeof(theConfig.ipaddr) - 1);
+	//strncpy(theConfig.netmask, "255.255.255.0", sizeof(theConfig.netmask) - 1);
+	//strncpy(theConfig.gw, "10.8.8.254", sizeof(theConfig.gw) - 1);
+	//strncpy(theConfig.dns, "10.8.8.1", sizeof(theConfig.dns) - 1);
+
+	//theConfig.dhcp = 1;
+	//strncpy(theConfig.ipaddr, "192.168.1.1", sizeof(theConfig.ipaddr) - 1);
+	//strncpy(theConfig.netmask, "255.255.255.0", sizeof(theConfig.netmask) - 1);
+	//strncpy(theConfig.gw, "192.168.1.254", sizeof(theConfig.gw) - 1);
+	//strncpy(theConfig.dns, "192.168.1.1", sizeof(theConfig.dns) - 1);
 
     // wifi mode
     theConfig.wifi_mode = 1;
