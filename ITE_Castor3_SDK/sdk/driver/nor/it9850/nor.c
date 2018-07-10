@@ -99,6 +99,9 @@ typedef enum
     WIN_W25Q32BV,
     WIN_W25Q64BV,
     WIN_W25Q128JV,
+	WIN_W25Q128FV,
+	XM25QH128A,//BY LIUFEI
+	ZB25VQ128,//BY LIUFEI
     UNKNOW_VENDOR = 0xFFFF
 }NOR_VENDOR_ID;
 
@@ -216,7 +219,10 @@ NOR_VENDOR_CONTEXT nor_support_vendor[] = {
     {0xEF, 0x3016, 0x15, "WIN_W25X32V",     WIN_W25X32V},
     {0xEF, 0x4016, 0x15, "WIN_W25Q32BV",    WIN_W25Q32BV},
     {0xEF, 0x4017, 0x16, "WIN__W25Q64BV",   WIN_W25Q64BV},
-    {0xEF, 0x4018, 0x17, "WIN__W25Q128JV",  WIN_W25Q128JV}
+    {0xEF, 0x4018, 0x17, "WIN__W25Q128JV",  WIN_W25Q128JV},
+	 {0xEF, 0x4018, 0x17, "WIN_W25Q128FV",   WIN_W25Q128FV},
+		 {0x20, 0x7018, 0xFF,"XM25QH128A",XM25QH128A},
+		 {0x5E, 0x4018, 0x17,"ZB25VQ128",ZB25VQ128}
 };
 
 //=============================================================================
@@ -435,6 +441,7 @@ norGetContext(
 		
 	 case GD_GD25Q128C:    // 16 MB
 	 case WIN_W25Q128JV:
+	 case WIN_W25Q128FV:
 	    norObject->context.bytesPerPage       = 256;
 	    norObject->context.pagesPerSector     = 16;
 	    norObject->context.bytesPerSector     = 4*1024;
@@ -449,7 +456,15 @@ norGetContext(
        norObject->context.totalBlocks        = 1024;
        norObject->context.use4BytesAddress = true;
        break;
-
+	 case XM25QH128A:    // 16 MB
+	 case ZB25VQ128:
+       norObject->context.bytesPerPage       = 256;
+       norObject->context.pagesPerSector     = 16;
+       norObject->context.bytesPerSector     = 4*1024;
+       norObject->context.sectorsPerBlock    = 16;//8;//
+       norObject->context.totalBlocks        = 256;//512;//
+       //norObject->context.use4BytesAddress = true;
+       break;
     default:
         break;
     }
