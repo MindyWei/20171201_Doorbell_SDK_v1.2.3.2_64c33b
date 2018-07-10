@@ -194,7 +194,7 @@ static void _user_cam_detect()
 		cam_detecting = i;
 		mmpIicSendData(IIC_PORT_1, IIC_MASTER_MODE, 0x06>>1, 0x00, &cam_detecting, 2);
 		usleep(500*1000);
-		if(PR2000K_Check_signal())
+		if(UserPr2000CheckSignal())
 		{
 		}
 		usleep(10*1000);
@@ -429,7 +429,7 @@ void UserMotionEnd()
 	gState = SEND_STOP;
 	md_quit();
 	usleep(100*1000);
-	PR2000_set_end();
+	UserPr2000SetStart(false);
 }
 
 void _user_video_time_check()

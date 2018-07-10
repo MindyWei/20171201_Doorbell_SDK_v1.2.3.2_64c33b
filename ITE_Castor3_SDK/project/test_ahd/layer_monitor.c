@@ -167,7 +167,7 @@ bool MonitorOnEnter(ITUWidget* widget, char* param)
 	monitor_time_update(monitor_time);
 	ituWidgetSetVisible(monitorRecTimeText,true);
 	ithGpioClear(AUDIO_IN);
-	PR2000_set_start();
+	UserPr2000SetStart(true);
 	usleep(100*1000);
 	gState = SEND_BEGIN;
 	return true;
@@ -257,7 +257,7 @@ bool MonitorOnLeave(ITUWidget* widget, char* param)
 	SceneLeaveVideoState();
 	AudioResumeKeySound();
 	usleep(100*1000);
-	PR2000_set_end();
+	UserPr2000SetStart(false);
 	printf("MonitorOnLeave........................................2\n");
 	
 	return true;

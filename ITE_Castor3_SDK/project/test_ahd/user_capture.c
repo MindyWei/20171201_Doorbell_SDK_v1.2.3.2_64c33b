@@ -1408,6 +1408,20 @@ void SettingISPAnd_FilpLCD(
                 outdata.DisplayAddrY[outdata.OutWidth-15],
                 outdata.DisplayAddrY[outdata.OutWidth*outdata.OutHeight-15]);
 #if defined(TARGET_BOARD_G)
+#if 0
+			gState = SEND_STOP;
+			UserPr2000SetStart(false);
+
+			//pr2000_signal_lock = false;
+			//PR2000K_SoftReset;
+			//PR2000K_HW_Reset();
+			//PR2000K_INIT_register_table();
+
+			usleep(100*1000);
+			UserPr2000SetStart(true);
+			gState = SEND_BEGIN;
+#endif
+
 			currCam = currCam ? 0 : 1;
 			UserCameraSwitch(currCam);
 
@@ -1653,7 +1667,7 @@ void *signal_control(void *arg)
 		else
 			usleep(1000);
 			
-		if(sure_PR2000_lock())
+		if(UserPr2000IsLock())
 		{
 			switch (gState)
 			{

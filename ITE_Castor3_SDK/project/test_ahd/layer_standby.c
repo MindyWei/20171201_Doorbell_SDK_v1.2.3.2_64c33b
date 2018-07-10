@@ -49,7 +49,7 @@ bool StandbyOnEnter(ITUWidget* widget, char* param)
 #if TEST_CAM
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = 1;
-	PR2000_set_start();
+	UserPr2000SetStart(true);
 	usleep(100*1000);
 	gState = SEND_BEGIN;
 #else
@@ -67,7 +67,7 @@ static void _md_start()
 	montion_enable = true;
 	ituWidgetSetVisible(standbyMotionDectionBackground,true);
 	cur_signal = theConfig.mdcam+1;
-	PR2000_set_start();
+	UserPr2000SetStart(true);
 	usleep(100*1000);
 	gState = SEND_BEGIN;
 	set_montion_pass_once();
@@ -151,7 +151,7 @@ bool StandbyOnLeave(ITUWidget* widget, char* param)
 		md_quit();
 		SceneLeaveVideoState();
 		usleep(100*1000);
-		PR2000_set_end();
+		UserPr2000SetStart(false);
 	}
 	UserTimerMotionSnapReinit();
 	ithGpioSet(AUDIO_OUT);

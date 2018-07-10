@@ -327,7 +327,7 @@ int SceneRun(void)
 		if (tick - lasttick >= 1000)
 		{
 		#if 0
-			if(sure_PR2000_lock())
+			if(UserPr2000IsLock())
 				printf("------------->1\n");
 			else
 				printf("------------->0\n");

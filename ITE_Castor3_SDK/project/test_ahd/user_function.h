@@ -219,7 +219,6 @@ extern bool PlayerRead;
 extern bool pr2000_signal_lock;
 extern bool pre_singnal_lock;
 extern bool pr2000_is_ok;
-extern bool pr2000_start;
 extern bool auto_snap_filename;	
 extern bool sd_card_check;
 
@@ -227,8 +226,8 @@ extern bool sd_card_check;
 extern uint32_t test_tick;
 
 typedef void (*PhotoLoadCallback)(uint8_t* data, int size);
-extern uint8_t pr2000_i2c_read(uint8_t slaveAddr,uint8_t regAddr);
-extern void pr2000_i2c_write(uint8_t slaveAddr,uint8_t regAddr,uint8_t val);
+//extern uint8_t pr2000_i2c_read(uint8_t slaveAddr,uint8_t regAddr);
+//extern void pr2000_i2c_write(uint8_t slaveAddr,uint8_t regAddr,uint8_t val);
 extern void* TestFunc_t(void* arg);
 
 #endif

@@ -53,7 +53,7 @@ retry_backup:
 	//video_memo_init();
 	user_gpio_init();
 	UserTimerInit();
-	user_pr2000_init();
+	UserPr2000Init();
 	user_signal_control_init();
 	UserCameraDetect();
 	user_time_init();
