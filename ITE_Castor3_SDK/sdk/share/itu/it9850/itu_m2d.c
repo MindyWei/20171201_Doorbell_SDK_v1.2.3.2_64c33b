@@ -531,6 +531,9 @@ M2dDrawGlyph(
     {
         gfxSurfaceUnSetClip(destSurf->m2dSurf);
     }
+
+    if (w > 64 || h > 64)       // workaround draw large font bug
+        gfxwaitEngineIdle();
 }
 
 static void
